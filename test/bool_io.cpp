@@ -7,7 +7,8 @@ const int LL = 1024*1024*1024+10;
 int main(int argc, char** argv) {
 	int party, port;
 	parse_party_and_port(argv, &party, &port);
-	BoolIO * io = new BoolIO(party == ALICE, party == ALICE?nullptr:"127.0.0.1",port, false);
+	NetIO * netio = new NetIO(party == ALICE?nullptr:"127.0.0.1",port, false);
+	BoolIO<NetIO> * io = new BoolIO<NetIO>(netio, party == ALICE);
 	bool * data = new bool[LL];
 	bool * data2 = new bool[LL];
 

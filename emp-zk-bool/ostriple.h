@@ -30,7 +30,7 @@ public:
 	block minusone, one;
 	IO *io;
 	IO **ios;
-	BoolIO* bio;
+	BoolIO<IO>* bio;
 	PRG prg;
 	FerretCOT<IO> *ferret = nullptr;
 	TripleAuth<IO> *auth_helper;
@@ -48,7 +48,7 @@ public:
 		io = ios[0];
 		this->ios = ios;
 		pool = new ThreadPool(threads);
-		bio = new BoolIO(party == ALICE, ios[0]->is_server?nullptr:ios[0]->addr.c_str(), ios[0]->port);
+		bio = new BoolIO<IO>(io, party == ALICE);
 
 		auth_buffer_input = new block[INPUT_BUFFER_SZ];
 		auth_buffer_andgate = new block[ANDGATE_BUFFER_MEM_SZ];
@@ -101,7 +101,6 @@ public:
 		uint64_t res = 0;
 		for(int i = 0; i < threads; ++i)
 			res += ios[i]->counter;
-		res += bio->get_counter();
 		return res; 
 	}
 

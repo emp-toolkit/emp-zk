@@ -333,14 +333,14 @@ public:
 
 	/* ---------------------debug functions----------------------*/
 
-	void check_auth_mac(block* auth, bool* in, int len) {
+	void check_auth_mac(block* auth, bool* in, int len, IO *tio) {
 		if(party == ALICE) {
-			io->send_data(auth, len*sizeof(block));
-			io->send_data(in, len*sizeof(bool));
+			tio->send_data(auth, len*sizeof(block));
+			tio->send_data(in, len*sizeof(bool));
 		} else {
 			block* auth_recv = new block[len];
-			io->recv_data(auth_recv, len*sizeof(block));
-			io->recv_data(in, len*sizeof(bool));
+			tio->recv_data(auth_recv, len*sizeof(block));
+			tio->recv_data(in, len*sizeof(bool));
 			for(int i = 0; i < len; ++i) {
 				if(in[i] != getLSB(auth_recv[i])) error("check1");
 				set_zero_bit(auth[i]);
@@ -350,16 +350,16 @@ public:
 			delete[] auth_recv;
 		}
 	}
-	void check_compute_and(block* a, block *b, block *c, int len) {
+	void check_compute_and(block* a, block *b, block *c, int len, IO *tio) {
 		if(party == ALICE) {
-			io->send_data(a, len*sizeof(block));
-			io->send_data(b, len*sizeof(block));
-			io->send_data(c, len*sizeof(block));
+			tio->send_data(a, len*sizeof(block));
+			tio->send_data(b, len*sizeof(block));
+			tio->send_data(c, len*sizeof(block));
 		} else {
 			block* recv = new block[3*len];
-			io->recv_data(recv, len*sizeof(block));
-			io->recv_data(recv+len, len*sizeof(block));
-			io->recv_data(recv+2*len, len*sizeof(block));
+			tio->recv_data(recv, len*sizeof(block));
+			tio->recv_data(recv+len, len*sizeof(block));
+			tio->recv_data(recv+2*len, len*sizeof(block));
 			for(int i = 0; i < len; ++i) {
 				bool ar = getLSB(recv[i]);
 				bool br = getLSB(recv[len+i]);

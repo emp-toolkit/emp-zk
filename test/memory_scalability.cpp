@@ -1,4 +1,4 @@
-#include "emp-wolverine-bool/emp-wolverine-bool.h"
+#include "emp-zk-bool/emp-zk-bool.h"
 #include <iostream>
 #include "emp-tool/emp-tool.h"
 #if defined(__linux__)
@@ -43,7 +43,7 @@ void test_merkle_tree_dfs(NetIO *ios[threads], int party, int depth) {
 	std::cout << "number of nodes: " << (2*width-1) << std::endl;
 
 	auto start = clock_start();
-	setup_boolean_zk<NetIO>(ios, threads, party);
+	setup_zk_bool<NetIO>(ios, threads, party);
 
 	bool *witness = new bool[width];
 	PRG prg;
@@ -53,6 +53,7 @@ void test_merkle_tree_dfs(NetIO *ios[threads], int party, int depth) {
 	merkle_tree(dig_cipher_bit, 0, 0, depth, witness, &cf);
 	Bit res = Bit(true, PUBLIC);
 	bool ret = res.reveal<bool>(PUBLIC);
+	finalize_zk_bool<NetIO>(party);
 	std::cout << depth << " " << time_from(start)<<" us "<<party<< " " << ret << "\n";
 
 	delete[] witness;
@@ -70,6 +71,7 @@ void test_merkle_tree_dfs(NetIO *ios[threads], int party, int depth) {
 	else std::cout << "[Mac]Query RSS failed" << std::endl;
 #endif
 }
+
 void test_merkle_tree(NetIO *ios[threads], int party, int depth) {
 	std::cout << "merkle tree of depth: " << depth << std::endl;
 	string file = circuit_file_location+"sha-256.txt";
@@ -82,7 +84,7 @@ void test_merkle_tree(NetIO *ios[threads], int party, int depth) {
 	std::cout << "number of nodes: " << (2*width-1) << std::endl;
 
 	auto start = clock_start();
-	setup_boolean_zk<NetIO>(ios, threads, party);
+	setup_zk_bool<NetIO>(ios, threads, party);
 
 	Bit *msg_cipher_bit = new Bit[input_n];
 	Bit *dig_cipher_bit = new Bit[output_n*(2*width-1)];
@@ -115,6 +117,7 @@ void test_merkle_tree(NetIO *ios[threads], int party, int depth) {
 
 	Bit res = Bit(false, PUBLIC);
 	bool ret = res.reveal<bool>(PUBLIC);
+	finalize_zk_bool<NetIO>(party);
 	std::cout << depth << " " << time_from(start)<<" ms "<<party<< " " << ret << "\n";
 
 	delete[] msg_cipher_bit;
@@ -142,13 +145,15 @@ int main(int argc, char** argv) {
 
 	std::cout << std::endl << "------------ circuit zero-knowledge proof test ------------" << std::endl << std::endl;;
 
-//	test_sha256(ios, party);
+	if(argc < 4) {
+		std::cout << "usage: bin/memory_scalability PARTY PORT DEPTH_OF_MERKLE_TREE" << std::endl;
+		return -1;
+	}
+
 
 	int depth = atoi(argv[3]);
 	test_merkle_tree_dfs(ios, party, depth);
 	//test_merkle_tree(ios, party, depth);
-
-	finalize_boolean_zk<NetIO>(party);
 
 	for(int i = 0; i < threads; ++i)
 		delete ios[i];

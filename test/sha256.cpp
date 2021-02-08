@@ -1,4 +1,4 @@
-#include "emp-wolverine-bool/emp-wolverine-bool.h"
+#include "emp-zk-bool/emp-zk-bool.h"
 #include <iostream>
 using namespace std;
 const string circuit_file_location = macro_xstr(EMP_CIRCUIT_PATH) + string("bristol_format/");
@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
 	for(int i = 0; i < threads; ++i)
 		ios[i] = new NetIO(party == ALICE?nullptr:"127.0.0.1",port+i);
 
-	setup_boolean_zk<NetIO>(ios, threads, party);
+	setup_zk_bool<NetIO>(ios, threads, party);
 	vector<Bit> W, O;
 	for(int i = 0; i < 512; ++i)
 		W.push_back(Bit(witness[i], ALICE));
@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
 			error("wrong");
 	}
 
-	finalize_boolean_zk<NetIO>(party);
+	finalize_zk_bool<NetIO>(party);
 
 	for(int i = 0; i < threads; ++i)
 		delete ios[i];

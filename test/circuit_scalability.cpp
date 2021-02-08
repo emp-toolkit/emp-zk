@@ -26,7 +26,10 @@ void test_circuit_zk(NetIO *ios[threads], int party, int input_sz_lg) {
 		c = a ^ b;
 	}
 	Bit ret = Bit(false, PUBLIC);
-	cout << 100*input_sz << "\t" << time_from(start)<<" "<<party<<" "<<ret.reveal<bool>(PUBLIC)<<endl;
+	bool ret_b = ret.reveal<bool>(PUBLIC);
+	finalize_zk_bool<NetIO>(party);
+	cout << 100*input_sz << "\t" << time_from(start)<<" "<<party<<endl;
+	cout << ret_b << std::endl;
 }
 
 int main(int argc, char** argv) {
@@ -36,6 +39,11 @@ int main(int argc, char** argv) {
 		ios[i] = new NetIO(party == ALICE?nullptr:"127.0.0.1",port+i);
 
 	std::cout << std::endl << "------------ circuit zero-knowledge proof test ------------" << std::endl << std::endl;;
+
+	if(argc < 4) {
+		std::cout << "usage: bin/circuit_scalability PARTY PORT LOG(NUM_GATES)" << std::endl;
+		return -1;
+	}
 
 	int num = atoi(argv[3]);
 	test_circuit_zk(ios, party, num);

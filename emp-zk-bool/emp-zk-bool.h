@@ -25,7 +25,7 @@ template<typename IO>
 inline block get_bool_delta(int party) {
 	if(party == BOB)
 		return ((ZKVerifier<IO>*)(ProtocolExecution::prot_exec))->ostriple->delta;
-	else error("Prover has no \\delta");
+	else zero_block;
 }
 
 template<typename IO>
@@ -34,9 +34,11 @@ inline void sync_zk_bool() {
 }
 
 template<typename IO>
-inline void finalize_zk_bool(int party) {
+inline bool finalize_zk_bool(int party) {
+	bool res = ((ZKBoolCircExec<IO>*)CircuitExecution::circ_exec)->ostriple->check_cheat();
 	delete CircuitExecution::circ_exec;
 	delete ProtocolExecution::prot_exec;
+	return res;
 }
 
 template<typename IO>

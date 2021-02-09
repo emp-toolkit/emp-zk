@@ -44,9 +44,9 @@ public:
 	IO* io = nullptr;
 	OSTriple<IO>* ostriple;
 	ZKBoolCircExecVer<IO> *eva;
-	ZKVerifier(IO **ios, int threads, ZKBoolCircExecVer<IO> *t, bool check_zero = false): ProtocolExecution(BOB) {
+	ZKVerifier(IO **ios, int threads, ZKBoolCircExecVer<IO> *t): ProtocolExecution(BOB) {
 		this->io = ios[0];
-		ostriple = new OSTriple<IO>(BOB, threads, ios, check_zero);
+		ostriple = new OSTriple<IO>(BOB, threads, ios);
 		t->template set_ostriple<IO>(ostriple);
 	}
 	~ZKVerifier() {

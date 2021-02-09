@@ -117,7 +117,8 @@ void test_merkle_tree(NetIO *ios[threads], int party, int depth) {
 
 	Bit res = Bit(false, PUBLIC);
 	bool ret = res.reveal<bool>(PUBLIC);
-	finalize_zk_bool<NetIO>(party);
+	bool cheated = finalize_zk_bool<NetIO>(party);
+	if(cheated) error("cheated\n");
 	std::cout << depth << " " << time_from(start)<<" ms "<<party<< " " << ret << "\n";
 
 	delete[] msg_cipher_bit;

@@ -42,7 +42,8 @@ void test_lowmc(NetIO *ios[threads], int party) {
 
 	ProtocolExecution::prot_exec->reveal(ctx_rev, PUBLIC, (block*)ctx, test_sz);
 
-	finalize_zk_bool<NetIO>(party);
+	bool cheated = finalize_zk_bool<NetIO>(party);
+	if(cheated) error("cheated\n");
 
 	//cout<<"ctx rev:";for(int i = 0; i < test_sz; ++i)cout<<ctx_rev[i];cout<<endl;
 	std::cout << "check encryption consistency" << std::endl;

@@ -33,10 +33,10 @@ public:
 	IO* io = nullptr;
 	OSTriple<IO> *ostriple;
 	ZKBoolCircExecPrv<IO> *gen;
-	ZKProver(IO** ios, int threads, ZKBoolCircExecPrv<IO> *t, bool check_zero = false): ProtocolExecution(ALICE) {
+	ZKProver(IO** ios, int threads, ZKBoolCircExecPrv<IO> *t): ProtocolExecution(ALICE) {
 		this->io = ios[0];
 		this->gen = t;
-		ostriple = new OSTriple<IO>(ALICE, threads, ios, check_zero);
+		ostriple = new OSTriple<IO>(ALICE, threads, ios);
 		t->template set_ostriple<IO>(ostriple);
 	}
 	~ZKProver() {

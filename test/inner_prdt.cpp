@@ -43,7 +43,8 @@ void test_inner_product(NetIO *ios[threads], int party) {
 		zkp_inner_prdt<NetIO>(x, x+sz, constant, sz);
 	}
 
-	finalize_zk_bool<NetIO>(party);
+	bool cheated = finalize_zk_bool<NetIO>(party);
+	if(cheated) error("cheated\n");
 
 	double tt = time_from(start);
 	cout << "prove " << repeat << " degree-2 inner_product of length " << sz << endl;

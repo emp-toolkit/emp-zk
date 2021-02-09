@@ -36,10 +36,10 @@ public:
 	TripleAuth<IO> *auth_helper;
 	ThreadPool *pool = nullptr;
 	PolyProof<IO> *polyproof = nullptr;
-	bool output_check_zero = true;
+	
+	bool cheated = false;
 
-	OSTriple (int party, int threads, IO **ios, bool ocz = false) {
-		this->output_check_zero = ocz;
+	OSTriple (int party, int threads, IO **ios) {
 		this->party = party;
 		this->threads = threads;
 		// initiate Iterative COT with regular noise and security against malicious adv
@@ -75,14 +75,17 @@ public:
 		}
 	}	
 
-	~OSTriple () {
+	bool check_cheat() {
 		if(andgate_buf_not_empty()) {
 			andgate_correctness_check_manage();
 		}
+		if(!auth_helper->finalize())
+			cheated = true;
+		return cheated;
+	}
+
+	~OSTriple () {
 		delete bio;
-		if(!auth_helper->finalize()) {
-			error("Output Reveal Wrong!\n");
-		}
 		delete polyproof;
 		delete ferret;
 		delete[] auth_buffer_input;
@@ -233,7 +236,7 @@ public:
 			gfmul(A_star[1], this->delta, &W);
 			W = W ^ A_star[0];
 			if(cmpBlock(&W, &B_star, 1) != 1)
-				error("AND gate check fails");
+				cheated = true;
 		}
 		io->flush();
 		delete[] share_seed;
@@ -292,8 +295,6 @@ public:
 				bio->send_bool(b[i]);
 			} else {
 				b[i] = bio->recv_bool();
-				if(output_check_zero and b[i] != 0) 
-					error("verify_output, wrong value");
 			}
 		}
 		if(party == ALICE) {

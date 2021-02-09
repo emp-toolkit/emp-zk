@@ -86,7 +86,7 @@ public:
 			gfmul(check_sum[1], delta, &tmp);
 			check_sum[1] = B ^ tmp;
 			if(cmpBlock(check_sum, check_sum+1, 1) != 1)
-				error("boolean polynomial zkp fails");
+				CheatRecord::put("zk polynomial: boolean polynomial zkp fails");
 		}
 		num = 0;
 		delete[] chi;

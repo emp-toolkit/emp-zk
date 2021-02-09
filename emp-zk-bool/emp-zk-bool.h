@@ -5,9 +5,12 @@
 #include "emp-zk-bool/zk_bool_circuit_exec.h"
 #include "emp-zk-bool/ostriple.h"
 #include "emp-zk-bool/polynomial.h"
+#include "emp-zk-bool/cheat_record.h"
 
+namespace emp {
 template<typename IO>
 inline void setup_zk_bool(IO** ios, int threads, int party) {
+	CheatRecord::reset();
 	if(party == ALICE) {
 		ZKBoolCircExecPrv<IO> * t = new ZKBoolCircExecPrv<IO>();
 		CircuitExecution::circ_exec = t;
@@ -33,10 +36,9 @@ inline void sync_zk_bool() {
 
 template<typename IO>
 inline bool finalize_zk_bool() {
-	bool res = ((ZKBoolCircExec<IO>*)CircuitExecution::circ_exec)->ostriple->check_cheat();
 	delete CircuitExecution::circ_exec;
 	delete ProtocolExecution::prot_exec;
-	return res;
+	return CheatRecord::cheated();
 }
 
 template<typename IO>
@@ -47,5 +49,6 @@ inline void zkp_poly_deg2(Bit *x, Bit *y, bool *coeff, int len) {
 template<typename IO>
 inline void zkp_inner_prdt(Bit *x, Bit *y, bool constant, int len) {
 	PolyProof<IO>::polyproof->zkp_inner_prdt((block*)x, (block*)y, constant, len);
+}
 }
 #endif

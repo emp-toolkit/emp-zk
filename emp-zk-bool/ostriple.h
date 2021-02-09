@@ -4,6 +4,7 @@
 #include "emp-ot/emp-ot.h"
 #include "emp-zk-bool/triple_auth.h"
 #include "emp-zk-bool/bool_io.h"
+#include "emp-zk-bool/cheat_record.h"
 
 const static int INPUT_BUFFER_SZ = 1024;
 const static int ANDGATE_BUFFER_MEM_SZ= N_REG;
@@ -35,8 +36,6 @@ public:
 	TripleAuth<IO> *auth_helper;
 	ThreadPool *pool = nullptr;
 	
-	bool cheated = false;
-
 	OSTriple (int party, int threads, IO **ios) {
 		this->party = party;
 		this->threads = threads;
@@ -66,16 +65,12 @@ public:
 		if(party == BOB) auth_helper->set_delta(this->delta);
 	}	
 
-	bool check_cheat() {
+	~OSTriple () {
 		if(andgate_buf_not_empty()) {
 			andgate_correctness_check_manage();
 		}
 		if(!auth_helper->finalize())
-			cheated = true;
-		return cheated;
-	}
-
-	~OSTriple () {
+			CheatRecord::put("emp-zk-bool finalize");
 		delete bio;
 		delete ferret;
 		delete[] auth_buffer_input;
@@ -222,7 +217,7 @@ public:
 			gfmul(A_star[1], this->delta, &W);
 			W = W ^ A_star[0];
 			if(cmpBlock(&W, &B_star, 1) != 1)
-				cheated = true;
+				CheatRecord::put("emp_zk_bool AND batch check");
 		}
 		io->flush();
 		delete[] share_seed;

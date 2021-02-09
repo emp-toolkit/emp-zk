@@ -72,7 +72,7 @@ public:
 			uint64_t tmp = mult_mod(check_sum[1], delta);
 			tmp = add_mod(B, tmp);
 			if(tmp != check_sum[0])
-				error("polynomial zkp fails");
+				CheatRecord::put("polynomial zkp fails");
 		}
 		num = 0;
 		delete[] chi;

@@ -1,4 +1,4 @@
-#include "emp-wolverine-fp/emp-wolverine-fp.h"
+#include "emp-zk-arith/emp-zk-arith.h"
 #include <iostream>
 #include "emp-tool/emp-tool.h"
 using namespace emp;
@@ -14,8 +14,8 @@ void test_input_speed(NetIO **ios, int party, int sz) {
 	for(int i = 0; i < sz; ++i)
 		a[i] = rand() % PR;
 
-	setup_boolean_zk<NetIO>(ios, threads, party);
-	setup_fp_zk<NetIO>(ios, threads, party);
+	setup_zk_bool<NetIO>(ios, threads, party);
+	setup_zk_arith<NetIO>(ios, threads, party);
 
 	IntFp *x = new IntFp[sz];
 
@@ -23,19 +23,19 @@ void test_input_speed(NetIO **ios, int party, int sz) {
 	auto start = clock_start();
 	for(int i = 0; i < sz; ++i)
 		x[i] = IntFp(a[i], ALICE);
-	sync_boolean_zk();
+	sync_zk_bool<NetIO>();
 	double tt = time_from(start);
 	std::cout << "normal input average time: " << tt*1000/sz << " ns per element" << std::endl;
 
 	/* batch input */
 	start = clock_start();
 	batch_feed(x, a, sz);
-	sync_boolean_zk();
+	sync_zk_bool<NetIO>();
 	tt = time_from(start);
 	std::cout << "batch input average time: " << tt*1000/sz << " ns per element" << std::endl;
 
-	finalize_boolean_zk<NetIO>(party);
-	finalize_fp_zk();
+	finalize_zk_bool<NetIO>(party);
+	finalize_zk_arith<NetIO>();
 
 	delete[] a;
 	delete[] x;	

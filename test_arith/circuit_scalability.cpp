@@ -1,4 +1,4 @@
-#include "emp-wolverine-fp/emp-wolverine-fp.h"
+#include "emp-zk-arith/emp-zk-arith.h"
 #include <iostream>
 #include "emp-tool/emp-tool.h"
 using namespace emp;
@@ -12,7 +12,7 @@ void test_circuit_zk(NetIO *ios[threads+1], int party, int input_sz_lg) {
 
 	long long test_n = 1<<input_sz_lg;
 	auto start = clock_start();
-	setup_fp_zk<NetIO, threads>(ios, party);
+	setup_zk_arith<NetIO>(ios, threads, party);
 	auto timesetup = time_from(start);
 	cout << "time for setup: " << timesetup*1000 <<" "<<party<<" "<<endl;
 

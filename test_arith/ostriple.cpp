@@ -1,6 +1,6 @@
 #include "emp-tool/emp-tool.h"
-#include "vole-arith/emp-vole.h"
-#include "fp-circuit-zk/ostriple.h"
+#include "emp-vole/emp-vole.h"
+#include "emp-zk-arith/ostriple.h"
 #include <iostream>
 using namespace emp;
 using namespace std;

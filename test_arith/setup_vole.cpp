@@ -1,4 +1,4 @@
-#include "vole-arith/emp-vole.h"
+#include "emp-vole/emp-vole.h"
 #include "emp-tool/emp-tool.h"
 #if defined(__linux__)
 	#include <sys/time.h>

@@ -1,5 +1,5 @@
-#include "emp-wolverine-fp/floats.h"
-#include "emp-wolverine-fp/emp-wolverine-fp.h"
+#include "emp-zk-arith/floats.h"
+#include "emp-zk-arith/emp-zk-arith.h"
 #include <iostream>
 #include <string>
 using namespace emp;

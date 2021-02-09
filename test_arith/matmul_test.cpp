@@ -1,5 +1,5 @@
 #include <iostream>
-#include "emp-wolverine-fp/emp-wolverine-fp.h"
+#include "emp-zk-arith/emp-zk-arith.h"
 #include "emp-tool/emp-tool.h"
 
 using namespace emp;

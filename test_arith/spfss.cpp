@@ -1,4 +1,4 @@
-#include "vole-arith/emp-vole.h"
+#include "emp-vole/emp-vole.h"
 #include "emp-tool/emp-tool.h"
 
 using namespace emp;

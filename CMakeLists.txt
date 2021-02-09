@@ -37,6 +37,8 @@ foreach(bin ${binaries})
 endforeach()
 
 set(binaries2  
+input_scalability 
+circuit_scalability 
 zk_proof)
 
 foreach(bin ${binaries2})

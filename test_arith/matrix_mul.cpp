@@ -1,4 +1,4 @@
-#include "emp-wolverine-fp/emp-wolverine-fp.h"
+#include "emp-zk-arith/emp-zk-arith.h"
 #include <iostream>
 #include "emp-tool/emp-tool.h"
 #if defined(__linux__)

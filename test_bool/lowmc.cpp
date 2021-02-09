@@ -42,7 +42,7 @@ void test_lowmc(NetIO *ios[threads], int party) {
 
 	ProtocolExecution::prot_exec->reveal(ctx_rev, PUBLIC, (block*)ctx, test_sz);
 
-	bool cheated = finalize_zk_bool<NetIO>(party);
+	bool cheated = finalize_zk_bool<NetIO>();
 	if(cheated) error("cheated\n");
 
 	//cout<<"ctx rev:";for(int i = 0; i < test_sz; ++i)cout<<ctx_rev[i];cout<<endl;

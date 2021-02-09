@@ -1,6 +1,6 @@
 #include "emp-tool/emp-tool.h"
 #include "emp-zk-bool/emp-zk-bool.h"
-#include "empzk-arith/emp-zk-arith.h"
+#include "emp-zk-arith/emp-zk-arith.h"
 #include <iostream>
 
 using namespace emp;
@@ -17,8 +17,8 @@ void test_inner_product(NetIO *ios[threads], int party) {
 	uint64_t *witness = new uint64_t[2*sz];
 	memset(witness, 0, 2*sz*sizeof(uint64_t));
 
-	setup_boolean_zk<NetIO>(ios, threads, party);
-	setup_fp_zk<NetIO>(ios, threads, party);
+	setup_zk_bool<NetIO>(ios, threads, party);
+	setup_zk_arith<NetIO>(ios, threads, party);
 
 	IntFp *x = new IntFp[2*sz];
 
@@ -46,8 +46,8 @@ void test_inner_product(NetIO *ios[threads], int party) {
 		fp_zkp_inner_prdt<NetIO>(x, x+sz, constant, sz);
 	}
 
-	finalize_boolean_zk<NetIO>(party);
-	finalize_fp_zk<NetIO>();
+	finalize_zk_bool<NetIO>();
+	finalize_zk_arith<NetIO>();
 
 	double tt = time_from(start);
 	cout << "prove " << repeat << " degree-2 polynomial of length " << sz << endl;

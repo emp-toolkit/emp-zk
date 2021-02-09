@@ -39,6 +39,9 @@ endforeach()
 set(binaries2  
 input_scalability 
 circuit_scalability 
+inner_prdt
+mix
+polynomial
 zk_proof)
 
 foreach(bin ${binaries2})

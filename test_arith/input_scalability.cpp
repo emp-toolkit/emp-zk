@@ -34,7 +34,7 @@ void test_input_speed(NetIO **ios, int party, int sz) {
 	tt = time_from(start);
 	std::cout << "batch input average time: " << tt*1000/sz << " ns per element" << std::endl;
 
-	finalize_zk_bool<NetIO>(party);
+	finalize_zk_bool<NetIO>();
 	finalize_zk_arith<NetIO>();
 
 	delete[] a;

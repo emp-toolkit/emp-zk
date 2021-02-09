@@ -45,7 +45,7 @@ void test_polynomial(NetIO *ios[threads], int party) {
 		zkp_poly_deg2<NetIO>(x, x+sz, coeff, sz);
 	}
 
-	bool cheated = finalize_zk_bool<NetIO>(party);
+	bool cheated = finalize_zk_bool<NetIO>();
 	if(cheated) error("cheated\n");
 
 	double tt = time_from(start);

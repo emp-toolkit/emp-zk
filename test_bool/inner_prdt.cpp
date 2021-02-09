@@ -43,7 +43,7 @@ void test_inner_product(NetIO *ios[threads], int party) {
 		zkp_inner_prdt<NetIO>(x, x+sz, constant, sz);
 	}
 
-	bool cheated = finalize_zk_bool<NetIO>(party);
+	bool cheated = finalize_zk_bool<NetIO>();
 	if(cheated) error("cheated\n");
 
 	double tt = time_from(start);

@@ -13,7 +13,7 @@ void test_circuit_zk(NetIO *ios[threads], int party) {
 	Integer b(32, 2, ALICE);
 	cout << (a-b).reveal<uint32_t>(PUBLIC)<<endl;
 
-	bool cheat = finalize_zk_bool<NetIO>(party);
+	bool cheat = finalize_zk_bool<NetIO>();
 	if(cheat)error("cheat!\n");
 }
 

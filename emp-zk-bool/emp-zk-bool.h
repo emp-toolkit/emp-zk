@@ -32,7 +32,7 @@ inline void sync_zk_bool() {
 }
 
 template<typename IO>
-inline bool finalize_zk_bool(int party) {
+inline bool finalize_zk_bool() {
 	bool res = ((ZKBoolCircExec<IO>*)CircuitExecution::circ_exec)->ostriple->check_cheat();
 	delete CircuitExecution::circ_exec;
 	delete ProtocolExecution::prot_exec;

@@ -16,15 +16,15 @@ void test_mix_circuit(NetIO *ios[threads+1], int party) {
 	uint64_t c = rand()%p;
 	uint64_t d = ((a+b)%p+c)%p;
 
-	setup_boolean_zk<NetIO>(ios, threads, party);
-	setup_fp_zk<NetIO>(ios, threads, party);
+	setup_zk_bool<NetIO>(ios, threads, party);
+	setup_zk_arith<NetIO>(ios, threads, party);
 	IntFp a1(a, ALICE);
 	IntFp a2(b, ALICE);
 	a1 = a1 + a2;
 
 	Integer b1(62, c, ALICE);
 	Integer b2;
-	b2 = arith2bool(a1);
+	b2 = arith2bool<NetIO>(a1);
 	b1 = b1 + b2;
 	Integer b3(62, d, PUBLIC);
 	Bit ret = (b1.equal(b3));
@@ -32,10 +32,10 @@ void test_mix_circuit(NetIO *ios[threads+1], int party) {
 	cout << ret.reveal<bool>(PUBLIC) << endl;
 
 	IntFp a3;
-	a3 = bool2arith(b3);
+	a3 = bool2arith<NetIO>(b3);
 	cout << a3.reveal(d) << endl;	
 
-	finalize_boolean_zk<NetIO>(party);
+	finalize_zk_bool<NetIO>();
 }
 
 int main(int argc, char** argv) {

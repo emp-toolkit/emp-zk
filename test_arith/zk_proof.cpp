@@ -80,7 +80,7 @@ void test_circuit_zk(NetIO *ios[threads], int party) {
 
 	std::cout << std::endl;
 
-	finalize_zk_bool<NetIO>(party);
+	finalize_zk_bool<NetIO>();
 
 	delete[] d;
 	delete[] e;

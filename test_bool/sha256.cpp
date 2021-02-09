@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
 			error("wrong");
 	}
 
-	bool cheated = finalize_zk_bool<NetIO>(party);
+	bool cheated = finalize_zk_bool<NetIO>();
 	if(cheated) error("cheated\n");
 
 	for(int i = 0; i < threads; ++i)

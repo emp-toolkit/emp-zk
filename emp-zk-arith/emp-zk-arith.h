@@ -1,0 +1,35 @@
+#ifndef EMP_ZK_ARITH_H__
+#define EMP_ZK_ARITH_H__
+#include "emp-zk-arith/zk_fp_exec.h"
+#include "emp-zk-arith/zk_fp_exec_prover.h"
+#include "emp-zk-arith/zk_fp_exec_verifier.h"
+#include "emp-zk-arith/triple_auth.h"
+#include "emp-zk-arith/ostriple.h"
+#include "emp-zk-arith/int_fp.h"
+#include "emp-zk-arith/conversion.h"
+#include "emp-zk-arith/polynomial.h"
+#include "emp-zk-arith/zk_fp_exec_prover.h"
+#include "emp-zk-arith/zk_fp_exec_verifier.h"
+#include "emp-zk-arith/polynomial.h"
+
+template<typename IO>
+inline void setup_zk_arith(IO** ios, int threads, int party) {
+	if(party == ALICE) {
+		ZKFpExec::zk_exec = new ZKFpExecPrv<IO>(ios, threads);
+		EdaBits<IO>::conv = new EdaBits<IO>(ALICE, threads, ios, ((ZKFpExecPrv<IO>*)(ZKFpExec::zk_exec))->ostriple->vole);
+		FpPolyProof<IO>::fppolyproof = new FpPolyProof<IO>(ALICE, (IO*)ios[0], ((ZKFpExecPrv<IO>*)(ZKFpExec::zk_exec))->ostriple);
+	} else {
+		ZKFpExec::zk_exec = new ZKFpExecVer<IO>(ios, threads);
+		EdaBits<IO>::conv = new EdaBits<IO>(BOB, threads, ios, ((ZKFpExecVer<IO>*)(ZKFpExec::zk_exec))->ostriple->vole);
+		EdaBits<IO>::conv->install_boolean(((ZKBoolCircExecVer<IO>*)CircuitExecution::circ_exec)->delta);
+		FpPolyProof<IO>::fppolyproof = new FpPolyProof<IO>(BOB, (IO*)ios[0], ((ZKFpExecVer<IO>*)(ZKFpExec::zk_exec))->ostriple);
+	}
+}
+
+template<typename IO>
+inline void finalize_zk_arith() {
+	delete EdaBits<IO>::conv;
+	delete FpPolyProof<IO>::fppolyproof;
+	delete ZKFpExec::zk_exec;
+}
+#endif

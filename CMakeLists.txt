@@ -11,6 +11,9 @@ find_package(emp-ot REQUIRED)
 include_directories(${EMP-OT_INCLUDE_DIRS})
 
 install(DIRECTORY emp-zk-bool DESTINATION include)
+install(DIRECTORY emp-zk-arith DESTINATION include)
+install(DIRECTORY emp-vole DESTINATION include)
+install(DIRECTORY edabit DESTINATION include)
 install(DIRECTORY cmake/ DESTINATION cmake)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -ggdb -Wno-ignored-attributes")
@@ -29,6 +32,14 @@ inner_prdt
 lowmc)
 
 foreach(bin ${binaries})
-   add_executable(${bin} "test/${bin}.cpp")
-	target_link_libraries(${bin} ${EMP-OT_LIBRARIES})
+   add_executable("${bin}_bool" "test_bool/${bin}.cpp")
+	target_link_libraries("${bin}_bool" ${EMP-OT_LIBRARIES})
+endforeach()
+
+set(binaries2  
+zk_proof)
+
+foreach(bin ${binaries2})
+   add_executable("${bin}_arith" "test_arith/${bin}.cpp")
+	target_link_libraries("${bin}_arith" ${EMP-OT_LIBRARIES})
 endforeach()

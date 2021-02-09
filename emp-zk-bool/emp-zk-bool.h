@@ -12,12 +12,10 @@ inline void setup_zk_bool(IO** ios, int threads, int party) {
 		ZKBoolCircExecPrv<IO> * t = new ZKBoolCircExecPrv<IO>();
 		CircuitExecution::circ_exec = t;
 		ProtocolExecution::prot_exec = new ZKProver<IO>(ios, threads, t);
-		((ZKProver<IO>*)(ProtocolExecution::prot_exec))->ostriple->init_polyproof();
 	} else {
 		ZKBoolCircExecVer<IO> * t = new ZKBoolCircExecVer<IO>();
 		CircuitExecution::circ_exec = t;
 		ProtocolExecution::prot_exec = new ZKVerifier<IO>(ios, threads, t);
-		((ZKVerifier<IO>*)(ProtocolExecution::prot_exec))->ostriple->init_polyproof();
 	}
 }
 
@@ -25,7 +23,7 @@ template<typename IO>
 inline block get_bool_delta(int party) {
 	if(party == BOB)
 		return ((ZKVerifier<IO>*)(ProtocolExecution::prot_exec))->ostriple->delta;
-	else zero_block;
+	else return zero_block;
 }
 
 template<typename IO>

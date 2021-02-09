@@ -4,6 +4,7 @@
 #include <emp-ot/emp-ot.h>
 #include "emp-zk-bool/ostriple.h"
 #include "emp-zk-bool/zk_bool_circuit_exec.h"
+#include "emp-zk-bool/polynomial.h"
 
 template<typename IO>
 class ZKBoolCircExecVer:public ZKBoolCircExec<IO> { public:
@@ -43,13 +44,18 @@ class ZKVerifier: public ProtocolExecution {
 public:
 	IO* io = nullptr;
 	OSTriple<IO>* ostriple;
+	PolyProof<IO> *polyproof = nullptr;
 	ZKBoolCircExecVer<IO> *eva;
 	ZKVerifier(IO **ios, int threads, ZKBoolCircExecVer<IO> *t): ProtocolExecution(BOB) {
 		this->io = ios[0];
 		ostriple = new OSTriple<IO>(BOB, threads, ios);
+		polyproof = new PolyProof<IO>(BOB, ios[0], ostriple->ferret);
+		polyproof->delta = ostriple->delta;
+		PolyProof<IO>::polyproof = this->polyproof;
 		t->template set_ostriple<IO>(ostriple);
 	}
 	~ZKVerifier() {
+		delete polyproof;
 		delete ostriple;
 	}
 

@@ -5,6 +5,7 @@
 #include <iostream>
 #include "emp-zk-bool/ostriple.h"
 #include "emp-zk-bool/zk_bool_circuit_exec.h"
+#include "emp-zk-bool/polynomial.h"
 
 template<typename IO>
 class ZKBoolCircExecPrv:public ZKBoolCircExec<IO> { public:
@@ -32,14 +33,18 @@ class ZKProver: public ProtocolExecution {
 public:
 	IO* io = nullptr;
 	OSTriple<IO> *ostriple;
+	PolyProof<IO> *polyproof = nullptr;
 	ZKBoolCircExecPrv<IO> *gen;
 	ZKProver(IO** ios, int threads, ZKBoolCircExecPrv<IO> *t): ProtocolExecution(ALICE) {
 		this->io = ios[0];
 		this->gen = t;
 		ostriple = new OSTriple<IO>(ALICE, threads, ios);
+		polyproof = new PolyProof<IO>(ALICE, ios[0], ostriple->ferret);
+		PolyProof<IO>::polyproof = this->polyproof;
 		t->template set_ostriple<IO>(ostriple);
 	}
 	~ZKProver() {
+		delete polyproof;
 		delete ostriple;
 	}
 

@@ -4,7 +4,6 @@
 #include "emp-ot/emp-ot.h"
 #include "emp-zk-bool/triple_auth.h"
 #include "emp-zk-bool/bool_io.h"
-#include "emp-zk-bool/polynomial.h"
 
 const static int INPUT_BUFFER_SZ = 1024;
 const static int ANDGATE_BUFFER_MEM_SZ= N_REG;
@@ -35,7 +34,6 @@ public:
 	FerretCOT<IO> *ferret = nullptr;
 	TripleAuth<IO> *auth_helper;
 	ThreadPool *pool = nullptr;
-	PolyProof<IO> *polyproof = nullptr;
 	
 	bool cheated = false;
 
@@ -66,13 +64,6 @@ public:
 
 		auth_helper = new TripleAuth<IO>(party, io);
 		if(party == BOB) auth_helper->set_delta(this->delta);
-
-		if(party == ALICE)
-			polyproof = new PolyProof<IO>(ALICE, ios[0], ferret);
-		else {
-			polyproof = new PolyProof<IO>(BOB, ios[0], ferret);
-			polyproof->delta = delta;
-		}
 	}	
 
 	bool check_cheat() {
@@ -86,7 +77,6 @@ public:
 
 	~OSTriple () {
 		delete bio;
-		delete polyproof;
 		delete ferret;
 		delete[] auth_buffer_input;
 		delete[] auth_buffer_andgate;
@@ -96,10 +86,6 @@ public:
 		delete pool;
 	}
 
-	void init_polyproof() {
-		PolyProof<IO>::polyproof = this->polyproof;
-	}
-	
 	uint64_t communication() {
 		uint64_t res = 0;
 		for(int i = 0; i < threads; ++i)

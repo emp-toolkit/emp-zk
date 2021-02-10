@@ -32,9 +32,9 @@ template<typename IO>
 class ZKProver: public ProtocolExecution {
 public:
 	IO* io = nullptr;
-	OSTriple<IO> *ostriple;
+	OSTriple<IO> *ostriple = nullptr;
 	PolyProof<IO> *polyproof = nullptr;
-	ZKBoolCircExecPrv<IO> *gen;
+	ZKBoolCircExecPrv<IO> *gen = nullptr;
 	ZKProver(IO** ios, int threads, ZKBoolCircExecPrv<IO> *t): ProtocolExecution(ALICE) {
 		this->io = ios[0];
 		this->gen = t;

@@ -43,9 +43,9 @@ template<typename IO>
 class ZKVerifier: public ProtocolExecution {
 public:
 	IO* io = nullptr;
-	OSTriple<IO>* ostriple;
+	OSTriple<IO>* ostriple = nullptr;
 	PolyProof<IO> *polyproof = nullptr;
-	ZKBoolCircExecVer<IO> *eva;
+	ZKBoolCircExecVer<IO> *eva = nullptr;
 	ZKVerifier(IO **ios, int threads, ZKBoolCircExecVer<IO> *t): ProtocolExecution(BOB) {
 		this->io = ios[0];
 		ostriple = new OSTriple<IO>(BOB, threads, ios);

@@ -7,9 +7,10 @@ template<typename IO>
 class BoolIO { public:
 	IO * io;
 	Hash hash;//modelled as RO
-	bool * buf = nullptr;
+	bool * buf;
 	int ptr;
 	bool sender;
+	vector<unsigned char> tmp_arr;
 	BoolIO(IO * io, int sender) : io(io), sender(sender) {
 		buf = new bool[NETWORK_BUFFER_SIZE2];
 		if(sender)
@@ -56,7 +57,8 @@ class BoolIO { public:
 		return res;
 	}
 	void send_bool_raw(const bool * data, int length) {
-		uint8_t* tmp_arr = new uint8_t[length/8];
+		if(tmp_arr.size() < length/8)
+			tmp_arr.resize(length/8);
 		int cnt = 0;
 		
 		unsigned long long * data64 = (unsigned long long * )data;
@@ -76,20 +78,21 @@ class BoolIO { public:
 			tmp_arr[cnt] = tmp;
 			cnt++;
 		}
-		hash.put(tmp_arr, cnt);
-		io->send_data(tmp_arr, cnt);
+		hash.put(tmp_arr.data(), cnt);
+		io->send_data(tmp_arr.data(), cnt);
 
 		if (8*i != length) {
 			hash.put(data + 8*i, length - 8*i);
 			io->send_data(data + 8*i, length - 8*i);
 		}
-		delete[] tmp_arr;
 	}
 	void recv_bool_raw(bool * data, int length) {
-		uint8_t* tmp_arr = new uint8_t[length/8];
+		if(tmp_arr.size() < length/8)
+			tmp_arr.resize(length/8);
+
 		int cnt = 0;
-		io->recv_data(tmp_arr, length/8);
-		hash.put(tmp_arr, length/8);
+		io->recv_data(tmp_arr.data(), length/8);
+		hash.put(tmp_arr.data(), length/8);
 
 		unsigned long long * data64 = (unsigned long long *) data;
 		int i = 0;
@@ -111,7 +114,6 @@ class BoolIO { public:
 			io->recv_data(data + 8*i, length - 8*i);
 			hash.put(data + 8*i, length - 8*i);
 		}
-		delete[] tmp_arr;
 	}
 };
 }

@@ -1,11 +1,11 @@
 #ifndef EMP_ZK_BOOL_H__
 #define EMP_ZK_BOOL_H__
-#include "emp-zk-bool/zk_prover.h"
-#include "emp-zk-bool/zk_verifier.h"
-#include "emp-zk-bool/zk_bool_circuit_exec.h"
-#include "emp-zk-bool/ostriple.h"
-#include "emp-zk-bool/polynomial.h"
-#include "emp-zk-bool/cheat_record.h"
+#include "emp-zk/emp-zk-bool/zk_prover.h"
+#include "emp-zk/emp-zk-bool/zk_verifier.h"
+#include "emp-zk/emp-zk-bool/zk_bool_circuit_exec.h"
+#include "emp-zk/emp-zk-bool/ostriple.h"
+#include "emp-zk/emp-zk-bool/polynomial.h"
+#include "emp-zk/emp-zk-bool/cheat_record.h"
 
 namespace emp {
 template<typename IO>

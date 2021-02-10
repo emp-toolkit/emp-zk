@@ -1,16 +1,16 @@
 #ifndef EMP_ZK_ARITH_H__
 #define EMP_ZK_ARITH_H__
-#include "emp-zk-arith/zk_fp_exec.h"
-#include "emp-zk-arith/zk_fp_exec_prover.h"
-#include "emp-zk-arith/zk_fp_exec_verifier.h"
-#include "emp-zk-arith/triple_auth.h"
-#include "emp-zk-arith/ostriple.h"
-#include "emp-zk-arith/int_fp.h"
-#include "emp-zk-arith/conversion.h"
-#include "emp-zk-arith/polynomial.h"
-#include "emp-zk-arith/zk_fp_exec_prover.h"
-#include "emp-zk-arith/zk_fp_exec_verifier.h"
-#include "emp-zk-arith/polynomial.h"
+#include "emp-zk/emp-zk-arith/zk_fp_exec.h"
+#include "emp-zk/emp-zk-arith/zk_fp_exec_prover.h"
+#include "emp-zk/emp-zk-arith/zk_fp_exec_verifier.h"
+#include "emp-zk/emp-zk-arith/triple_auth.h"
+#include "emp-zk/emp-zk-arith/ostriple.h"
+#include "emp-zk/emp-zk-arith/int_fp.h"
+#include "emp-zk/emp-zk-arith/conversion.h"
+#include "emp-zk/emp-zk-arith/polynomial.h"
+#include "emp-zk/emp-zk-arith/zk_fp_exec_prover.h"
+#include "emp-zk/emp-zk-arith/zk_fp_exec_verifier.h"
+#include "emp-zk/emp-zk-arith/polynomial.h"
 
 template<typename IO>
 inline void setup_zk_arith(IO** ios, int threads, int party) {

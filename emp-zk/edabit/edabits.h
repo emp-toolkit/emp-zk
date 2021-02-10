@@ -3,9 +3,9 @@
 
 #include "emp-tool/emp-tool.h"
 #include "emp-ot/emp-ot.h"
-#include "emp-zk-bool/emp-zk-bool.h"
-#include "emp-vole/emp-vole.h"
-#include "edabit/auth_helper.h"
+#include "emp-zk/emp-zk-bool/emp-zk-bool.h"
+#include "emp-zk/emp-vole/emp-vole.h"
+#include "emp-zk/edabit/auth_helper.h"
 
 template<typename IO>
 class EdaBits {

@@ -1,6 +1,6 @@
 #include<iostream>
 #include "emp-tool/emp-tool.h"
-#include "emp-zk-bool/bool_io.h"
+#include <emp-zk/emp-zk.h>
 using namespace emp;
 using namespace std;
 const int LL = 1024*1024*1024+10;

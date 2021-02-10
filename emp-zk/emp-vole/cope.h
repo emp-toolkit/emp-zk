@@ -3,7 +3,7 @@
 
 #include "emp-tool/emp-tool.h"
 #include "emp-ot/emp-ot.h"
-#include "emp-vole/utility.h"
+#include "emp-zk/emp-vole/utility.h"
 
 template<typename IO>
 class Cope {

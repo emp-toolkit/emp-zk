@@ -3,8 +3,8 @@
 
 #include <emp-tool/emp-tool.h>
 #include <set>
-#include "emp-vole/utility.h"
-#include "emp-vole/preot.h"
+#include "emp-zk/emp-vole/utility.h"
+#include "emp-zk/emp-vole/preot.h"
 
 using namespace emp;
 

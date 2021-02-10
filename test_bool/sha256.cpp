@@ -1,4 +1,4 @@
-#include "emp-zk-bool/emp-zk-bool.h"
+#include <emp-zk/emp-zk.h>
 #include <iostream>
 using namespace std;
 const string circuit_file_location = macro_xstr(EMP_CIRCUIT_PATH) + string("bristol_format/");

@@ -1,6 +1,6 @@
 #ifndef ZK_FP_EXECUTIION_PROVER_H__
 #define ZK_FP_EXECUTIION_PROVER_H__
-#include "emp-zk-arith/zk_fp_exec.h"
+#include "emp-zk/emp-zk-arith/zk_fp_exec.h"
 
 template<typename IO>
 class ZKFpExecPrv : public ZKFpExec {

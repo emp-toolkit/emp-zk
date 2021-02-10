@@ -2,7 +2,7 @@
 #define _LPN_FP_H__
 
 #include "emp-tool/emp-tool.h"
-#include "emp-vole/utility.h"
+#include "emp-zk/emp-vole/utility.h"
 namespace emp {
 template<int d = 10>
 class LpnFp { public:

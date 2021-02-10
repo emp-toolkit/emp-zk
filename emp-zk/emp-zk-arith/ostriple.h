@@ -1,8 +1,8 @@
 #ifndef FP_OS_TRIPLE_H__
 #define FP_OS_TRIPLE_H__
 
-#include "emp-vole/emp-vole.h"
-#include "emp-zk-arith/triple_auth.h"
+#include "emp-zk/emp-vole/emp-vole.h"
+#include "emp-zk/emp-zk-arith/triple_auth.h"
 
 #define LOW64(x) _mm_extract_epi64((block)x, 0)
 #define HIGH64(x) _mm_extract_epi64((block)x, 1)

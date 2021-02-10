@@ -2,7 +2,7 @@
 #define BASE_VOLE_H__
 
 #include "emp-tool/emp-tool.h"
-#include "emp-vole/cope.h"
+#include "emp-zk/emp-vole/cope.h"
 
 template<typename IO>
 class Base_svole {

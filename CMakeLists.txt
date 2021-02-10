@@ -10,16 +10,13 @@ include(${CMAKE_FOLDER}/cmake/enable_float.cmake)
 find_package(emp-ot REQUIRED)
 include_directories(${EMP-OT_INCLUDE_DIRS})
 set(sources
-  emp-zk-bool/emp-zk-bool.cpp
+  emp-zk/emp-zk-bool/emp-zk-bool.cpp
 )
 
 add_library(${NAME} SHARED ${sources})
 install(TARGETS ${NAME} DESTINATION lib)
 
-install(DIRECTORY emp-zk-bool DESTINATION include)
-install(DIRECTORY emp-zk-arith DESTINATION include)
-install(DIRECTORY emp-vole DESTINATION include)
-install(DIRECTORY edabit DESTINATION include)
+install(DIRECTORY emp-zk/ DESTINATION include)
 install(DIRECTORY cmake/ DESTINATION cmake)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -ggdb -Wno-ignored-attributes")

@@ -2,8 +2,8 @@
 #define INT_FP_H__
 
 #include "emp-tool/emp-tool.h"
-#include "emp-zk-bool/emp-zk-bool.h"
-#include "emp-zk-arith/emp-zk-arith.h"
+#include "emp-zk/emp-zk-bool/emp-zk-bool.h"
+#include "emp-zk/emp-zk-arith/emp-zk-arith.h"
 
 class IntFp {
 public:

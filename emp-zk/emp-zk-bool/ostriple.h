@@ -2,9 +2,9 @@
 #define OS_TRIPLE_H__
 
 #include "emp-ot/emp-ot.h"
-#include "emp-zk-bool/triple_auth.h"
-#include "emp-zk-bool/bool_io.h"
-#include "emp-zk-bool/cheat_record.h"
+#include "emp-zk/emp-zk-bool/triple_auth.h"
+#include "emp-zk/emp-zk-bool/bool_io.h"
+#include "emp-zk/emp-zk-bool/cheat_record.h"
 
 const static int INPUT_BUFFER_SZ = 1024;
 const static int ANDGATE_BUFFER_MEM_SZ= N_REG;

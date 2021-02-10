@@ -1,6 +1,5 @@
 #include "emp-tool/emp-tool.h"
-#include "emp-zk-bool/emp-zk-bool.h"
-#include "emp-zk-arith/emp-zk-arith.h"
+#include <emp-zk/emp-zk.h>
 #include <iostream>
 
 using namespace emp;

@@ -2,8 +2,8 @@
 #define FP_POLY_H__
 
 #include "emp-tool/emp-tool.h"
-#include "emp-zk-bool/emp-zk-bool.h"
-#include "emp-zk-arith/ostriple.h"
+#include "emp-zk/emp-zk-bool/emp-zk-bool.h"
+#include "emp-zk/emp-zk-arith/ostriple.h"
 
 template<typename IO>
 class FpPolyProof {

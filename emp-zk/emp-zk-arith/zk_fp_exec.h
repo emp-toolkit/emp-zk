@@ -1,9 +1,9 @@
 #ifndef ZK_FP_EXECUTION_H__
 #define ZK_FP_EXECUTION_H__
 
-#include "emp-vole/emp-vole.h"
-#include "emp-zk-arith/ostriple.h"
-#include "edabit/edabits.h"
+#include "emp-zk/emp-vole/emp-vole.h"
+#include "emp-zk/emp-zk-arith/ostriple.h"
+#include "emp-zk/edabit/edabits.h"
 
 class ZKFpExec {
 public:

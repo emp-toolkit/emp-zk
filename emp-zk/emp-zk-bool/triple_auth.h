@@ -1,13 +1,12 @@
-#ifndef TRIPLE_AUTH_H__
-#define TRIPLE_AUTH_H__
+#ifndef EMP_ZK_BOOL_TRIPLE_AUTH_H__
+#define EMP_ZK_BOOL_TRIPLE_AUTH_H__
 
 #include "emp-tool/emp-tool.h"
 
 #define MAC_CHECK_BUFFER_SZ 8192
 
 template<typename IO>
-class TripleAuth {
-public:
+class TripleAuth { public:
 	int party;
 	Hash hash;
 	block choice[2];
@@ -34,6 +33,7 @@ public:
 			tmp[i] = key[i] ^ choice[b[i]];
 		hash.put_block(tmp.data(), length);
 	}
+
 	bool finalize() {
 		char digest[emp::Hash::DIGEST_SIZE];
 		hash.digest(digest);

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "emp-tool/emp-tool.h"
-#include "emp-zk-bool/emp-zk-bool.h"
-#include "emp-zk-arith/int_fp.h"
+#include "emp-zk/emp-zk-bool/emp-zk-bool.h"
+#include "emp-zk/emp-zk-arith/int_fp.h"
 
 template<typename IO>
 inline IntFp bool2arith(Integer &x) {

@@ -3,9 +3,9 @@
 #include <emp-tool/emp-tool.h>
 #include <emp-ot/emp-ot.h>
 #include <iostream>
-#include "emp-zk-bool/ostriple.h"
-#include "emp-zk-bool/zk_bool_circuit_exec.h"
-#include "emp-zk-bool/polynomial.h"
+#include "emp-zk/emp-zk-bool/ostriple.h"
+#include "emp-zk/emp-zk-bool/zk_bool_circuit_exec.h"
+#include "emp-zk/emp-zk-bool/polynomial.h"
 
 template<typename IO>
 class ZKBoolCircExecPrv:public ZKBoolCircExec<IO> { public:

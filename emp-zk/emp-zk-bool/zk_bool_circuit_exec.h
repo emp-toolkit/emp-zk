@@ -1,7 +1,7 @@
 #ifndef ZK_BOOL_CIRCUIT_EXE_H__
 #define ZK_BOOL_CIRCUIT_EXE_H__
 #include "emp-tool/emp-tool.h"
-#include "emp-zk-bool/polynomial.h"
+#include "emp-zk/emp-zk-bool/polynomial.h"
 #include <iostream>
 
 template<typename IO>

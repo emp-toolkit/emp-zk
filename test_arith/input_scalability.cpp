@@ -1,4 +1,4 @@
-#include "emp-zk-arith/emp-zk-arith.h"
+#include <emp-zk/emp-zk.h>
 #include <iostream>
 #include "emp-tool/emp-tool.h"
 using namespace emp;

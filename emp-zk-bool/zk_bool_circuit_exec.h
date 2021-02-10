@@ -1,12 +1,14 @@
 #ifndef ZK_BOOL_CIRCUIT_EXE_H__
 #define ZK_BOOL_CIRCUIT_EXE_H__
 #include "emp-tool/emp-tool.h"
+#include "emp-zk-bool/polynomial.h"
 #include <iostream>
 
 template<typename IO>
 class ZKBoolCircExec:public CircuitExecution { public:
 	int64_t gid = 0;
 	OSTriple<IO> *ostriple;
+	PolyProof<IO> *polyproof;
 	block pub_label[2];
 	uint64_t communication() {
 		return ostriple->communication();

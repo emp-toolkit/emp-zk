@@ -40,8 +40,8 @@ public:
 		this->gen = t;
 		ostriple = new OSTriple<IO>(ALICE, threads, ios);
 		polyproof = new PolyProof<IO>(ALICE, ios[0], ostriple->ferret);
-		PolyProof<IO>::polyproof = this->polyproof;
 		t->template set_ostriple<IO>(ostriple);
+		t->polyproof = this->polyproof;
 	}
 	~ZKProver() {
 		delete polyproof;

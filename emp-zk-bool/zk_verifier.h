@@ -51,8 +51,8 @@ public:
 		ostriple = new OSTriple<IO>(BOB, threads, ios);
 		polyproof = new PolyProof<IO>(BOB, ios[0], ostriple->ferret);
 		polyproof->delta = ostriple->delta;
-		PolyProof<IO>::polyproof = this->polyproof;
 		t->template set_ostriple<IO>(ostriple);
+		t->polyproof = this->polyproof;
 	}
 	~ZKVerifier() {
 		delete polyproof;

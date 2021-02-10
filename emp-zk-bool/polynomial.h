@@ -7,7 +7,6 @@
 template<typename IO>
 class PolyProof {
 public:
-	static PolyProof<IO> *polyproof;
 	int party;
 	IO *io;
 	block delta;
@@ -185,6 +184,4 @@ public:
 	}
 
 };
-template<typename IO>
-PolyProof<IO>* PolyProof<IO>::polyproof = nullptr;
 #endif

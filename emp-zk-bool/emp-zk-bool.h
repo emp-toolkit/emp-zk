@@ -43,12 +43,12 @@ inline bool finalize_zk_bool() {
 
 template<typename IO>
 inline void zkp_poly_deg2(Bit *x, Bit *y, bool *coeff, int len) {
-	PolyProof<IO>::polyproof->zkp_poly_deg2((block*)x, (block*)y, coeff, len);
+	((ZKBoolCircExec<IO>*)(CircuitExecution::circ_exec))->polyproof->zkp_poly_deg2((block*)x, (block*)y, coeff, len);
 }
 
 template<typename IO>
 inline void zkp_inner_prdt(Bit *x, Bit *y, bool constant, int len) {
-	PolyProof<IO>::polyproof->zkp_inner_prdt((block*)x, (block*)y, constant, len);
+	((ZKBoolCircExec<IO>*)(CircuitExecution::circ_exec))->polyproof->zkp_inner_prdt((block*)x, (block*)y, constant, len);
 }
 }
 #endif

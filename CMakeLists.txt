@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 2.8.11)
-project (emp-zk-bool)
-set(NAME "emp-zk-bool")
+project (emp-zk)
+set(NAME "emp-zk")
 
 find_path(CMAKE_FOLDER NAMES cmake/emp-tool-config.cmake)
 include(${CMAKE_FOLDER}/cmake/common.cmake)
@@ -14,10 +14,10 @@ set(sources
 )
 
 add_library(${NAME} SHARED ${sources})
-install(TARGETS ${NAME} DESTINATION lib)
 
-install(DIRECTORY emp-zk/ DESTINATION include)
-install(DIRECTORY cmake/ DESTINATION cmake)
+install(DIRECTORY emp-zk DESTINATION include/)
+install(DIRECTORY cmake/ DESTINATION cmake/)
+install(TARGETS ${NAME} DESTINATION lib)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -ggdb -Wno-ignored-attributes")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -Wno-ignored-attributes")

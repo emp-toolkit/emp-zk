@@ -310,7 +310,7 @@ public:
 		if(party == ALICE) {
 			uint64_t a = sender_check_int_value(bool_candidate[edab_f2]);
 			uint64_t b = sender_check_int_value(arith_candidate[edab_fp]);
-			assert(a == b);
+			if(a != b) error("edabit error!");
 		}
 	}
 

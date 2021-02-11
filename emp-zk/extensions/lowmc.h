@@ -8,7 +8,7 @@
 #ifndef _EMP_LOWMC_H__
 #define _EMP_LOWMC_H__
 
-#include "emp-zk-bool/emp-zk-bool.h"
+#include "emp-zk/emp-zk-bool/emp-zk-bool.h"
 
 const unsigned numofboxes = 15;    // Number of Sboxes
 const unsigned blocksize = 64;   // Block size in bits

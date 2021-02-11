@@ -36,11 +36,8 @@ inline void sync_zk_bool() {
 
 template<typename IO>
 inline bool finalize_zk_bool() {
-	std::cout <<"!!!1\n";
 	delete CircuitExecution::circ_exec;
-	std::cout <<"!!!2\n";
 	delete ProtocolExecution::prot_exec;
-	std::cout <<"!!!3\n";
 	return CheatRecord::cheated();
 }
 

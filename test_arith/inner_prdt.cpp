@@ -6,12 +6,11 @@ using namespace emp;
 using namespace std;
 
 int port, party;
+int repeat, sz;
 const int threads = 1;
 
 void test_inner_product(NetIO *ios[threads], int party) {
 	srand(time(NULL));
-	int sz = 100000;
-	int repeat = 10000;
 	uint64_t constant = 0;
 	uint64_t *witness = new uint64_t[2*sz];
 	memset(witness, 0, 2*sz*sizeof(uint64_t));
@@ -66,6 +65,13 @@ int main(int argc, char** argv) {
 	std::cout << std::endl << "------------ ";
 	std::cout << "ZKP inner product test";
         std::cout << " ------------" << std::endl << std::endl;;
+
+	if(argc < 5) {
+		std::cout << "usage: bin/inner_prdt PARTY PORT POLY_NUM POLY_DIMENSION" << std::endl;
+		return -1;
+	}
+	repeat = atoi(argv[3]);
+	sz = atoi(argv[4]);
 
 	test_inner_product(ios, party);
 

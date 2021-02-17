@@ -28,7 +28,7 @@ class ZKBoolCircExec:public CircuitExecution { public:
 	}
 	void sync() {
 		ostriple->bio->flush();
-		for(int i = 0; i < ostriple->threads; ++i)
+		for(int i = 1; i < ostriple->threads; ++i)
 			ostriple->ios[i]->flush();
 	}
 };

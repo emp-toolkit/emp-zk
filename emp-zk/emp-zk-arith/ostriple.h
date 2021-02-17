@@ -283,7 +283,7 @@ public:
 				mc = LOW64(gateout[i]);
 				A0 = mult_mod(ma, mb);
 				A1 = add_mod(mult_mod(a, mb), mult_mod(b, ma));
-				uint64_t tmp = PR - gateout[i];
+				uint64_t tmp = PR - mc;
 				A1 = add_mod(A1, tmp);
 				U = add_mod(U, mult_mod(A0, chi[k]));
 				V = add_mod(V, mult_mod(A1, chi[k]));

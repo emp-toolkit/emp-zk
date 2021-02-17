@@ -26,12 +26,10 @@ void test_mix_circuit(NetIO *ios[threads+1], int party) {
 	b2 = arith2bool<NetIO>(a1);
 	b1 = b1 + b2;
 	Integer b3(62, d, PUBLIC);
-	Bit ret = (b1.equal(b3));
-	ret = !ret;
-	cout << ret.reveal<bool>(PUBLIC) << endl;
 
 	IntFp a3;
 	a3 = bool2arith<NetIO>(b3);
+	sync_zk_bool<NetIO>();
 	cout << a3.reveal(d) << endl;	
 
 	finalize_zk_bool<NetIO>();

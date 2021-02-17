@@ -45,7 +45,11 @@ circuit_scalability
 inner_prdt
 mix
 polynomial
-zk_proof)
+zk_proof
+vole_triple
+ostriple
+cope
+base_svole)
 
 foreach(bin ${binaries2})
    add_executable("${bin}_arith" "test_arith/${bin}.cpp")

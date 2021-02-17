@@ -1,6 +1,5 @@
 #include "emp-tool/emp-tool.h"
-#include "emp-vole/emp-vole.h"
-#include "emp-zk-arith/ostriple.h"
+#include "emp-zk/emp-zk-arith/ostriple.h"
 #include <iostream>
 using namespace emp;
 using namespace std;
@@ -8,7 +7,7 @@ using namespace std;
 int port, party;
 const int threads = 5;
 
-void test_auth_bit_input(OSTriple<threads> *os) {
+void test_auth_bit_input(FpOSTriple<NetIO> *os) {
 	PRG prg;
 	int len = 1024*1024;
 	__uint128_t *auth = new __uint128_t[len];
@@ -31,7 +30,7 @@ void test_auth_bit_input(OSTriple<threads> *os) {
 	delete[] auth;
 }
 
-void test_compute_and_gate_check(OSTriple<threads> *os) {
+void test_compute_and_gate_check(FpOSTriple<NetIO> *os) {
 	PRG prg;
 	int len = 1024*1024;
 	auto start = clock_start();
@@ -78,7 +77,7 @@ void test_compute_and_gate_check(OSTriple<threads> *os) {
 
 void test_ostriple(NetIO *ios[threads+1], int party) {
 	auto t1 = clock_start();
-	OSTriple<threads> os(party, ios);
+	FpOSTriple<NetIO> os(party, threads, ios);
 	cout <<party<<"\tconstructor\t"<< time_from(t1)<<" us"<<endl;
 
 	test_auth_bit_input(&os);

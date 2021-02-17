@@ -1,4 +1,4 @@
-#include "emp-vole/emp-vole.h"
+#include "emp-zk/emp-vole/cope.h"
 #include "emp-tool/emp-tool.h"
 
 using namespace emp;
@@ -7,7 +7,7 @@ using namespace std;
 int party, port;
 
 void test_cope(NetIO *io, int party) {
-	Cope cope(party, io, MERSENNE_PRIME_EXP);
+	Cope<NetIO> cope(party, io, MERSENNE_PRIME_EXP);
 
 	PRG prg;
 	__uint128_t Delta;
@@ -17,33 +17,6 @@ void test_cope(NetIO *io, int party) {
 
 	int test_n = 1024*128;
 	__uint128_t mac[test_n];
-
-	// test single
-	/*auto start = clock_start();
-	if(party == ALICE) {
-		cope.initialize(Delta);
-
-		for(int i = 0; i < test_n; ++i)
-			mac[i] = cope.extend();
-
-		cope.check_triple(&Delta, mac, test_n);
-	} else {
-		cope.initialize();
-
-		__uint128_t *u = new __uint128_t[test_n];
-		prg.random_block((block*)u, test_n);
-		for(int i = 0; i < test_n; ++i) {
-			u[i] = u[i] & ((__uint128_t)0xFFFFFFFFFFFFFFFFLL);
-			u[i] = mod(u[i], pr);
-		}
-
-		for(int i = 0; i < test_n; ++i)
-			mac[i] = cope.extend(u[i]);
-
-		std::cout << "single triple generation: " << time_from(start) << " ms" << std::endl;
-		cope.check_triple(u, mac, test_n);
-		delete[] u;
-	}*/
 
 	// test batch
 	if(party == ALICE) {

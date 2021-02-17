@@ -1,4 +1,4 @@
-#include "emp-vole/emp-vole.h"
+#include "emp-zk/emp-vole/base_svole.h"
 #include "emp-tool/emp-tool.h"
 
 using namespace emp;
@@ -10,7 +10,7 @@ void test_base_svole(NetIO *io, int party) {
 	int test_n = 1024*1024;
 	__uint128_t *mac = new __uint128_t[test_n];
 
-	Base_svole *svole;
+	Base_svole<NetIO> *svole;
 
 	__uint128_t Delta;
 	if(party == ALICE) {
@@ -19,9 +19,9 @@ void test_base_svole(NetIO *io, int party) {
 		Delta = Delta & ((__uint128_t)0xFFFFFFFFFFFFFFFFLL);
 		Delta = mod(Delta, pr);
 
-		svole = new Base_svole(party, io, Delta);
+		svole = new Base_svole<NetIO>(party, io, Delta);
 	} else {
-		svole = new Base_svole(party, io);
+		svole = new Base_svole<NetIO>(party, io);
 	}
 
 	// test single

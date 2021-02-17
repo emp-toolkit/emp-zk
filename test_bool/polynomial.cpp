@@ -5,12 +5,11 @@ using namespace emp;
 using namespace std;
 
 int port, party;
+int sz, repeat;
 const int threads = 1;
 
 void test_polynomial(NetIO *ios[threads], int party) {
 	srand(time(NULL));
-	int sz = 100000;
-	int repeat = 10000;
 	bool *coeff = new bool[sz+1];
 	bool *witness = new bool[2*sz];
 	memset(witness, 0, 2*sz*sizeof(bool));
@@ -68,6 +67,13 @@ int main(int argc, char** argv) {
 	std::cout << "ZKP polynomial test";
         std::cout << " ------------" << std::endl << std::endl;;
 	
+	if(argc < 5) {
+		std::cout << "usage: bin/inner_prdt_bool PARTY PORT POLY_NUM POLY_DIMENSION" << std::endl;
+		return -1;
+	}
+	repeat = atoi(argv[3]);
+	sz = atoi(argv[4]);
+
 	test_polynomial(ios, party);
 
 	for(int i = 0; i < threads; ++i)

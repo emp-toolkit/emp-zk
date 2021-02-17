@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
 	std::cout << std::endl << "------------ circuit zero-knowledge proof test ------------" << std::endl << std::endl;;
 
 	if(argc < 4) {
-		std::cout << "usage: bin/circuit_scalability PARTY PORT LOG(NUM_GATES)" << std::endl;
+		std::cout << "usage: bin/circuit_scalability_bool PARTY PORT LOG(NUM_GATES)" << std::endl;
 		return -1;
 	}
 

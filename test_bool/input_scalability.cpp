@@ -52,6 +52,11 @@ int main(int argc, char** argv) {
 
 	std::cout << std::endl << "------------ circuit zero-knowledge proof test ------------" << std::endl << std::endl;;
 
+	if(argc < 4) {
+		std::cout << "usage: bin/input_scalability_bool PARTY PORT LOG(NUM_GATES)" << std::endl;
+		return -1;
+	}
+
 	int num = atoi(argv[3]);
 	test_circuit_zk(ios, party, num);
 

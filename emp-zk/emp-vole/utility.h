@@ -14,9 +14,12 @@ const static uint64_t PR = 2305843009213693951;
 static __m128i PRs = makeBlock(PR, PR);
 
 #ifdef __x86_64__
+inline uint64_t mul64(uint64_t a, uint64_t b, uint64_t * c) {
+	return _mulx_u64((unsigned long long )a, (unsigned long long) b, (unsigned long long*)c);
+}
 //
 #else
-inline uint64_t _mulx_u64(uint64_t a, uint64_t b, uint64_t * c) {
+inline uint64_t mul64(uint64_t a, uint64_t b, uint64_t * c) {
 	__uint128_t aa = a;
 	__uint128_t bb = b;
 	auto cc = aa*bb;
@@ -62,8 +65,8 @@ inline void mult_mod_bch4(block* res, block *a, uint64_t *b) {
 	for(int i = 0; i < 4; ++i) {
 		uint64_t H = _mm_extract_epi64(a[i], 1);
 		uint64_t L = _mm_extract_epi64(a[i], 0);
-		is[2*i+1] = _mulx_u64(H, b[i], (uint64_t*)is+8+2*i+1);
-		is[2*i] = _mulx_u64(L, b[i], (uint64_t*)is+8+2*i);
+		is[2*i+1] = mul64(H, b[i], (uint64_t*)is+8+2*i+1);
+		is[2*i] = mul64(L, b[i], (uint64_t*)is+8+2*i);
 	}
 	__m512i t1 = bs[0] & PR8;
 	__m512i t2 = _mm512_srli_epi64(bs[0], MERSENNE_PRIME_EXP) ^ _mm512_slli_epi64(bs[1], 64 - MERSENNE_PRIME_EXP);
@@ -87,8 +90,8 @@ inline block mult_mod(block a, uint64_t b) {
 	block bs[2];
 	uint64_t * is = (uint64_t*)(bs);
 //	uint64_t h0, h1, l0, l1;
-	is[1] = _mulx_u64(H, b, (uint64_t*)(is+3));
-	is[0] = _mulx_u64(L, b, (uint64_t*)(is+2));
+	is[1] = mul64(H, b, (uint64_t*)(is+3));
+	is[0] = mul64(L, b, (uint64_t*)(is+2));
 	//block Hb = _mm_set_epi64((__m64)h1, (__m64)l1); 
 	//block Lb = _mm_set_epi64((__m64)h0, (__m64)l0);
 	block t1 = bs[0] & prs;
@@ -103,8 +106,8 @@ inline void mult_mod_bch2(block* res, block *a, uint64_t *b) {
 	for(int i = 0; i < 2; ++i) {
 		uint64_t H = _mm_extract_epi64(a[i], 1);
 		uint64_t L = _mm_extract_epi64(a[i], 0);
-		is[2*i+1] = _mulx_u64(H, b[i], (uint64_t*)is+4+2*i+1);
-		is[2*i] = _mulx_u64(L, b[i], (uint64_t*)is+4+2*i);
+		is[2*i+1] = mul64(H, b[i], (uint64_t*)is+4+2*i+1);
+		is[2*i] = mul64(L, b[i], (uint64_t*)is+4+2*i);
 	}
 	block t1[2], t2[2];
        	t1[0] = bs[0] & prs;
@@ -120,7 +123,7 @@ inline void mult_mod_bch2(block* res, block *a, uint64_t *b) {
 
 inline uint64_t mult_mod(uint64_t a, uint64_t b) {
 	uint64_t c = 0;
-	uint64_t e = _mulx_u64(a, b, (uint64_t*)&c);
+	uint64_t e = mul64(a, b, (uint64_t*)&c);
 	uint64_t res =  (e & PR) + ( (e>>MERSENNE_PRIME_EXP) ^ (c<< (64-MERSENNE_PRIME_EXP)));
 	return (res >= PR) ? (res - PR) : res;
 }
@@ -129,8 +132,8 @@ inline void mult_mod_bch2(uint64_t *res, uint64_t *a, uint64_t *b) {
 	block cb, eb;
 	uint64_t *c = (uint64_t*)&cb;
 	uint64_t *e = (uint64_t*)&eb;
-	e[0] = _mulx_u64(a[0], b[0], (uint64_t*)c);
-	e[1] = _mulx_u64(a[1], b[1], (uint64_t*)c+1);
+	e[0] = mul64(a[0], b[0], (uint64_t*)c);
+	e[1] = mul64(a[1], b[1], (uint64_t*)c+1);
 	eb = _mm_add_epi64(eb&prs, _mm_srli_epi64(eb, MERSENNE_PRIME_EXP) ^ _mm_slli_epi64(cb, 64-MERSENNE_PRIME_EXP));
 	eb = vec_partial_mod(eb);
 	res[0] = e[0];
@@ -142,10 +145,10 @@ inline void mult_mod_bch4(uint64_t *res, uint64_t *a, uint64_t *b) {
 	block eb[2];
 	uint64_t *c = (uint64_t*)cb;
 	uint64_t *e = (uint64_t*)eb;
-	e[0] = _mulx_u64(a[0], b[0], (uint64_t*)c);
-	e[1] = _mulx_u64(a[1], b[1], (uint64_t*)c+1);
-	e[2] = _mulx_u64(a[2], b[2], (uint64_t*)c+2);
-	e[3] = _mulx_u64(a[3], b[3], (uint64_t*)c+3);
+	e[0] = mul64(a[0], b[0], (uint64_t*)c);
+	e[1] = mul64(a[1], b[1], (uint64_t*)c+1);
+	e[2] = mul64(a[2], b[2], (uint64_t*)c+2);
+	e[3] = mul64(a[3], b[3], (uint64_t*)c+3);
 	block *resb = (block*)res;
 	resb[0] = _mm_add_epi64((eb[0] & prs), (_mm_srli_epi64(eb[0], MERSENNE_PRIME_EXP) ^ _mm_slli_epi64(cb[0], 64-MERSENNE_PRIME_EXP)));
 	resb[1] = _mm_add_epi64((eb[1] & prs), (_mm_srli_epi64(eb[1], MERSENNE_PRIME_EXP) ^ _mm_slli_epi64(cb[1], 64-MERSENNE_PRIME_EXP)));

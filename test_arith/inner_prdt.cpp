@@ -9,14 +9,14 @@ int port, party;
 int repeat, sz;
 const int threads = 1;
 
-void test_inner_product(NetIO *ios[threads], int party) {
+void test_inner_product(BoolIO<NetIO> *ios[threads], int party) {
 	srand(time(NULL));
 	uint64_t constant = 0;
 	uint64_t *witness = new uint64_t[2*sz];
 	memset(witness, 0, 2*sz*sizeof(uint64_t));
 
-	setup_zk_bool<NetIO>(ios, threads, party);
-	setup_zk_arith<NetIO>(ios, threads, party);
+	setup_zk_bool<BoolIO<NetIO>>(ios, threads, party);
+	setup_zk_arith<BoolIO<NetIO>>(ios, threads, party);
 
 	IntFp *x = new IntFp[2*sz];
 
@@ -41,11 +41,11 @@ void test_inner_product(NetIO *ios[threads], int party) {
 
 	auto start = clock_start();
 	for(int j = 0; j < repeat; ++j) {
-		fp_zkp_inner_prdt<NetIO>(x, x+sz, constant, sz);
+		fp_zkp_inner_prdt<BoolIO<NetIO>>(x, x+sz, constant, sz);
 	}
 
-	finalize_zk_bool<NetIO>();
-	finalize_zk_arith<NetIO>();
+	finalize_zk_bool<BoolIO<NetIO>>();
+	finalize_zk_arith<BoolIO<NetIO>>();
 
 	double tt = time_from(start);
 	cout << "prove " << repeat << " degree-2 polynomial of length " << sz << endl;
@@ -58,9 +58,9 @@ void test_inner_product(NetIO *ios[threads], int party) {
 
 int main(int argc, char** argv) {
 	parse_party_and_port(argv, &party, &port);
-	NetIO* ios[threads];
+	BoolIO<NetIO>* ios[threads];
 	for(int i = 0; i < threads; ++i)
-		ios[i] = new NetIO(party == ALICE?nullptr:"127.0.0.1",port+i);
+		ios[i] = new BoolIO<NetIO>(new NetIO(party == ALICE?nullptr:"127.0.0.1",port+i), party==ALICE);
 
 	std::cout << std::endl << "------------ ";
 	std::cout << "ZKP inner product test";

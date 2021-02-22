@@ -7,15 +7,15 @@ using namespace std;
 int port, party;
 const int threads = 5;
 
-void test_input_speed(NetIO **ios, int party, int sz) {
+void test_input_speed(BoolIO<NetIO> **ios, int party, int sz) {
 	std::cout << "input size: " << sz << std::endl;
 	srand(time(NULL));
 	uint64_t *a = new uint64_t[sz];
 	for(int i = 0; i < sz; ++i)
 		a[i] = rand() % PR;
 
-	setup_zk_bool<NetIO>(ios, threads, party);
-	setup_zk_arith<NetIO>(ios, threads, party);
+	setup_zk_bool<BoolIO<NetIO>>(ios, threads, party);
+	setup_zk_arith<BoolIO<NetIO>>(ios, threads, party);
 
 	IntFp *x = new IntFp[sz];
 
@@ -23,30 +23,30 @@ void test_input_speed(NetIO **ios, int party, int sz) {
 	auto start = clock_start();
 	for(int i = 0; i < sz; ++i)
 		x[i] = IntFp(a[i], ALICE);
-	sync_zk_bool<NetIO>();
+	sync_zk_bool<BoolIO<NetIO>>();
 	double tt = time_from(start);
 	std::cout << "normal input average time: " << tt*1000/sz << " ns per element" << std::endl;
 
 	/* batch input */
 	start = clock_start();
 	batch_feed(x, a, sz);
-	sync_zk_bool<NetIO>();
+	sync_zk_bool<BoolIO<NetIO>>();
 	tt = time_from(start);
 	std::cout << "batch input average time: " << tt*1000/sz << " ns per element" << std::endl;
 
-	finalize_zk_bool<NetIO>();
-	finalize_zk_arith<NetIO>();
+	finalize_zk_bool<BoolIO<NetIO>>();
+	finalize_zk_arith<BoolIO<NetIO>>();
 
 	delete[] a;
 	delete[] x;	
 }
 
-/*void test_circuit_zk(NetIO *ios[threads+1], int party) {
+/*void test_circuit_zk(BoolIO<NetIO> *ios[threads+1], int party) {
 
 	long long input_sz = 1048576;
 	while(input_sz < 1000000000LL) {
 		auto start = clock_start();
-		setup_fp_zk<NetIO, threads>(ios, party);
+		setup_fp_zk<BoolIO<NetIO>, threads>(ios, party);
 		IntFp *a = new IntFp[input_sz];
 		for(int i = 0; i < input_sz; ++i)
 			a[i] = IntFp((uint64_t)i, ALICE);
@@ -60,7 +60,7 @@ void test_input_speed(NetIO **ios, int party, int sz) {
 	input_sz = unit * 2;
 	while(input_sz < 1100000000LL) {
 		auto start = clock_start();
-		setup_fp_zk<NetIO, threads>(ios, party);
+		setup_fp_zk<BoolIO<NetIO>, threads>(ios, party);
 		int round = input_sz / unit;
 		IntFp **a = (IntFp**)malloc(round*sizeof(IntFp*));
 		for(int i = 0; i < round; ++i) {
@@ -79,9 +79,9 @@ void test_input_speed(NetIO **ios, int party, int sz) {
 
 int main(int argc, char** argv) {
 	parse_party_and_port(argv, &party, &port);
-	NetIO* ios[threads+1];
+	BoolIO<NetIO>* ios[threads+1];
 	for(int i = 0; i < threads+1; ++i)
-		ios[i] = new NetIO(party == ALICE?nullptr:"127.0.0.1",port+i);
+		ios[i] = new BoolIO<NetIO>(new NetIO(party == ALICE?nullptr:"127.0.0.1",port+i), party==ALICE);
 
 	std::cout << std::endl << "------------ circuit zero-knowledge proof test ------------" << std::endl << std::endl;;
 

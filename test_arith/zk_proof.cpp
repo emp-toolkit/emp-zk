@@ -7,17 +7,16 @@ using namespace std;
 int port, party;
 const int threads = 5;
 
-void test_circuit_zk(NetIO *ios[threads], int party) {
+void test_circuit_zk(BoolIO<NetIO> *ios[threads], int party) {
 	int test_n = 1024*1024*64;
 
 	std::cout << "performance test" << std::endl;
 	auto start = clock_start();
-	setup_zk_bool<NetIO>(ios, threads, party);
-	setup_zk_arith<NetIO>(ios, threads, party);
+	setup_zk_bool<BoolIO<NetIO>>(ios, threads, party);
+	setup_zk_arith<BoolIO<NetIO>>(ios, threads, party);
 	auto timesetup = time_from(start);
 	cout << "\tsetup: " << timesetup*1000 <<" "<<party<<" "<<endl;
 
-	ios[0]->sync();
 	__uint128_t ar = 2, br = 3, cr = 4;
 	IntFp a((uint64_t)ar, ALICE);
 	IntFp b((uint64_t)br, ALICE);
@@ -39,7 +38,7 @@ void test_circuit_zk(NetIO *ios[threads], int party) {
 	c = c + a;
 
 	c.reveal(cr);
-	sync_zk_bool<NetIO>();
+	sync_zk_bool<BoolIO<NetIO>>();
 	auto timeuse = time_from(start);
 	cout << "\taverage time per gate: " << (timeuse+timesetup)/test_n*1000<<" ns "<<party<<endl;
 
@@ -80,7 +79,7 @@ void test_circuit_zk(NetIO *ios[threads], int party) {
 
 	std::cout << std::endl;
 
-	finalize_zk_bool<NetIO>();
+	finalize_zk_bool<BoolIO<NetIO>>();
 
 	delete[] d;
 	delete[] e;
@@ -92,9 +91,9 @@ void test_circuit_zk(NetIO *ios[threads], int party) {
 
 int main(int argc, char** argv) {
 	parse_party_and_port(argv, &party, &port);
-	NetIO* ios[threads];
+	BoolIO<NetIO>* ios[threads];
 	for(int i = 0; i < threads; ++i)
-		ios[i] = new NetIO(party == ALICE?nullptr:"127.0.0.1",port+i);
+		ios[i] = new BoolIO<NetIO>(new NetIO(party == ALICE?nullptr:"127.0.0.1",port+i), party==ALICE);
 
 	std::cout << std::endl << "------------ circuit zero-knowledge proof test ------------" << std::endl << std::endl;
 

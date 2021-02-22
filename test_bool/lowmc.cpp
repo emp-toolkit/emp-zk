@@ -10,11 +10,11 @@ const int threads = 1;
 
 using namespace std;
 
-void test_lowmc(NetIO *ios[threads], int party) {
+void test_lowmc(BoolIO<NetIO> *ios[threads], int party) {
 	unsigned nblocks = 104867;
 	unsigned test_sz = nblocks*blocksize;
-	setup_zk_bool<NetIO>(ios, threads, party);
-	sync_zk_bool<NetIO>();
+	setup_zk_bool<BoolIO<NetIO>>(ios, threads, party);
+	sync_zk_bool<BoolIO<NetIO>>();
 
 	bool *key_b = new bool[keysize];
 	bool *ptx_b = new bool[test_sz];
@@ -42,7 +42,7 @@ void test_lowmc(NetIO *ios[threads], int party) {
 
 	ProtocolExecution::prot_exec->reveal(ctx_rev, PUBLIC, (block*)ctx, test_sz);
 
-	bool cheated = finalize_zk_bool<NetIO>();
+	bool cheated = finalize_zk_bool<BoolIO<NetIO>>();
 	if(cheated) error("cheated\n");
 
 	//cout<<"ctx rev:";for(int i = 0; i < test_sz; ++i)cout<<ctx_rev[i];cout<<endl;
@@ -61,9 +61,9 @@ void test_lowmc(NetIO *ios[threads], int party) {
 
 int main(int argc, char** argv) {
 	parse_party_and_port(argv, &party, &port);
-	NetIO* ios[threads];
+	BoolIO<NetIO>* ios[threads];
 	for(int i = 0; i < threads; ++i)
-		ios[i] = new NetIO(party == ALICE?nullptr:"127.0.0.1",port+i);
+		ios[i] = new BoolIO<NetIO>(new NetIO(party == ALICE?nullptr:"127.0.0.1",port+i), party==ALICE);
 
 	std::cout << std::endl << "------------ ";
 	std::cout << "LowMC block cipher test";

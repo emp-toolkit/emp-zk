@@ -17,10 +17,10 @@ int main(int argc, char** argv) {
 	auto t1 = clock_start();
 	if(party == ALICE) {
 		for(int i = 0; i < LL; ++i)
-			io->send_bool(data[i]);
+			io->send_bit(data[i]);
 	} else {
 		for(int i = 0; i < LL; ++i) 
-			data[i] = io->recv_bool();
+			data[i] = io->recv_bit();
 	}
 	io->flush();
 	cout << time_from(t1)/LL*1000<<"\n";

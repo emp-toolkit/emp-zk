@@ -8,16 +8,16 @@ int port, party;
 const int threads = 5;
 
 
-void test_circuit_zk(NetIO *ios[threads+1], int party, int input_sz_lg) {
+void test_circuit_zk(BoolIO<NetIO> *ios[threads+1], int party, int input_sz_lg) {
 
 	long long test_n = 1<<input_sz_lg;
 	auto start = clock_start();
-	setup_zk_bool<NetIO>(ios, threads, party);
-	setup_zk_arith<NetIO>(ios, threads, party);
+	setup_zk_bool<BoolIO<NetIO>>(ios, threads, party);
+	setup_zk_arith<BoolIO<NetIO>>(ios, threads, party);
 	auto timesetup = time_from(start);
 	cout << "time for setup: " << timesetup*1000 <<" "<<party<<" "<<endl;
 
-	ios[0]->sync();
+//	ios[0]->sync();
 	start = clock_start();
 	__uint128_t ar = 2, br = 3, cr = 4;
 	IntFp a((uint64_t)ar, ALICE);
@@ -45,15 +45,15 @@ void test_circuit_zk(NetIO *ios[threads+1], int party, int input_sz_lg) {
 	cout << test_n << "\t" << (timeuse+timesetup) << "\t" << party << " " << ret << endl;
 	std::cout << std::endl;
 
-	finalize_zk_bool<NetIO>();
-	finalize_zk_arith<NetIO>();
+	finalize_zk_bool<BoolIO<NetIO>>();
+	finalize_zk_arith<BoolIO<NetIO>>();
 }
 
 int main(int argc, char** argv) {
 	parse_party_and_port(argv, &party, &port);
-	NetIO* ios[threads+1];
+	BoolIO<NetIO>* ios[threads+1];
 	for(int i = 0; i < threads+1; ++i)
-		ios[i] = new NetIO(party == ALICE?nullptr:"127.0.0.1",port+i);
+		ios[i] = new BoolIO<NetIO>(new NetIO(party == ALICE?nullptr:"127.0.0.1",port+i), party == ALICE);
 
 	std::cout << std::endl << "------------ circuit zero-knowledge proof test ------------" << std::endl << std::endl;;
 

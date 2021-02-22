@@ -30,7 +30,6 @@ public:
 	block minusone, one;
 	IO *io;
 	IO **ios;
-	BoolIO<IO>* bio;
 	PRG prg;
 	FerretCOT<IO> *ferret = nullptr;
 	TripleAuth<IO> *auth_helper;
@@ -45,7 +44,6 @@ public:
 		io = ios[0];
 		this->ios = ios;
 		pool = new ThreadPool(threads);
-		bio = new BoolIO<IO>(io, party == ALICE);
 
 		auth_buffer_input = new block[INPUT_BUFFER_SZ];
 		auth_buffer_andgate = new block[ANDGATE_BUFFER_MEM_SZ];
@@ -71,7 +69,6 @@ public:
 		}
 		if(!auth_helper->finalize())
 			CheatRecord::put("emp-zk-bool finalize");
-		delete bio;
 		delete ferret;
 		delete[] auth_buffer_input;
 		delete[] auth_buffer_andgate;
@@ -114,11 +111,11 @@ public:
 			for(int i = 0; i < len; ++i) {
 				bool buff = getLSB(auth[i]) ^ in[i];
 				set_value_in_block(auth[i], in[i]);
-				bio->send_bool(buff);
+				io->send_bit(buff);
 			}
 		} else {
 			for(int i = 0; i < len; ++i) {
-				bool buff = bio->recv_bool();
+				bool buff = io->recv_bit();
 				auth[i] = auth[i] ^ choice[buff];
 				set_zero_bit(auth[i]);
 			}
@@ -146,9 +143,9 @@ public:
 			bool s = getLSB(a) & getLSB(b);
 			bool d = s ^ getLSB(auth);
 			set_value_in_block(auth, s);
-			bio->send_bool(d);
+			io->send_bit(d);
 		} else {
-			bool d = bio->recv_bool();
+			bool d = io->recv_bit();
 			auth = auth ^ choice[d];
 			set_zero_bit(auth);
 		}
@@ -161,8 +158,8 @@ public:
 	/* ---------------------check----------------------*/
 
 	void andgate_correctness_check_manage() {
-		bio->flush();
-		block seed = bio->get_hash_block();
+		io->flush();
+		block seed = io->get_hash_block();
 		vector<future<void>> fut;
 
 		int share_seed_n = threads;
@@ -273,9 +270,9 @@ public:
 		for(int i = 0; i < length; ++i) {
 			if(party == ALICE) {	
 				b[i] = getLSB(output[i]);
-				bio->send_bool(b[i]);
+				io->send_bit(b[i]);
 			} else {
-				b[i] = bio->recv_bool();
+				b[i] = io->recv_bit();
 			}
 		}
 		if(party == ALICE) {
@@ -287,7 +284,7 @@ public:
 	/* ---------------------helper functions----------------------*/
 	
 	void refill(block *buffer, int *cnt, int sz) {
-		bio->flush();
+		io->flush();
 		ferret->rcot(buffer, sz);
 		*cnt = 0;
 	}
@@ -307,7 +304,7 @@ public:
 	}
 
 	void sync() {
-		bio->flush();
+		io->flush();
 		for(int i = 0; i < threads; ++i) {
 			ios[i]->flush();
 		}

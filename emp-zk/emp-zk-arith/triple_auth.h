@@ -19,7 +19,7 @@ public:
 
 	/* --------------------- MAC check zero ----------------------*/
 
-	void store(uint64_t mac) {
+	void store(uint64_t& mac) {
 		hash.put(&mac, sizeof(uint64_t));
 	}
 

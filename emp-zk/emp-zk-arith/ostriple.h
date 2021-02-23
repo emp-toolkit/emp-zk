@@ -314,7 +314,8 @@ public:
 	void reveal_send(const __uint128_t *output, uint64_t *value, int len) {
 		for(int i = 0; i < len; ++i) {
 			value[i] = HIGH64(output[i]);
-			auth_helper->store(LOW64(output[i])); // TODO
+			uint64_t mac = LOW64(output[i]);
+			auth_helper->store(mac); // TODO
 		}
 		io->send_data(value, len*sizeof(uint64_t));
 	}
@@ -344,8 +345,10 @@ public:
 	}
 
 	void reveal_check_zero(const __uint128_t *output, int len) {
-		for(int i = 0; i < len; ++i)
-			auth_helper->store(LOW64(output[i]));
+		for(int i = 0; i < len; ++i) {
+			uint64_t mac = LOW64(output[i]);
+			auth_helper->store(mac);
+		}
 	}
 
 

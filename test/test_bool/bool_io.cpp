@@ -33,6 +33,7 @@ int main(int argc, char** argv) {
 			cout<<"fine!\n";
 
 	}	
+	delete netio;
 	delete io;
 	return 0;
 }

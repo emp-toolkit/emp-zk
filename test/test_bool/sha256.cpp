@@ -52,8 +52,10 @@ int main(int argc, char** argv) {
 	bool cheated = finalize_zk_bool<BoolIO<NetIO>>();
 	if(cheated) error("cheated\n");
 
-	for(int i = 0; i < threads; ++i)
+	for(int i = 0; i < threads; ++i) {
+		delete ios[i]->io;
 		delete ios[i];
+	}
 
 	return 0;
 }

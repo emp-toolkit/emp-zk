@@ -35,7 +35,7 @@ inner_prdt
 lowmc)
 
 foreach(bin ${binaries})
-   add_executable("${bin}_bool" "test_bool/${bin}.cpp")
+   add_executable("${bin}_bool" "test/test_bool/${bin}.cpp")
 	target_link_libraries("${bin}_bool" ${NAME} ${EMP-OT_LIBRARIES})
 endforeach()
 
@@ -51,7 +51,7 @@ matrix_mul
 sis)
 
 foreach(bin ${binaries2})
-   add_executable("${bin}_arith" "test_arith/${bin}.cpp")
+   add_executable("${bin}_arith" "test/test_arith/${bin}.cpp")
 	target_link_libraries("${bin}_arith" ${NAME} ${EMP-OT_LIBRARIES})
 endforeach()
 
@@ -62,6 +62,6 @@ base_svole
 lpn)
 
 foreach(bin ${binaries3})
-   add_executable("${bin}_vole" "test_vole/${bin}.cpp")
+   add_executable("${bin}_vole" "test/test_vole/${bin}.cpp")
 	target_link_libraries("${bin}_vole" ${NAME} ${EMP-OT_LIBRARIES})
 endforeach()

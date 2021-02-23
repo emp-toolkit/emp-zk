@@ -74,7 +74,9 @@ int main(int argc, char** argv) {
 
 	test_ostriple(ios, party);
 
-	for(int i = 0; i < threads+1; ++i)
+	for(int i = 0; i < threads+1; ++i) {
+		delete ios[i]->io;
 		delete ios[i];
+	}
 	return 0;
 }

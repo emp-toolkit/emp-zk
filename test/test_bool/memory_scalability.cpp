@@ -156,7 +156,9 @@ int main(int argc, char** argv) {
 	test_merkle_tree_dfs(ios, party, depth);
 	//test_merkle_tree(ios, party, depth);
 
-	for(int i = 0; i < threads; ++i)
+	for(int i = 0; i < threads; ++i) {
+		delete ios[i]->io;
 		delete ios[i];
+	}
 	return 0;
 }

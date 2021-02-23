@@ -71,8 +71,10 @@ int main(int argc, char** argv) {
 	
 	test_lowmc(ios, party);
 
-	for(int i = 0; i < threads; ++i)
+	for(int i = 0; i < threads; ++i) {
+		delete ios[i]->io;
 		delete ios[i];
+	}
 	return 0;
 }
 

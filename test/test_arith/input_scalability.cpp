@@ -5,7 +5,7 @@ using namespace emp;
 using namespace std;
 
 int port, party;
-const int threads = 5;
+const int threads = 1;
 
 void test_input_speed(BoolIO<NetIO> **ios, int party, int sz) {
 	std::cout << "input size: " << sz << std::endl;
@@ -90,7 +90,9 @@ int main(int argc, char** argv) {
 	test_input_speed(ios, party, 40000000);
 	test_input_speed(ios, party, 80000000);
 
-	for(int i = 0; i < threads+1; ++i)
+	for(int i = 0; i < threads+1; ++i) {
+		delete ios[i]->io;
 		delete ios[i];
+	}
 	return 0;
 }

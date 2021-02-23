@@ -5,7 +5,7 @@ using namespace emp;
 using namespace std;
 
 int port, party;
-const int threads = 5;
+const int threads = 1;
 
 void test_circuit_zk(BoolIO<NetIO> *ios[threads], int party) {
 	int test_n = 1024*1024*64;
@@ -99,7 +99,9 @@ int main(int argc, char** argv) {
 
 	test_circuit_zk(ios, party);
 
-	for(int i = 0; i < threads; ++i)
+	for(int i = 0; i < threads; ++i) {
+		delete ios[i]->io;
 		delete ios[i];
+	}
 	return 0;
 }

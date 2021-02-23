@@ -106,7 +106,9 @@ int main(int argc, char** argv) {
 	int num = atoi(argv[3]);
 	test_circuit_zk(ios, party, num);
 
-	for(int i = 0; i < threads; ++i)
+	for(int i = 0; i < threads; ++i) {
+		delete ios[i]->io;
 		delete ios[i];
+	}
 	return 0;
 }

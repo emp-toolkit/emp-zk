@@ -1,53 +1,51 @@
-#include "emp-tool/emp-tool.h"
-#include "emp-zk/emp-zk-bool/emp-zk-bool.h"
-#include "emp-zk/emp-zk-arith/emp-zk-arith.h"
+#include <emp-zk/emp-zk.h>
 #include <iostream>
-
+#include "emp-tool/emp-tool.h"
 using namespace emp;
 using namespace std;
 
 int port, party;
-int repeat, sz;
+int sz, repeat;
 const int threads = 1;
 
 void test_polynomial(BoolIO<NetIO> *ios[threads], int party) {
 	srand(time(NULL));
-	uint64_t *coeff = new uint64_t[sz+1];
-	uint64_t *witness = new uint64_t[2*sz];
-	memset(witness, 0, 2*sz*sizeof(uint64_t));
+	bool *coeff = new bool[sz+1];
+	bool *witness = new bool[2*sz];
+	memset(witness, 0, 2*sz*sizeof(bool));
 
 	setup_zk_bool<BoolIO<NetIO>>(ios, threads, party);
-	setup_zk_arith<BoolIO<NetIO>>(ios, threads, party);
+	sync_zk_bool<BoolIO<NetIO>>();
 
-	IntFp *x = new IntFp[2*sz];
+	Bit *x = new Bit[2*sz];
 
 	if(party == ALICE) {
-		uint64_t sum = 0, tmp;
+		bool sum = 0, tmp;
+		PRG prg;
+		prg.random_bool(witness, 2*sz);
+		prg.random_bool(coeff+1, sz);
 		for(int i = 0; i < sz; ++i) {
-			witness[i] = rand() % PR;
-			witness[sz+i] = rand() % PR;	
+			tmp = witness[i] & witness[sz+i];
+			sum = sum ^ (coeff[i+1] & tmp);
 		}
-		for(int i = 0; i < sz; ++i) {
-			coeff[i+1] = rand() % PR;
-			tmp = mult_mod(witness[i], witness[sz+i]);
-			sum = add_mod(sum, mult_mod(coeff[i+1], tmp));
-		}
-		coeff[0] = PR - sum;
-		ios[0]->send_data(coeff, (sz+1)*sizeof(uint64_t));
+		coeff[0] = sum;
+		ios[0]->send_data(coeff, (sz+1)*sizeof(bool));
 	} else {
-		ios[0]->recv_data(coeff, (sz+1)*sizeof(uint64_t));
+		ios[0]->recv_data(coeff, (sz+1)*sizeof(bool));
 	}
+	ios[0]->flush();
 
 	for(int i = 0; i < 2*sz; ++i)
-		x[i] = IntFp(witness[i], ALICE);
+		x[i] = Bit(witness[i], ALICE);
 
+	sync_zk_bool<BoolIO<NetIO>>();
 	auto start = clock_start();
 	for(int j = 0; j < repeat; ++j) {
-		fp_zkp_poly_deg2<BoolIO<NetIO>>(x, x+sz, coeff, sz);
+		zkp_poly_deg2<BoolIO<NetIO>>(x, x+sz, coeff, sz);
 	}
 
-	finalize_zk_bool<BoolIO<NetIO>>();
-	finalize_zk_arith<BoolIO<NetIO>>();
+	bool cheated = finalize_zk_bool<BoolIO<NetIO>>();
+	if(cheated) error("cheated\n");
 
 	double tt = time_from(start);
 	cout << "prove " << repeat << " degree-2 polynomial of length " << sz << endl;
@@ -68,9 +66,9 @@ int main(int argc, char** argv) {
 	std::cout << std::endl << "------------ ";
 	std::cout << "ZKP polynomial test";
         std::cout << " ------------" << std::endl << std::endl;;
-
+	
 	if(argc < 5) {
-		std::cout << "usage: bin/polynomial_arith PARTY PORT POLY_NUM POLY_DIMENSION" << std::endl;
+		std::cout << "usage: bin/inner_prdt_bool PARTY PORT POLY_NUM POLY_DIMENSION" << std::endl;
 		return -1;
 	}
 	repeat = atoi(argv[3]);
@@ -78,7 +76,10 @@ int main(int argc, char** argv) {
 
 	test_polynomial(ios, party);
 
-	for(int i = 0; i < threads; ++i)
+	for(int i = 0; i < threads; ++i) {
+		delete ios[i]->io;
 		delete ios[i];
+	}
 	return 0;
 }
+

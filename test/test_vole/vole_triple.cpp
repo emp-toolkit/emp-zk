@@ -13,7 +13,7 @@ using namespace emp;
 using namespace std;
 
 int party, port;
-const int threads = 5;
+const int threads = 4;
 
 void test_vole_triple(NetIO *ios[threads+1], int party) {
 	VoleTriple<NetIO> vtriple(party, threads, ios);
@@ -83,15 +83,15 @@ void test_vole_triple(NetIO *ios[threads+1], int party) {
 
 int main(int argc, char** argv) {
 	parse_party_and_port(argv, &party, &port);
-	NetIO* ios[threads+1];
-	for(int i = 0; i < threads+1; ++i)
+	NetIO* ios[threads];
+	for(int i = 0; i < threads; ++i)
 		ios[i] = new NetIO(party == ALICE?nullptr:"127.0.0.1",port+i);
 
 	std::cout << std::endl << "------------ VOLE field ------------" << std::endl << std::endl;;
 
 	test_vole_triple(ios, party);
 
-	for(int i = 0; i < threads+1; ++i)
+	for(int i = 0; i < threads; ++i)
 		delete ios[i];
 	return 0;
 }

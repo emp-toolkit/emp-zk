@@ -1,5 +1,6 @@
 #include "emp-tool/emp-tool.h"
-#include <emp-zk/emp-zk.h>
+#include "emp-zk/emp-zk-bool/emp-zk-bool.h"
+#include "emp-zk/emp-zk-arith/emp-zk-arith.h"
 #include <iostream>
 
 using namespace emp;
@@ -9,9 +10,9 @@ int port, party;
 int repeat, sz;
 const int threads = 1;
 
-void test_inner_product(BoolIO<NetIO> *ios[threads], int party) {
+void test_polynomial(BoolIO<NetIO> *ios[threads], int party) {
 	srand(time(NULL));
-	uint64_t constant = 0;
+	uint64_t *coeff = new uint64_t[sz+1];
 	uint64_t *witness = new uint64_t[2*sz];
 	memset(witness, 0, 2*sz*sizeof(uint64_t));
 
@@ -27,13 +28,14 @@ void test_inner_product(BoolIO<NetIO> *ios[threads], int party) {
 			witness[sz+i] = rand() % PR;	
 		}
 		for(int i = 0; i < sz; ++i) {
+			coeff[i+1] = rand() % PR;
 			tmp = mult_mod(witness[i], witness[sz+i]);
-			sum = add_mod(sum, tmp);
+			sum = add_mod(sum, mult_mod(coeff[i+1], tmp));
 		}
-		constant = PR - sum;
-		ios[0]->send_data(&constant, sizeof(uint64_t));
+		coeff[0] = PR - sum;
+		ios[0]->send_data(coeff, (sz+1)*sizeof(uint64_t));
 	} else {
-		ios[0]->recv_data(&constant, sizeof(uint64_t));
+		ios[0]->recv_data(coeff, (sz+1)*sizeof(uint64_t));
 	}
 
 	for(int i = 0; i < 2*sz; ++i)
@@ -41,7 +43,7 @@ void test_inner_product(BoolIO<NetIO> *ios[threads], int party) {
 
 	auto start = clock_start();
 	for(int j = 0; j < repeat; ++j) {
-		fp_zkp_inner_prdt<BoolIO<NetIO>>(x, x+sz, constant, sz);
+		fp_zkp_poly_deg2<BoolIO<NetIO>>(x, x+sz, coeff, sz);
 	}
 
 	finalize_zk_bool<BoolIO<NetIO>>();
@@ -52,6 +54,7 @@ void test_inner_product(BoolIO<NetIO> *ios[threads], int party) {
 	cout << "time use: " << tt/1000 << " ms" << endl;
 	cout << "average time use: " << tt/1000/repeat << " ms" << endl;
 
+	delete[] coeff;
 	delete[] witness;
 	delete[] x;
 }
@@ -63,19 +66,21 @@ int main(int argc, char** argv) {
 		ios[i] = new BoolIO<NetIO>(new NetIO(party == ALICE?nullptr:"127.0.0.1",port+i), party==ALICE);
 
 	std::cout << std::endl << "------------ ";
-	std::cout << "ZKP inner product test";
+	std::cout << "ZKP polynomial test";
         std::cout << " ------------" << std::endl << std::endl;;
 
 	if(argc < 5) {
-		std::cout << "usage: bin/inner_prdt_arith PARTY PORT POLY_NUM POLY_DIMENSION" << std::endl;
+		std::cout << "usage: bin/polynomial_arith PARTY PORT POLY_NUM POLY_DIMENSION" << std::endl;
 		return -1;
 	}
 	repeat = atoi(argv[3]);
 	sz = atoi(argv[4]);
 
-	test_inner_product(ios, party);
+	test_polynomial(ios, party);
 
-	for(int i = 0; i < threads; ++i)
+	for(int i = 0; i < threads; ++i) {
+		delete ios[i]->io;
 		delete ios[i];
+	}
 	return 0;
 }

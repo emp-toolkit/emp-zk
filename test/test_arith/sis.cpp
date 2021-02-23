@@ -14,7 +14,7 @@ using namespace emp;
 using namespace std;
 
 int port, party;
-const int threads = 5;
+const int threads = 1;
 
 void test_sis_proof(BoolIO<NetIO> *ios[threads+1], int party, int n, int m) {
 
@@ -117,7 +117,9 @@ int main(int argc, char** argv) {
 	test_sis_proof(ios, party, 1024, 4096);
 	test_sis_proof(ios, party, 256, 256*61);
 
-	for(int i = 0; i < threads+1; ++i)
+	for(int i = 0; i < threads+1; ++i) {
+		delete ios[i]->io;
 		delete ios[i];
+	}
 	return 0;
 }

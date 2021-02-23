@@ -56,7 +56,8 @@ endforeach()
 set(binaries3
 vole_triple
 cope
-base_svole)
+base_svole
+lpn)
 
 foreach(bin ${binaries3})
    add_executable("${bin}_vole" "test_vole/${bin}.cpp")

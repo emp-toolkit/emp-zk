@@ -1,4 +1,4 @@
-#include "emp-vole/emp-vole.h"
+#include "emp-zk/emp-vole/emp-vole.h"
 #include "emp-tool/emp-tool.h"
 
 using namespace emp;
@@ -26,7 +26,7 @@ void check_triple(NetIO *io, __uint128_t* x, __uint128_t* y, int size) {
 	}
 }
 void test_lpn(NetIO *io, int party) {
-	Base_svole *svole;
+	Base_svole<NetIO> *svole;
 
 	// ALICE generate delta
 	PRG prg;
@@ -35,48 +35,45 @@ void test_lpn(NetIO *io, int party) {
 	Delta = Delta & ((__uint128_t)0xFFFFFFFFFFFFFFFFLL);
 	Delta = mod(Delta, pr);
 
-	int test_n = 10168320;
-	int test_k = 158000;
+	int test_n = 1016832;
+	int test_k = 15800;
 	__uint128_t *mac1 = new __uint128_t[test_n];
 	__uint128_t *mac2 = new __uint128_t[test_k];
 
-	// test batch
-/*	if(party == ALICE) {
-		svole = new Base_svole(party, io, Delta);
+	if(party == ALICE) {
+		svole = new Base_svole<NetIO>(party, io, Delta);
 		svole->triple_gen_send(mac1, test_n);
 		svole->triple_gen_send(mac2, test_k);
 	} else {
-		svole = new Base_svole(party, io);
+		svole = new Base_svole<NetIO>(party, io);
 		svole->triple_gen_recv(mac1, test_n);
 		svole->triple_gen_recv(mac2, test_k);
-	}*/
+	}
 
 	ThreadPool pool(5);
 	LpnFp<10> lpn(test_n, test_k, &pool, pool.size());
 	auto start = clock_start();
 	if(party == ALICE) {
 		lpn.compute_send(mac1, mac2);
-
-//		check_triple(io, &Delta, mac1, test_n);
+		check_triple(io, &Delta, mac1, test_n);
 	} else {
-		lpn.compute_recv(mac1, mac2);
-		
-//		check_triple(io, nullptr, mac1, test_n);
+		lpn.compute_recv(mac1, mac2);	
+		check_triple(io, nullptr, mac1, test_n);
 	}
-	std::cout << "LPN regular noise: " << time_from(start)*1000.0/test_n << " ns per entry" << std::endl;
+	std::cout << "LPN: " << time_from(start)*1000.0/test_n << " ns per entry" << std::endl;
 
 	delete[] mac1;
 	delete[] mac2;
 }
 
 int main(int argc, char** argv) {
-//	parse_party_and_port(argv, &party, &port);
-//	NetIO *io = new NetIO(party == ALICE?nullptr:"127.0.0.1",port);
+	parse_party_and_port(argv, &party, &port);
+	NetIO *io = new NetIO(party == ALICE?nullptr:"127.0.0.1",port);
 
 	std::cout << std::endl << "------------ LPN ------------" << std::endl << std::endl;;
 
-	test_lpn(0,0);//io, party);
+	test_lpn(io, party);
 
-//	delete io;
+	delete io;
 	return 0;
 }

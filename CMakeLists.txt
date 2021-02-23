@@ -46,12 +46,19 @@ inner_prdt
 mix
 polynomial
 zk_proof
-vole_triple
-ostriple
-cope
-base_svole)
+ostriple)
 
 foreach(bin ${binaries2})
    add_executable("${bin}_arith" "test_arith/${bin}.cpp")
 	target_link_libraries("${bin}_arith" ${NAME} ${EMP-OT_LIBRARIES})
+endforeach()
+
+set(binaries3
+vole_triple
+cope
+base_svole)
+
+foreach(bin ${binaries3})
+   add_executable("${bin}_vole" "test_vole/${bin}.cpp")
+	target_link_libraries("${bin}_vole" ${NAME} ${EMP-OT_LIBRARIES})
 endforeach()

@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
 	parse_party_and_port(argv, &party, &port);
 	NetIO *io = new NetIO(party == ALICE?nullptr:"127.0.0.1",port);
 
-	std::cout << std::endl << "------------ COPE ------------" << std::endl << std::endl;;
+	std::cout << std::endl << "------------ BASE SVOLE ------------" << std::endl << std::endl;;
 
 	test_base_svole(io, party);
 

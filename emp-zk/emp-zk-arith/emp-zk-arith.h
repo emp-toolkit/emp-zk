@@ -8,9 +8,6 @@
 #include "emp-zk/emp-zk-arith/int_fp.h"
 #include "emp-zk/emp-zk-arith/conversion.h"
 #include "emp-zk/emp-zk-arith/polynomial.h"
-#include "emp-zk/emp-zk-arith/zk_fp_exec_prover.h"
-#include "emp-zk/emp-zk-arith/zk_fp_exec_verifier.h"
-#include "emp-zk/emp-zk-arith/polynomial.h"
 
 template<typename IO>
 inline void setup_zk_arith(IO** ios, int threads, int party) {

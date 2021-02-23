@@ -3,7 +3,10 @@
 
 #include "emp-tool/emp-tool.h"
 #include "emp-zk/emp-zk-bool/emp-zk-bool.h"
-#include "emp-zk/emp-zk-arith/emp-zk-arith.h"
+#include "emp-zk/emp-zk-arith/zk_fp_exec.h"
+#include "emp-zk/emp-zk-arith/zk_fp_exec_prover.h"
+#include "emp-zk/emp-zk-arith/zk_fp_exec_verifier.h"
+#include "emp-zk/emp-zk-arith/polynomial.h"
 
 class IntFp {
 public:
@@ -83,11 +86,11 @@ static inline bool batch_reveal_check_zero(IntFp *obj, int len) {
 
 template<typename IO>
 inline void fp_zkp_poly_deg2(IntFp *x, IntFp *y, uint64_t *coeff, int len) {
-	//!!!FpPolyProof<IO>::fppolyproof->zkp_poly_deg2((__uint128_t*)x, (__uint128_t*)y, coeff, len);
+	FpPolyProof<IO>::fppolyproof->zkp_poly_deg2((__uint128_t*)x, (__uint128_t*)y, coeff, len);
 }
 
 template<typename IO>
 inline void fp_zkp_inner_prdt(IntFp *x, IntFp *y, uint64_t constant, int len) {
-	//!!!FpPolyProof<IO>::fppolyproof->zkp_inner_prdt((__uint128_t*)x, (__uint128_t*)y, constant, len);
+	FpPolyProof<IO>::fppolyproof->zkp_inner_prdt((__uint128_t*)x, (__uint128_t*)y, constant, len);
 }
 #endif

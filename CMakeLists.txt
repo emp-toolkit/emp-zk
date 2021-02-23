@@ -43,10 +43,12 @@ set(binaries2
 input_scalability 
 circuit_scalability 
 inner_prdt
-mix
+abconversion
 polynomial
 zk_proof
-ostriple)
+ostriple
+matrix_mul
+sis)
 
 foreach(bin ${binaries2})
    add_executable("${bin}_arith" "test_arith/${bin}.cpp")

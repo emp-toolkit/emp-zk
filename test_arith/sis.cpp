@@ -1,4 +1,4 @@
-#include "emp-zk-arith/emp-zk-arith.h"
+#include "emp-zk/emp-zk.h"
 #include <iostream>
 #include "emp-tool/emp-tool.h"
 #if defined(__linux__)
@@ -16,7 +16,7 @@ using namespace std;
 int port, party;
 const int threads = 5;
 
-void test_sis_proof(NetIO *ios[threads+1], int party, int n, int m) {
+void test_sis_proof(BoolIO<NetIO> *ios[threads+1], int party, int n, int m) {
 
 	srand(time(NULL));
 
@@ -40,7 +40,8 @@ void test_sis_proof(NetIO *ios[threads+1], int party, int n, int m) {
 
 	int repeat = 485;
 	auto start = clock_start();
-	setup_fp_zk<NetIO, threads>(ios, party);
+	setup_zk_bool<BoolIO<NetIO>>(ios, threads, party);
+	setup_zk_arith<BoolIO<NetIO>>(ios, threads, party);
 
 	// allocation
 	IntFp *vec_s = new IntFp[m];
@@ -77,8 +78,10 @@ void test_sis_proof(NetIO *ios[threads+1], int party, int n, int m) {
 	}
 
 	bool ret = batch_reveal_check(vec_t, t, n+m);
+	finalize_zk_bool<BoolIO<NetIO>>();
+	finalize_zk_arith<BoolIO<NetIO>>();
 	auto timeuse = time_from(start);
-	cout << n << "\t" << m << "\t" << timeuse/tt << "\t" << party << " " << ret << endl;
+	cout << n << "\t" << m << "\t" << timeuse/tt << " us\t" << party << " " << ret << endl;
 	std::cout << std::endl;
 
 	delete[] A;
@@ -105,9 +108,9 @@ void test_sis_proof(NetIO *ios[threads+1], int party, int n, int m) {
 
 int main(int argc, char** argv) {
 	parse_party_and_port(argv, &party, &port);
-	NetIO* ios[threads+1];
+	BoolIO<NetIO>* ios[threads+1];
 	for(int i = 0; i < threads+1; ++i)
-		ios[i] = new NetIO(party == ALICE?nullptr:"127.0.0.1",port+i);
+		ios[i] = new BoolIO<NetIO>(new NetIO(party == ALICE?nullptr:"127.0.0.1",port+i), party==ALICE);
 
 	std::cout << std::endl << "------------ circuit zero-knowledge proof test ------------" << std::endl << std::endl;;
 

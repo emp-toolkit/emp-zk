@@ -1,4 +1,4 @@
-#include "emp-zk-arith/emp-zk-arith.h"
+#include "emp-zk/emp-zk.h"
 #include <iostream>
 #include "emp-tool/emp-tool.h"
 #if defined(__linux__)
@@ -14,9 +14,9 @@ using namespace emp;
 using namespace std;
 
 int port, party;
-const int threads = 4;
+const int threads = 1;
 
-void test_circuit_zk(NetIO *ios[threads], int party, int matrix_sz) {
+void test_circuit_zk(BoolIO<NetIO> *ios[threads], int party, int matrix_sz) {
 	long long test_n = matrix_sz * matrix_sz;
 
 	uint64_t *ar, *br, *cr;
@@ -38,8 +38,9 @@ void test_circuit_zk(NetIO *ios[threads], int party, int matrix_sz) {
 	}
 
 	auto start = clock_start();
-	setup_boolean_zk<NetIO>(ios, threads, party);
-	setup_fp_zk<NetIO>(ios, threads, party);
+
+	setup_zk_bool<BoolIO<NetIO>>(ios, threads, party);
+	setup_zk_arith<BoolIO<NetIO>>(ios, threads, party);
 
 	IntFp *mat_a = new IntFp[test_n];
 	IntFp *mat_b = new IntFp[test_n];
@@ -62,9 +63,9 @@ void test_circuit_zk(NetIO *ios[threads], int party, int matrix_sz) {
 
 	batch_reveal_check(mat_c, cr, test_n);
 	auto timeuse = time_from(start);
-	finalize_boolean_zk<NetIO>(party);
-	finalize_fp_zk();
-	cout << matrix_sz << "\t" << timeuse << "\t" << party << " " << endl;
+	finalize_zk_bool<BoolIO<NetIO>>();
+	finalize_zk_arith<BoolIO<NetIO>>();
+	cout << matrix_sz << "\t" << timeuse << " us\t" << party << " " << endl;
 	std::cout << std::endl;
 
 	delete[] ar;
@@ -91,11 +92,16 @@ void test_circuit_zk(NetIO *ios[threads], int party, int matrix_sz) {
 
 int main(int argc, char** argv) {
 	parse_party_and_port(argv, &party, &port);
-	NetIO* ios[threads];
+	BoolIO<NetIO>* ios[threads];
 	for(int i = 0; i < threads; ++i)
-		ios[i] = new NetIO(party == ALICE?nullptr:"127.0.0.1",port+i);
+		ios[i] = new BoolIO<NetIO>(new NetIO(party == ALICE?nullptr:"127.0.0.1",port+i), party==ALICE);
 
 	std::cout << std::endl << "------------ circuit zero-knowledge proof test ------------" << std::endl << std::endl;;
+
+	if(argc < 4) {
+		std::cout << "usage: bin/matrix_mul_arith PARTY PORT DIMENSION" << std::endl;
+		return -1;
+	}
 
 	int num = atoi(argv[3]);
 	test_circuit_zk(ios, party, num);

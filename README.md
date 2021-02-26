@@ -1,4 +1,4 @@
-# emp-ot 
+# EMP-zk  
 ![arm](https://github.com/emp-toolkit/emp-zk/workflows/arm/badge.svg)
 ![x86](https://github.com/emp-toolkit/emp-zk/workflows/x86/badge.svg)
 

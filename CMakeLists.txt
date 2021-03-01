@@ -23,36 +23,36 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -ggdb -Wno-ignored-attributes")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -Wno-ignored-attributes")
 
 set(binaries  
-ostriple 
+ostriple_bool
 bool_io 
 memory_scalability
-input_scalability 
-circuit_scalability 
+input_scalability_bool
+circuit_scalability_bool
 example
 sha256 
-polynomial 
-inner_prdt 
+polynomial_bool
+inner_prdt_bool
 lowmc)
-
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/bool)
 foreach(bin ${binaries})
-   add_executable("${bin}_bool" "test/test_bool/${bin}.cpp")
-	target_link_libraries("${bin}_bool" ${NAME} ${EMP-OT_LIBRARIES})
+   add_executable("${bin}" "test/test_bool/${bin}.cpp")
+	target_link_libraries("${bin}" ${NAME} ${EMP-OT_LIBRARIES})
 endforeach()
 
 set(binaries2  
-input_scalability 
-circuit_scalability 
-inner_prdt
+input_scalability_arith
+circuit_scalability_arith
+inner_prdt_arith
 abconversion
-polynomial
+polynomial_arith
 zk_proof
-ostriple
+ostriple_arith
 matrix_mul
 sis)
-
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/arith)
 foreach(bin ${binaries2})
-   add_executable("${bin}_arith" "test/test_arith/${bin}.cpp")
-	target_link_libraries("${bin}_arith" ${NAME} ${EMP-OT_LIBRARIES})
+   add_executable("${bin}" "test/test_arith/${bin}.cpp")
+	target_link_libraries("${bin}" ${NAME} ${EMP-OT_LIBRARIES})
 endforeach()
 
 set(binaries3
@@ -60,8 +60,8 @@ vole_triple
 cope
 base_svole
 lpn)
-
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/vole)
 foreach(bin ${binaries3})
-   add_executable("${bin}_vole" "test/test_vole/${bin}.cpp")
-	target_link_libraries("${bin}_vole" ${NAME} ${EMP-OT_LIBRARIES})
+   add_executable("${bin}" "test/test_vole/${bin}.cpp")
+	target_link_libraries("${bin}" ${NAME} ${EMP-OT_LIBRARIES})
 endforeach()

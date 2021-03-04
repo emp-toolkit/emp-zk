@@ -7,7 +7,8 @@ using namespace std;
 int port, party;
 const int threads = 1;
 
-void test_input_speed(BoolIO<NetIO> **ios, int party, int sz) {
+void test_input_speed(BoolIO<NetIO> **ios, int party, int input_sz_log) {
+	long long sz = input_sz_log;
 	std::cout << "input size: " << sz << std::endl;
 	srand(time(NULL));
 	uint64_t *a = new uint64_t[sz];
@@ -85,10 +86,13 @@ int main(int argc, char** argv) {
 
 	std::cout << std::endl << "------------ circuit zero-knowledge proof test ------------" << std::endl << std::endl;;
 
-	test_input_speed(ios, party, 1000000);
-	test_input_speed(ios, party, 10000000);
-	test_input_speed(ios, party, 40000000);
-	test_input_speed(ios, party, 80000000);
+	if(argc < 4) {
+		std::cout << "usage: bin/arith/input_scalability_arith PARTY PORT LOG(CIRCUIT_SZ)" << std::endl;
+		return -1;
+	}
+
+	int num = atoi(argv[3]);
+	test_input_speed(ios, party, num);
 
 	for(int i = 0; i < threads+1; ++i) {
 		delete ios[i]->io;

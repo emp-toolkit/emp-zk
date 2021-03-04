@@ -147,7 +147,7 @@ int main(int argc, char** argv) {
 	std::cout << std::endl << "------------ circuit zero-knowledge proof test ------------" << std::endl << std::endl;;
 
 	if(argc < 4) {
-		std::cout << "usage: bin/memory_scalability PARTY PORT DEPTH_OF_MERKLE_TREE" << std::endl;
+		std::cout << "usage: bin/bool/memory_scalability PARTY PORT DEPTH_OF_MERKLE_TREE" << std::endl;
 		return -1;
 	}
 

@@ -31,7 +31,7 @@ jobs:
         ./bin/bool/polynomial_bool 1 12345 1000 1000 & ./bin/bool/polynomial_bool 2 12345 1000 1000
         ./bin/bool/inner_prdt_bool 1 12345 1000 1000 & ./bin/bool/inner_prdt_bool 2 12345 1000 1000
         ./run ./bin/bool/lowmc
-        ./run ./bin/arith/input_scalability_arith
+        ./bin/arith/input_scalability_arith 1 12345 10 & ./bin/arith/input_scalability_arith 2 12345 10
         ./bin/arith/circuit_scalability_arith 1 12345 10 & ./bin/arith/circuit_scalability_arith 2 12345 10
         ./bin/arith/inner_prdt_arith 1 12345 1000 1000 & ./bin/arith/inner_prdt_arith 2 12345 1000 1000
         ./run ./bin/arith/abconversion

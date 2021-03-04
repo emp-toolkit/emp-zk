@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
         std::cout << " ------------" << std::endl << std::endl;;
 
 	if(argc < 5) {
-		std::cout << "usage: bin/inner_prdt_arith PARTY PORT POLY_NUM POLY_DIMENSION" << std::endl;
+		std::cout << "usage: bin/arith/inner_prdt_arith PARTY PORT POLY_NUM POLY_DIMENSION" << std::endl;
 		return -1;
 	}
 	repeat = atoi(argv[3]);

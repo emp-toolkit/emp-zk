@@ -8,7 +8,7 @@ int port, party;
 const int threads = 1;
 
 void test_circuit_zk(BoolIO<NetIO> *ios[threads], int party) {
-	int test_n = 1024*1024*64;
+	int test_n = 1024*1024*16;
 
 	std::cout << "performance test" << std::endl;
 	auto start = clock_start();

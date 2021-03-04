@@ -5,7 +5,7 @@ jobs:
   build_x86:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [macos-latest, ubuntu-latest]
         build_type: [Debug, Release]
     runs-on: ${{ matrix.os }}
     env: 
@@ -31,13 +31,13 @@ jobs:
         ./bin/bool/polynomial_bool 1 12345 1000 1000 & ./bin/bool/polynomial_bool 2 12345 1000 1000
         ./bin/bool/inner_prdt_bool 1 12345 1000 1000 & ./bin/bool/inner_prdt_bool 2 12345 1000 1000
         ./run ./bin/bool/lowmc
-        ./bin/arith/input_scalability_arith 1 12345 10 & ./bin/arith/input_scalability_arith 2 12345 10
-        ./bin/arith/circuit_scalability_arith 1 12345 10 & ./bin/arith/circuit_scalability_arith 2 12345 10
-        ./bin/arith/inner_prdt_arith 1 12345 1000 1000 & ./bin/arith/inner_prdt_arith 2 12345 1000 1000
-        ./run ./bin/arith/abconversion
-        ./bin/arith/polynomial_arith 1 12345 1000 1000 & ./bin/arith/polynomial_arith 2 12345 1000 1000
         ./run ./bin/arith/zk_proof
         ./run ./bin/arith/ostriple_arith
+        ./bin/arith/circuit_scalability_arith 1 12345 10 & ./bin/arith/circuit_scalability_arith 2 12345 10
+        ./bin/arith/input_scalability_arith 1 12345 10 & ./bin/arith/input_scalability_arith 2 12345 10
+        ./bin/arith/inner_prdt_arith 1 12345 1000 1000 & ./bin/arith/inner_prdt_arith 2 12345 1000 1000
+        ./bin/arith/abconversion 1 12345 100000 & ./bin/arith/abconversion 2 12345 100000
+        ./bin/arith/polynomial_arith 1 12345 1000 1000 & ./bin/arith/polynomial_arith 2 12345 1000 1000
         ./bin/arith/matrix_mul 1 12345 128 & ./bin/arith/matrix_mul 2 12345 128
         ./run ./bin/arith/sis
         ./run ./bin/vole/vole_triple

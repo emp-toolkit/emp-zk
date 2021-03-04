@@ -70,7 +70,7 @@ class BoolIO: public IOChannel<BoolIO<IO>> { public:
 	}
 	
 	void send_bool_raw(const bool * data, int length) {
-		if(tmp_arr.size() < length/8)
+		if(tmp_arr.size() < (size_t)length/8)
 			tmp_arr.resize(length/8);
 		int cnt = 0;
 		
@@ -100,7 +100,7 @@ class BoolIO: public IOChannel<BoolIO<IO>> { public:
 		}
 	}
 	void recv_bool_raw(bool * data, int length) {
-		if(tmp_arr.size() < length/8)
+		if(tmp_arr.size() < (size_t)length/8)
 			tmp_arr.resize(length/8);
 
 		int cnt = 0;

@@ -3,7 +3,7 @@
 #include <emp-zk/emp-zk.h>
 using namespace emp;
 using namespace std;
-const int LL = 1024*1024*1024+10;
+const int LL = 1024*1024*100+10;
 int main(int argc, char** argv) {
 	int party, port;
 	parse_party_and_port(argv, &party, &port);

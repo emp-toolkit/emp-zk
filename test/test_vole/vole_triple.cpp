@@ -36,36 +36,29 @@ void test_vole_triple(NetIO *ios[threads+1], int party) {
 		vtriple.check_triple(0, vtriple.pre_yz, vtriple.n_pre);
 	}
 
-	int triple_need = 2 * vtriple.ot_limit;
-	while(triple_need <= 8 * vtriple.ot_limit) {
-		auto start = clock_start();
-		__uint128_t *buf = new __uint128_t[triple_need];
-		if(party == ALICE) {
-			vtriple.extend(buf, triple_need);
-			std::cout << triple_need << "\t" << time_from(start)/1000 << " ms" << std::endl;
-			vtriple.check_triple(Delta, buf, triple_need);
-		} else {
-			vtriple.extend(buf, triple_need);
-			std::cout << triple_need << "\t" << time_from(start)/1000 << " ms" << std::endl;
-			vtriple.check_triple(0, buf, triple_need);
-		}
-		delete[] buf;
-		triple_need *= 2;
+	int triple_need = vtriple.ot_limit;
+	auto start = clock_start();
+	__uint128_t *buf = new __uint128_t[triple_need];
+	if(party == ALICE) {
+		vtriple.extend(buf, triple_need);
+		std::cout << triple_need << "\t" << time_from(start)/1000 << " ms" << std::endl;
+		vtriple.check_triple(Delta, buf, triple_need);
+	} else {
+		vtriple.extend(buf, triple_need);
+		std::cout << triple_need << "\t" << time_from(start)/1000 << " ms" << std::endl;
+		vtriple.check_triple(0, buf, triple_need);
 	}
+	delete[] buf;
 
 	// triple generation inplace
-	uint64_t triple_need_inplace = 2 * vtriple.ot_limit;
-	while(triple_need_inplace <= uint64_t(8 * vtriple.ot_limit)) {
-		uint64_t memory_need = vtriple.byte_memory_need_inplace(triple_need_inplace);
-		__uint128_t *buf = new __uint128_t[memory_need];
-		auto start = clock_start();
-		vtriple.extend_inplace(buf, memory_need);
-		std::cout << triple_need_inplace << "\tinplace\t" << memory_need << "\t" << time_from(start)/1000 << " ms" << std::endl;
-		if(party == ALICE) vtriple.check_triple(Delta, buf, memory_need);
-		else vtriple.check_triple(0, buf, memory_need);
-
-		triple_need_inplace *= 2;
-	}
+	uint64_t triple_need_inplace = vtriple.ot_limit;
+	uint64_t memory_need = vtriple.byte_memory_need_inplace(triple_need_inplace);
+	buf = new __uint128_t[memory_need];
+	start = clock_start();
+	vtriple.extend_inplace(buf, memory_need);
+	std::cout << triple_need_inplace << "\tinplace\t" << memory_need << "\t" << time_from(start)/1000 << " ms" << std::endl;
+	if(party == ALICE) vtriple.check_triple(Delta, buf, memory_need);
+	else vtriple.check_triple(0, buf, memory_need);
 
 #if defined(__linux__)
 	struct rusage rusage;

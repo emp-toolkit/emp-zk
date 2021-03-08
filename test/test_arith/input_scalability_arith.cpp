@@ -15,7 +15,6 @@ void test_input_speed(BoolIO<NetIO> **ios, int party, int input_sz_log) {
 	for(int i = 0; i < sz; ++i)
 		a[i] = rand() % PR;
 
-	setup_zk_bool<BoolIO<NetIO>>(ios, threads, party);
 	setup_zk_arith<BoolIO<NetIO>>(ios, threads, party);
 
 	IntFp *x = new IntFp[sz];
@@ -24,18 +23,15 @@ void test_input_speed(BoolIO<NetIO> **ios, int party, int input_sz_log) {
 	auto start = clock_start();
 	for(int i = 0; i < sz; ++i)
 		x[i] = IntFp(a[i], ALICE);
-	sync_zk_bool<BoolIO<NetIO>>();
 	double tt = time_from(start);
 	std::cout << "normal input average time: " << tt*1000/sz << " ns per element" << std::endl;
 
 	/* batch input */
 	start = clock_start();
 	batch_feed(x, a, sz);
-	sync_zk_bool<BoolIO<NetIO>>();
 	tt = time_from(start);
 	std::cout << "batch input average time: " << tt*1000/sz << " ns per element" << std::endl;
 
-	finalize_zk_bool<BoolIO<NetIO>>();
 	finalize_zk_arith<BoolIO<NetIO>>();
 
 	delete[] a;

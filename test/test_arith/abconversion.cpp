@@ -8,15 +8,14 @@ using namespace std;
 int port, party;
 const int threads = 1;
 
-void test_mix_circuit(BoolIO<NetIO> *ios[threads], int party) {
+void test_mix_circuit(BoolIO<NetIO> *ios[threads], int party, int sz) {
 	srand(time(NULL));
-	int sz = 110000;
 	uint64_t *a = new uint64_t[sz];
 	for(int i = 0; i < sz; ++i)
 		a[i] = rand() % PR;
 
 	setup_zk_bool<BoolIO<NetIO>>(ios, threads, party);
-	setup_zk_arith<BoolIO<NetIO>>(ios, threads, party);
+	setup_zk_arith<BoolIO<NetIO>>(ios, threads, party, true);
 
 	IntFp *x = new IntFp[sz];
 	batch_feed(x, a, sz);
@@ -83,7 +82,13 @@ int main(int argc, char** argv) {
 
 	std::cout << std::endl << "------------ circuit zero-knowledge proof test ------------" << std::endl << std::endl;;
 
-	test_mix_circuit(ios, party);
+	if(argc < 4) {
+		std::cout << "usage: bin/arith/abconversion PARTY PORT TEST_SIZE" << std::endl;
+		return -1;
+	}
+
+	int num = atoi(argv[3]);
+	test_mix_circuit(ios, party, num);
 
 	for(int i = 0; i < threads; ++i) {
 		delete ios[i]->io;

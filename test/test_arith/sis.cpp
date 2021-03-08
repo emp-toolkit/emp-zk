@@ -40,7 +40,6 @@ void test_sis_proof(BoolIO<NetIO> *ios[threads+1], int party, int n, int m) {
 
 	int repeat = 485;
 	auto start = clock_start();
-	setup_zk_bool<BoolIO<NetIO>>(ios, threads, party);
 	setup_zk_arith<BoolIO<NetIO>>(ios, threads, party);
 
 	// allocation
@@ -78,7 +77,6 @@ void test_sis_proof(BoolIO<NetIO> *ios[threads+1], int party, int n, int m) {
 	}
 
 	bool ret = batch_reveal_check(vec_t, t, n+m);
-	finalize_zk_bool<BoolIO<NetIO>>();
 	finalize_zk_arith<BoolIO<NetIO>>();
 	auto timeuse = time_from(start);
 	cout << n << "\t" << m << "\t" << timeuse/tt << " us\t" << party << " " << ret << endl;

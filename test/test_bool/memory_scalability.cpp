@@ -34,10 +34,7 @@ void merkle_tree(Bit *dig, int node_index, int current_level, int depth, bool* w
 void test_merkle_tree_dfs(BoolIO<NetIO> *ios[threads], int party, int depth) {
 	std::cout << "merkle tree of depth: " << depth << std::endl;
 	string file = circuit_file_location+"sha-256.txt";
-	int input_n, output_n;
 	BristolFormat cf(file.c_str());
-	input_n = cf.n1;
-	output_n = cf.n3;
 
 	int width = 1 << (depth-1);
 	std::cout << "number of nodes: " << (2*width-1) << std::endl;

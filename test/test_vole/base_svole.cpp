@@ -27,7 +27,7 @@ void check_triple(NetIO *io, __uint128_t* x, __uint128_t* y, int size) {
 }
 
 void test_base_svole(NetIO *io, int party) {
-	int test_n = 1024*1024;
+	int test_n = 1024;
 	__uint128_t *mac = new __uint128_t[test_n];
 
 	Base_svole<NetIO> *svole;

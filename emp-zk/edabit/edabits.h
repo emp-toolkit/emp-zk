@@ -148,7 +148,7 @@ public:
 	 	return intfp_add_const(arith_candidate[edab_fp], diff);
 	}
 
-	void bool2arith(__uint128_t *out, Integer *in, int len) {
+	void bool2arith(__uint128_t *out, Integer *in, size_t len) {
 		int counter = 0;
 		int round1_num, round, leftover;
 		if(len <= edabit_num) {
@@ -203,7 +203,7 @@ public:
 		return sum_boo.select(sum_boo.bits[61], sum_boo + int_boo_pr);
 	}
 
-	void arith2bool(Integer *out, __uint128_t *in, int len) {
+	void arith2bool(Integer *out, __uint128_t *in, size_t len) {
 		int counter = 0;
 		int round1_num, round, leftover;
 		if(len <= edabit_num) {

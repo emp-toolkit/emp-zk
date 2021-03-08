@@ -33,7 +33,6 @@ jobs:
         ./bin/arith/circuit_scalability_arith 1 12345 10 & ./bin/arith/circuit_scalability_arith 2 12345 10
         ./bin/arith/inner_prdt_arith 1 12345 1000 1000 & ./bin/arith/inner_prdt_arith 2 12345 1000 1000
         ./bin/arith/polynomial_arith 1 12345 1000 1000 & ./bin/arith/polynomial_arith 2 12345 1000 1000
-        ./run ./bin/arith/sis
         ./run ./bin/vole/cope
         ./run ./bin/vole/base_svole
         ./run ./bin/vole/lpn

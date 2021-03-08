@@ -1,5 +1,4 @@
 #include "emp-tool/emp-tool.h"
-#include "emp-zk/emp-zk-bool/emp-zk-bool.h"
 #include "emp-zk/emp-zk-arith/emp-zk-arith.h"
 #include <iostream>
 
@@ -16,7 +15,6 @@ void test_polynomial(BoolIO<NetIO> *ios[threads], int party) {
 	uint64_t *witness = new uint64_t[2*sz];
 	memset(witness, 0, 2*sz*sizeof(uint64_t));
 
-	setup_zk_bool<BoolIO<NetIO>>(ios, threads, party);
 	setup_zk_arith<BoolIO<NetIO>>(ios, threads, party);
 
 	IntFp *x = new IntFp[2*sz];
@@ -46,7 +44,6 @@ void test_polynomial(BoolIO<NetIO> *ios[threads], int party) {
 		fp_zkp_poly_deg2<BoolIO<NetIO>>(x, x+sz, coeff, sz);
 	}
 
-	finalize_zk_bool<BoolIO<NetIO>>();
 	finalize_zk_arith<BoolIO<NetIO>>();
 
 	double tt = time_from(start);

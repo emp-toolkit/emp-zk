@@ -12,7 +12,6 @@ void test_circuit_zk(BoolIO<NetIO> *ios[threads+1], int party, int input_sz_lg) 
 
 	long long test_n = 1<<input_sz_lg;
 	auto start = clock_start();
-	setup_zk_bool<BoolIO<NetIO>>(ios, threads, party);
 	setup_zk_arith<BoolIO<NetIO>>(ios, threads, party);
 	auto timesetup = time_from(start);
 	cout << "time for setup: " << timesetup*1000 <<" "<<party<<" "<<endl;
@@ -45,7 +44,6 @@ void test_circuit_zk(BoolIO<NetIO> *ios[threads+1], int party, int input_sz_lg) 
 	cout << test_n << "\t" << (timeuse+timesetup) << "\t" << party << " " << ret << endl;
 	std::cout << std::endl;
 
-	finalize_zk_bool<BoolIO<NetIO>>();
 	finalize_zk_arith<BoolIO<NetIO>>();
 }
 

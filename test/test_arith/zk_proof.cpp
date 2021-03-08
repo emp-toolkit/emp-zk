@@ -12,7 +12,6 @@ void test_circuit_zk(BoolIO<NetIO> *ios[threads], int party) {
 
 	std::cout << "performance test" << std::endl;
 	auto start = clock_start();
-	setup_zk_bool<BoolIO<NetIO>>(ios, threads, party);
 	setup_zk_arith<BoolIO<NetIO>>(ios, threads, party);
 	auto timesetup = time_from(start);
 	cout << "\tsetup: " << timesetup*1000 <<" "<<party<<" "<<endl;
@@ -38,7 +37,6 @@ void test_circuit_zk(BoolIO<NetIO> *ios[threads], int party) {
 	c = c + a;
 
 	c.reveal(cr);
-	sync_zk_bool<BoolIO<NetIO>>();
 	auto timeuse = time_from(start);
 	cout << "\taverage time per gate: " << (timeuse+timesetup)/test_n*1000<<" ns "<<party<<endl;
 
@@ -79,7 +77,7 @@ void test_circuit_zk(BoolIO<NetIO> *ios[threads], int party) {
 
 	std::cout << std::endl;
 
-	finalize_zk_bool<BoolIO<NetIO>>();
+	finalize_zk_arith<BoolIO<NetIO>>();
 
 	delete[] d;
 	delete[] e;

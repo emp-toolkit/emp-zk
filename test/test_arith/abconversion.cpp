@@ -15,7 +15,7 @@ void test_mix_circuit(BoolIO<NetIO> *ios[threads], int party, int sz) {
 		a[i] = rand() % PR;
 
 	setup_zk_bool<BoolIO<NetIO>>(ios, threads, party);
-	setup_zk_arith<BoolIO<NetIO>>(ios, threads, party);
+	setup_zk_arith<BoolIO<NetIO>>(ios, threads, party, true);
 
 	IntFp *x = new IntFp[sz];
 	batch_feed(x, a, sz);

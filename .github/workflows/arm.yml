@@ -35,5 +35,4 @@ jobs:
         ./bin/arith/polynomial_arith 1 12345 1000 1000 & ./bin/arith/polynomial_arith 2 12345 1000 1000
         ./run ./bin/vole/cope
         ./run ./bin/vole/base_svole
-        ./run ./bin/vole/lpn
         ./run ./bin/vole/vole_triple

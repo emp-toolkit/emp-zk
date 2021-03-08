@@ -148,7 +148,7 @@ public:
 	 	return intfp_add_const(arith_candidate[edab_fp], diff);
 	}
 
-	void bool2arith(__uint128_t *out, Integer *in, int len) {
+	void bool2arith(__uint128_t *out, Integer *in, size_t len) {
 		int counter = 0;
 		int round1_num, round, leftover;
 		if(len <= edabit_num) {

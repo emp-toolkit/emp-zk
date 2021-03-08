@@ -22,5 +22,20 @@ jobs:
       shell: bash
       run: |
         ./run ./bin/bool/example
-        ./run ./bin/vole/vole_triple
+        ./run ./bin/bool/ostriple_bool
+        ./run ./bin/bool/bool_io
+        ./run ./bin/bool/sha256
+        ./bin/bool/inner_prdt_bool 1 12345 1000 1000 & ./bin/bool/inner_prdt_bool 2 12345 1000 1000
+        ./bin/bool/polynomial_bool 1 12345 1000 1000 & ./bin/bool/polynomial_bool 2 12345 1000 1000
+        ./run ./bin/bool/lowmc
+        ./run ./bin/arith/ostriple_arith
         ./run ./bin/arith/zk_proof
+        ./bin/arith/matrix_mul 1 12345 128 & ./bin/arith/matrix_mul 2 12345 128
+        ./bin/arith/circuit_scalability_arith 1 12345 10 & ./bin/arith/circuit_scalability_arith 2 12345 10
+        ./bin/arith/inner_prdt_arith 1 12345 1000 1000 & ./bin/arith/inner_prdt_arith 2 12345 1000 1000
+        ./bin/arith/polynomial_arith 1 12345 1000 1000 & ./bin/arith/polynomial_arith 2 12345 1000 1000
+        ./run ./bin/arith/sis
+        ./run ./bin/vole/cope
+        ./run ./bin/vole/base_svole
+        ./run ./bin/vole/lpn
+        ./run ./bin/vole/vole_triple

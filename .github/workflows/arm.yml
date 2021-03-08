@@ -30,7 +30,6 @@ jobs:
         ./run ./bin/bool/lowmc
         ./run ./bin/arith/ostriple_arith
         ./run ./bin/arith/zk_proof
-        ./bin/arith/matrix_mul 1 12345 128 & ./bin/arith/matrix_mul 2 12345 128
         ./bin/arith/circuit_scalability_arith 1 12345 10 & ./bin/arith/circuit_scalability_arith 2 12345 10
         ./bin/arith/inner_prdt_arith 1 12345 1000 1000 & ./bin/arith/inner_prdt_arith 2 12345 1000 1000
         ./bin/arith/polynomial_arith 1 12345 1000 1000 & ./bin/arith/polynomial_arith 2 12345 1000 1000

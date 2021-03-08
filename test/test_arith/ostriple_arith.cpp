@@ -9,7 +9,7 @@ const int threads = 1;
 
 void test_auth_bit_input(FpOSTriple<NetIO> *os) {
 	PRG prg;
-	int len = 1024*1024;
+	int len = 1024;
 	__uint128_t *auth = new __uint128_t[len];
 	if(party == ALICE) {
 		__uint128_t *in = new __uint128_t[len];
@@ -32,7 +32,7 @@ void test_auth_bit_input(FpOSTriple<NetIO> *os) {
 
 void test_compute_and_gate_check(FpOSTriple<NetIO> *os) {
 	PRG prg;
-	int len = 1024*1024;
+	int len = 1024;
 	auto start = clock_start();
 	__uint128_t *a = new __uint128_t[len];
 	__uint128_t *b = new __uint128_t[len];

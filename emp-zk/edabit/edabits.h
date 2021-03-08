@@ -203,7 +203,7 @@ public:
 		return sum_boo.select(sum_boo.bits[61], sum_boo + int_boo_pr);
 	}
 
-	void arith2bool(Integer *out, __uint128_t *in, int len) {
+	void arith2bool(Integer *out, __uint128_t *in, size_t len) {
 		int counter = 0;
 		int round1_num, round, leftover;
 		if(len <= edabit_num) {

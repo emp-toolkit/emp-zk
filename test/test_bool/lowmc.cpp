@@ -11,7 +11,7 @@ const int threads = 1;
 using namespace std;
 
 void test_lowmc(BoolIO<NetIO> *ios[threads], int party) {
-	unsigned nblocks = 104867;
+	unsigned nblocks = 10;
 	unsigned test_sz = nblocks*blocksize;
 	setup_zk_bool<BoolIO<NetIO>>(ios, threads, party);
 	sync_zk_bool<BoolIO<NetIO>>();

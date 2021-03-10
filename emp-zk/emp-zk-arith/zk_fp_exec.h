@@ -35,5 +35,5 @@ public:
 	virtual __uint128_t pub_label(const uint64_t&a) = 0;
 };
 
-ZKFpExec * ZKFpExec::zk_exec = nullptr;
+// ZKFpExec * ZKFpExec::zk_exec = nullptr;
 #endif

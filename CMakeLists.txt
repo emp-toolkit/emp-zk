@@ -10,7 +10,7 @@ include(${CMAKE_FOLDER}/cmake/enable_float.cmake)
 find_package(emp-ot REQUIRED)
 include_directories(${EMP-OT_INCLUDE_DIRS})
 set(sources
-  emp-zk/emp-zk-bool/emp-zk-bool.cpp
+  emp-zk/emp-zk-bool/emp-zk-bool.cpp emp-zk/emp-zk-arith/emp-zk-arith.cpp
 )
 
 add_library(${NAME} SHARED ${sources})

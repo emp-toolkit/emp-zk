@@ -26,6 +26,9 @@ class ZKBoolCircExec:public CircuitExecution { public:
 	block public_label(bool b) override {
 		return pub_label[b];
 	}
+	size_t num_and() override {
+		return gid;
+	}
 	void sync() {
 //		ostriple->bio->flush();
 		for(int i = 0; i < ostriple->threads; ++i)

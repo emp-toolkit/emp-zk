@@ -6,10 +6,10 @@
 #include "emp-zk/emp-zk-bool/bool_io.h"
 #include "emp-zk/emp-zk-bool/cheat_record.h"
 
-const static int INPUT_BUFFER_SZ = 1024;
 const static int ANDGATE_BUFFER_MEM_SZ= N_REG;
 const static int CHECK_DIV_SZ = 8;
 const static int ANDGATE_BUFFER_SZ = ((N_REG - K_REG - T_REG * BIN_SZ_REG - 128)/CHECK_DIV_SZ)*CHECK_DIV_SZ;
+const static int INPUT_BUFFER_SZ = ANDGATE_BUFFER_SZ;
 
 template<typename IO>
 class OSTriple {
@@ -45,12 +45,12 @@ public:
 		this->ios = ios;
 		pool = new ThreadPool(threads);
 
-		auth_buffer_input = new block[INPUT_BUFFER_SZ];
+		auth_buffer_input = new block[ANDGATE_BUFFER_MEM_SZ];//INPUT_BUFFER_SZ];
 		auth_buffer_andgate = new block[ANDGATE_BUFFER_MEM_SZ];
 		andgate_left_buffer = new block[ANDGATE_BUFFER_SZ/CHECK_DIV_SZ];
 		andgate_right_buffer = new block[ANDGATE_BUFFER_SZ/CHECK_DIV_SZ];
 
-		ferret->rcot(auth_buffer_input, INPUT_BUFFER_SZ);
+		ferret->rcot_inplace(auth_buffer_input, ANDGATE_BUFFER_MEM_SZ);
 		ferret->rcot_inplace(auth_buffer_andgate, ANDGATE_BUFFER_MEM_SZ);
 
 		choice[0] = choice2[0] = zero_block;
@@ -96,10 +96,10 @@ public:
 			int round = (len - left) / INPUT_BUFFER_SZ;
 			int finalr = (len - left) % INPUT_BUFFER_SZ;
 			for(int i = 0; i < round; ++i) {
-				refill(auth_buffer_input, &input_cnt, INPUT_BUFFER_SZ);
+				ferret->rcot_inplace(auth_buffer_input, ANDGATE_BUFFER_MEM_SZ);
 				memcpy(auth+left+i*INPUT_BUFFER_SZ, auth_buffer_input, INPUT_BUFFER_SZ*sizeof(block));
 			}
-			refill(auth_buffer_input, &input_cnt, INPUT_BUFFER_SZ);
+			ferret->rcot_inplace(auth_buffer_input, ANDGATE_BUFFER_MEM_SZ);
 			memcpy(auth+left+round*INPUT_BUFFER_SZ, auth_buffer_input, finalr*sizeof(block));
 			input_cnt = finalr;
 		} else {
@@ -282,13 +282,6 @@ public:
 
 
 	/* ---------------------helper functions----------------------*/
-	
-	void refill(block *buffer, int *cnt, int sz) {
-		io->flush();
-		ferret->rcot(buffer, sz);
-		*cnt = 0;
-	}
-
 	void set_zero_bit(block& b) {
 		b = b & minusone;
 	}

@@ -96,12 +96,9 @@ public:
 			int round = (len - left) / INPUT_BUFFER_SZ;
 			int finalr = (len - left) % INPUT_BUFFER_SZ;
 			for(int i = 0; i < round; ++i) {
-				io->flush();
 				ferret->rcot_inplace(auth_buffer_input, ANDGATE_BUFFER_MEM_SZ);
 				memcpy(auth+left+i*INPUT_BUFFER_SZ, auth_buffer_input, INPUT_BUFFER_SZ*sizeof(block));
 			}
-//			refill(auth_buffer_input, &input_cnt, INPUT_BUFFER_SZ);
-//			io->flush();
 			ferret->rcot_inplace(auth_buffer_input, ANDGATE_BUFFER_MEM_SZ);
 			memcpy(auth+left+round*INPUT_BUFFER_SZ, auth_buffer_input, finalr*sizeof(block));
 			input_cnt = finalr;

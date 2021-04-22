@@ -55,7 +55,12 @@ public:
 	 * embeded in label
 	 */
 	void feed(block * label, int party, const bool* b, int length) {
-		ostriple->authenticated_bits_input(label, b, length);
+		if(party == ALICE)
+			ostriple->authenticated_bits_input(label, b, length);
+		else if (party == PUBLIC) {
+			for(int i = 0; i < length; ++i)
+				label[i] = gen->public_label(b[i]);
+		}
 	}
 
 	/*

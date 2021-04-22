@@ -50,5 +50,11 @@ template<typename IO>
 inline void zkp_inner_prdt(Bit *x, Bit *y, bool constant, int len) {
 	((ZKBoolCircExec<IO>*)(CircuitExecution::circ_exec))->polyproof->zkp_inner_prdt((block*)x, (block*)y, constant, len);
 }
+
+template<typename IO>
+inline void zkp_inner_prdt_eq(Bit *x, Bit *y, Bit *r, Bit * s, int len) {
+	((ZKBoolCircExec<IO>*)(CircuitExecution::circ_exec))->polyproof->zkp_inner_prdt_eq((block*)x, (block*)y, (block *)r, (block *)s, len);
+}
+
 }
 #endif

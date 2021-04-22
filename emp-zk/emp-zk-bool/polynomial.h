@@ -21,6 +21,7 @@ public:
 		this->party = party;
 		this->io = io;
 		this->ferret = ferret;
+		this->delta = ferret->Delta;
 		if(party == ALICE) {
 			buffer = new block[buffer_sz];
 			buffer1 = new block[buffer_sz];
@@ -182,6 +183,71 @@ public:
 		}
 		num++;
 	}
+
+	inline void zkp_inner_prdt_eq(block *polyx, block *polyy, block *r, block * s, int len) {
+		if(num >= buffer_sz) batch_check();
+
+		block choice[2];
+		choice[0] = zero_block;
+		if(party == ALICE) {
+			block A0 = zero_block, A1 = zero_block;
+			block m0, m1, tmp0, tmp1;
+			bool w0, w1;
+			for(int i = 0; i < len; ++i) {
+				w0 = getLSB(polyx[i]);
+				m0 = polyx[i];
+				w1 = getLSB(polyy[i]);
+				m1 = polyy[i];
+
+				gfmul(m0, m1, &tmp0);
+				A0 = A0 ^ tmp0;
+
+				choice[1] = m0;
+				tmp0 = choice[w1];
+				choice[1] = m1;
+				tmp1 = choice[w0];
+				tmp0 = tmp0 ^ tmp1;
+				A1 = A1 ^ tmp0;
+			}
+			{
+				w0 = getLSB(*r);
+				m0 = *r;
+				w1 = getLSB(*s);
+				m1 = *s;
+
+				gfmul(m0, m1, &tmp0);
+				A0 = A0 ^ tmp0;
+
+				choice[1] = m0;
+				tmp0 = choice[w1];
+				choice[1] = m1;
+				tmp1 = choice[w0];
+				tmp0 = tmp0 ^ tmp1;
+				A1 = A1 ^ tmp0;
+			}
+
+			buffer[num] = A0;
+			buffer1[num] = A1;
+		} else {
+			block B = zero_block;
+			block tmp;
+			for(int i = 0; i < len; ++i) {
+				gfmul(polyx[i], polyy[i], &tmp);
+				B = B ^ tmp;
+			}
+			{
+				gfmul(*r, *s, &tmp);
+				B = B ^ tmp;
+			}
+			gfmul(delta, delta, &tmp);
+			choice[1] = tmp;
+			tmp = choice[0];
+			B = B ^ tmp;
+			buffer[num] = B;
+		}
+		num++;
+	}
+
 
 };
 #endif

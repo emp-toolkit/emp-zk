@@ -248,6 +248,72 @@ public:
 		num++;
 	}
 
+	inline void zkp_inner_prdt_multi(Integer *polyx, Integer *polyy, Bit *r, Bit * s, int len, int in_width) {
+		for (int width = 0; width < in_width; ++width) {
+			if(num >= buffer_sz) batch_check();
+
+			block choice[2];
+			choice[0] = zero_block;
+			if(party == ALICE) {
+				block A0 = zero_block, A1 = zero_block;
+				block m0, m1, tmp0, tmp1;
+				bool w0, w1;
+				for(int i = 0; i < len; ++i) {
+					w0 = getLSB(polyx[i][width].bit);
+					m0 = polyx[i][width].bit;
+					w1 = getLSB(polyy[0][i].bit);
+					m1 = polyy[0][i].bit;
+
+					gfmul(m0, m1, &tmp0);
+					A0 = A0 ^ tmp0;
+
+					choice[1] = m0;
+					tmp0 = choice[w1];
+					choice[1] = m1;
+					tmp1 = choice[w0];
+					tmp0 = tmp0 ^ tmp1;
+					A1 = A1 ^ tmp0;
+				}
+				{
+					w0 = getLSB(r[width].bit);
+					m0 = r[width].bit;
+					w1 = getLSB(s->bit);
+					m1 = s->bit;
+
+					gfmul(m0, m1, &tmp0);
+					A0 = A0 ^ tmp0;
+
+					choice[1] = m0;
+					tmp0 = choice[w1];
+					choice[1] = m1;
+					tmp1 = choice[w0];
+					tmp0 = tmp0 ^ tmp1;
+					A1 = A1 ^ tmp0;
+				}
+
+				buffer[num] = A0;
+				buffer1[num] = A1;
+			} else {
+				block B = zero_block;
+				block tmp;
+				for(int i = 0; i < len; ++i) {
+					gfmul(polyx[i][width].bit, polyy[0][i].bit, &tmp);
+					B = B ^ tmp;
+				}
+				{
+					gfmul(r[width].bit, s->bit, &tmp);
+					B = B ^ tmp;
+				}
+				gfmul(delta, delta, &tmp);
+				choice[1] = tmp;
+				tmp = choice[0];
+				B = B ^ tmp;
+				buffer[num] = B;
+			}
+			num++;
+		}
+	}
+
 
 };
 #endif

@@ -56,5 +56,11 @@ inline void zkp_inner_prdt_eq(Bit *x, Bit *y, Bit *r, Bit * s, int len) {
 	((ZKBoolCircExec<IO>*)(CircuitExecution::circ_exec))->polyproof->zkp_inner_prdt_eq((block*)x, (block*)y, (block *)r, (block *)s, len);
 }
 
+template<typename IO>
+inline void zkp_inner_prdt_multi(Integer *x, Integer *y, Bit *r, Bit * s, int len, int width) {
+	((ZKBoolCircExec<IO>*)(CircuitExecution::circ_exec))->polyproof->zkp_inner_prdt_multi(x, y, r, s, len, width);
+}
+
+
 }
 #endif

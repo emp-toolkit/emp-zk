@@ -53,6 +53,7 @@ public:
 		polyproof->delta = ostriple->delta;
 		t->template set_ostriple<IO>(ostriple);
 		t->polyproof = this->polyproof;
+		this->eva = t;
 	}
 	~ZKVerifier() {
 		delete polyproof;

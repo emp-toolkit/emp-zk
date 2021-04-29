@@ -10,7 +10,8 @@ public:
 	int party;
 	IO *io;
 	block delta;
-	int buffer_sz = 4096;
+	int buffer_sz = 1000 * 1000;
+	//int buffer_sz = 4096;
 	block *buffer = nullptr;
 	block *buffer1 = nullptr;
 	int num;

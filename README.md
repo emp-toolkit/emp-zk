@@ -15,7 +15,7 @@ Installation
 2. `python install.py -install -tool -ot`
     1. By default it will build for Release. `-DCMAKE_BUILD_TYPE=[Release|Debug]` option is also available.
     2. No sudo? Change [`CMAKE_INSTALL_PREFIX`](https://cmake.org/cmake/help/v2.8.8/cmake.html#variable%3aCMAKE_INSTALL_PREFIX).
-3. git clone `https://github.com/emp-toolkit/emp-zk.git` & cmake . & make
+3. `git clone [this repo] && cmake . && make`
 
 Test
 =====

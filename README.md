@@ -61,7 +61,7 @@ All values are for "million gates per second".
 
 Question
 =====
-Please send email to Xiao Wang (wangxiao@cs.northwestern.edu) and Chenkai Weng (ckweng@u.northwestern.edu).
+Please send email to Chenkai Weng (ckweng@u.northwestern.edu).
 
 ## Acknowledgement
 This work was supported in part DARPA under Contract No. HR001120C0087. Any opinions, findings and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of DARPA. The authors would also like to thank the support from PlatON Network and ChainLink Lab.

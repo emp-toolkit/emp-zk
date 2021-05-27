@@ -9,16 +9,16 @@
 
 namespace emp {
 template<typename IO>
-inline void setup_zk_bool(IO** ios, int threads, int party) {
+inline void setup_zk_bool(IO** ios, int threads, int party, void * state = nullptr) {
 	CheatRecord::reset();
 	if(party == ALICE) {
 		ZKBoolCircExecPrv<IO> * t = new ZKBoolCircExecPrv<IO>();
 		CircuitExecution::circ_exec = t;
-		ProtocolExecution::prot_exec = new ZKProver<IO>(ios, threads, t);
+		ProtocolExecution::prot_exec = new ZKProver<IO>(ios, threads, t, state);
 	} else {
 		ZKBoolCircExecVer<IO> * t = new ZKBoolCircExecVer<IO>();
 		CircuitExecution::circ_exec = t;
-		ProtocolExecution::prot_exec = new ZKVerifier<IO>(ios, threads, t);
+		ProtocolExecution::prot_exec = new ZKVerifier<IO>(ios, threads, t, state);
 	}
 }
 

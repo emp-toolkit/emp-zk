@@ -34,12 +34,19 @@ public:
 	FerretCOT<IO> *ferret = nullptr;
 	TripleAuth<IO> *auth_helper;
 	ThreadPool *pool = nullptr;
+	void * ferret_state = nullptr;
 	
-	OSTriple (int party, int threads, IO **ios) {
+	OSTriple (int party, int threads, IO **ios, void * state = nullptr) {
 		this->party = party;
 		this->threads = threads;
+		this->ferret_state = state;
 		// initiate Iterative COT with regular noise and security against malicious adv
-		ferret = new FerretCOT<IO>(3-party, threads, ios, true);
+		if(ferret_state == nullptr)
+			ferret = new FerretCOT<IO>(3-party, threads, ios, true);
+		else {
+			ferret = new FerretCOT<IO>(3-party, threads, ios, true, false);
+			ferret->disassemble_state(ferret_state, 10400000);
+		}
 		this->delta = ferret->Delta;
 		io = ios[0];
 		this->ios = ios;
@@ -69,6 +76,8 @@ public:
 		}
 		if(!auth_helper->finalize())
 			CheatRecord::put("emp-zk-bool finalize");
+		if(ferret_state != nullptr)
+			ferret->assemble_state(ferret_state, 10400000);
 		delete ferret;
 		delete[] auth_buffer_input;
 		delete[] auth_buffer_andgate;

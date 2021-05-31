@@ -10,7 +10,7 @@ jobs:
     runs-on: [self-hosted]
     env: 
       BUILD_TYPE: ${{matrix.build_type}}
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
     - uses: actions/checkout@v2
     - name: install dependency

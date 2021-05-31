@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
 		std::cout << "usage: bin/bool/circuit_scalability_bool PARTY PORT LOG(NUM_GATES)" << std::endl;
 		return -1;
 	} else if (argc==3) {
-		num = 20;
+		num = 15;
 	} else {
 		num = atoi(argv[3]);
 	}

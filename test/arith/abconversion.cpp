@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
 		std::cout << "usage: bin/arith/abconversion PARTY PORT TEST_SIZE" << std::endl;
 		return -1;
 	} else if (argc == 3) {
-		num = 20;
+		num = 10;
 	} else {
 		num = atoi(argv[3]);
 	}

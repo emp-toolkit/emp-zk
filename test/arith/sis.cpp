@@ -112,8 +112,9 @@ int main(int argc, char** argv) {
 
 	std::cout << std::endl << "------------ circuit zero-knowledge proof test ------------" << std::endl << std::endl;;
 
-	test_sis_proof(ios, party, 1024, 4096);
-	test_sis_proof(ios, party, 256, 256*61);
+	test_sis_proof(ios, party, 8, 16);
+//	test_sis_proof(ios, party, 1024, 4096);
+//	test_sis_proof(ios, party, 256, 256*61);
 
 	for(int i = 0; i < threads+1; ++i) {
 		delete ios[i]->io;

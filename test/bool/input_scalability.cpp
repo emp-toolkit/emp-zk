@@ -7,9 +7,9 @@ using namespace std;
 int port, party;
 const int threads = 1;
 
-void test_circuit_zk(BoolIO<NetIO> *ios[threads], int party, int log_trail) {
+void test_circuit_zk(BoolIO<NetIO> *ios[threads], int party, int log_trial) {
 
-	long long input_sz = 1<<log_trail;
+	long long input_sz = 1<<log_trial;
 	if(input_sz < 100000000LL) {
 		auto start = clock_start();
 		setup_zk_bool<BoolIO<NetIO>>(ios, threads, party);
@@ -52,12 +52,16 @@ int main(int argc, char** argv) {
 
 	std::cout << std::endl << "------------ circuit zero-knowledge proof test ------------" << std::endl << std::endl;;
 
-	if(argc < 4) {
-		std::cout << "usage: bin/bool/input_scalability_bool PARTY PORT LOG(NUM_GATES)" << std::endl;
+	int num = 0;
+	if(argc < 3) {
+		std::cout << "usage: bin/bool/input_scalability_bool PARTY PORT LOG(INPUT_SZ)" << std::endl;
 		return -1;
+	} else if (argc==3) {
+		num = 20;
+	} else {
+		num = atoi(argv[3]);
 	}
 
-	int num = atoi(argv[3]);
 	test_circuit_zk(ios, party, num);
 
 	for(int i = 0; i < threads; ++i) {

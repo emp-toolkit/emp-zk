@@ -143,13 +143,18 @@ int main(int argc, char** argv) {
 
 	std::cout << std::endl << "------------ circuit zero-knowledge proof test ------------" << std::endl << std::endl;;
 
-	if(argc < 4) {
+
+	int depth = 0;
+	if(argc < 3) {
 		std::cout << "usage: bin/bool/memory_scalability PARTY PORT DEPTH_OF_MERKLE_TREE" << std::endl;
 		return -1;
+	} else if (argc==3) {
+		depth = 10;
+	} else {
+		depth = atoi(argv[3]);
 	}
 
 
-	int depth = atoi(argv[3]);
 	test_merkle_tree_dfs(ios, party, depth);
 	//test_merkle_tree(ios, party, depth);
 

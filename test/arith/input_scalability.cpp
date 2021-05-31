@@ -82,12 +82,17 @@ int main(int argc, char** argv) {
 
 	std::cout << std::endl << "------------ circuit zero-knowledge proof test ------------" << std::endl << std::endl;;
 
-	if(argc < 4) {
-		std::cout << "usage: bin/arith/input_scalability_arith PARTY PORT LOG(CIRCUIT_SZ)" << std::endl;
+	int num = 0;
+	if(argc < 3) {
+		std::cout << "usage: [binary] PARTY PORT LOG(INPUT_SZ)" << std::endl;
 		return -1;
+	} else if (argc==3) {
+		num = 20;
+	} else {
+		num = atoi(argv[3]);
 	}
 
-	int num = atoi(argv[3]);
+
 	test_input_speed(ios, party, num);
 
 	for(int i = 0; i < threads+1; ++i) {

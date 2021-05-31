@@ -64,12 +64,16 @@ int main(int argc, char** argv) {
 	std::cout << "ZKP inner product test";
         std::cout << " ------------" << std::endl << std::endl;;
 
-	if(argc < 5) {
-		std::cout << "usage: bin/arith/inner_prdt_arith PARTY PORT POLY_NUM POLY_DIMENSION" << std::endl;
+	if(argc < 3) {
+		std::cout << "usage: [binary] PARTY PORT POLY_NUM POLY_DIMENSION" << std::endl;
 		return -1;
+	} else if (argc < 5){
+		repeat = 100;
+		sz = 10;
+	} else {
+		repeat = atoi(argv[3]);
+		sz = atoi(argv[4]);
 	}
-	repeat = atoi(argv[3]);
-	sz = atoi(argv[4]);
 
 	test_inner_product(ios, party);
 

@@ -41,12 +41,16 @@ int main(int argc, char** argv) {
 
 	std::cout << std::endl << "------------ circuit zero-knowledge proof test ------------" << std::endl << std::endl;;
 
-	if(argc < 4) {
+	int num = 0;
+	if(argc < 3) {
 		std::cout << "usage: bin/bool/circuit_scalability_bool PARTY PORT LOG(NUM_GATES)" << std::endl;
 		return -1;
+	} else if (argc==3) {
+		num = 20;
+	} else {
+		num = atoi(argv[3]);
 	}
 
-	int num = atoi(argv[3]);
 	test_circuit_zk(ios, party, num);
 
 	for(int i = 0; i < threads; ++i) {

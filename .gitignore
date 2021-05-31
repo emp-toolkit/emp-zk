@@ -1,3 +1,5 @@
+*CTestTestfile.cmake
+*Testing/
 *.DS_Store
 data/*
 *perf.data*

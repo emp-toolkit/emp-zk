@@ -5,12 +5,12 @@ using namespace emp;
 using namespace std;
 
 int port, party;
-int sz, repeat;
+int repeat, sz;
 const int threads = 1;
 
-void test_polynomial(BoolIO<NetIO> *ios[threads], int party) {
+void test_inner_product(BoolIO<NetIO> *ios[threads], int party) {
 	srand(time(NULL));
-	bool *coeff = new bool[sz+1];
+	bool constant;
 	bool *witness = new bool[2*sz];
 	memset(witness, 0, 2*sz*sizeof(bool));
 
@@ -23,15 +23,14 @@ void test_polynomial(BoolIO<NetIO> *ios[threads], int party) {
 		bool sum = 0, tmp;
 		PRG prg;
 		prg.random_bool(witness, 2*sz);
-		prg.random_bool(coeff+1, sz);
 		for(int i = 0; i < sz; ++i) {
 			tmp = witness[i] & witness[sz+i];
-			sum = sum ^ (coeff[i+1] & tmp);
+			sum = sum ^ tmp;
 		}
-		coeff[0] = sum;
-		ios[0]->send_data(coeff, (sz+1)*sizeof(bool));
+		constant = sum;
+		ios[0]->send_data(&constant, sizeof(bool));
 	} else {
-		ios[0]->recv_data(coeff, (sz+1)*sizeof(bool));
+		ios[0]->recv_data(&constant, sizeof(bool));
 	}
 	ios[0]->flush();
 
@@ -41,18 +40,17 @@ void test_polynomial(BoolIO<NetIO> *ios[threads], int party) {
 	sync_zk_bool<BoolIO<NetIO>>();
 	auto start = clock_start();
 	for(int j = 0; j < repeat; ++j) {
-		zkp_poly_deg2<BoolIO<NetIO>>(x, x+sz, coeff, sz);
+		zkp_inner_prdt<BoolIO<NetIO>>(x, x+sz, constant, sz);
 	}
 
 	bool cheated = finalize_zk_bool<BoolIO<NetIO>>();
 	if(cheated) error("cheated\n");
 
 	double tt = time_from(start);
-	cout << "prove " << repeat << " degree-2 polynomial of length " << sz << endl;
+	cout << "prove " << repeat << " degree-2 inner_product of length " << sz << endl;
 	cout << "time use: " << tt/1000 << " ms" << endl;
 	cout << "average time use: " << tt/1000/repeat << " ms" << endl;
 
-	delete[] coeff;
 	delete[] witness;
 	delete[] x;
 }
@@ -64,17 +62,22 @@ int main(int argc, char** argv) {
 		ios[i] = new BoolIO<NetIO>(new NetIO(party == ALICE?nullptr:"127.0.0.1",port+i), party==ALICE);
 
 	std::cout << std::endl << "------------ ";
-	std::cout << "ZKP polynomial test";
+	std::cout << "ZKP inner_product test";
         std::cout << " ------------" << std::endl << std::endl;;
-	
-	if(argc < 5) {
-		std::cout << "usage: bin/bool/inner_prdt_bool PARTY PORT POLY_NUM POLY_DIMENSION" << std::endl;
-		return -1;
-	}
-	repeat = atoi(argv[3]);
-	sz = atoi(argv[4]);
 
-	test_polynomial(ios, party);
+	if(argc < 3) {
+		std::cout << "usage: [binary] PARTY PORT POLY_NUM POLY_DIMENSION" << std::endl;
+		return -1;
+	} else if (argc < 5){
+		repeat = 100;
+		sz = 10;
+	} else {
+		repeat = atoi(argv[3]);
+		sz = atoi(argv[4]);
+	} 
+
+	
+	test_inner_product(ios, party);
 
 	for(int i = 0; i < threads; ++i) {
 		delete ios[i]->io;

@@ -1,5 +1,5 @@
 name: x86
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build_x86:
@@ -8,6 +8,7 @@ jobs:
         os: [ubuntu-latest]
         build_type: [Debug, Release]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     env: 
       BUILD_TYPE: ${{matrix.build_type}}
     steps:
@@ -21,18 +22,4 @@ jobs:
     - name: Test
       shell: bash
       run: |
-        ./run ./bin/bool/example
-        ./run ./bin/bool/ostriple_bool
-        ./run ./bin/bool/bool_io
-        ./run ./bin/bool/sha256
-        ./bin/bool/inner_prdt_bool 1 12345 1000 1000 & ./bin/bool/inner_prdt_bool 2 12345 1000 1000
-        ./bin/bool/polynomial_bool 1 12345 1000 1000 & ./bin/bool/polynomial_bool 2 12345 1000 1000
-        ./run ./bin/bool/lowmc
-        ./run ./bin/arith/ostriple_arith
-        ./run ./bin/arith/zk_proof
-        ./bin/arith/circuit_scalability_arith 1 12345 10 & ./bin/arith/circuit_scalability_arith 2 12345 10
-        ./bin/arith/inner_prdt_arith 1 12345 1000 1000 & ./bin/arith/inner_prdt_arith 2 12345 1000 1000
-        ./bin/arith/polynomial_arith 1 12345 1000 1000 & ./bin/arith/polynomial_arith 2 12345 1000 1000
-        ./run ./bin/vole/cope
-        ./run ./bin/vole/base_svole
-        ./run ./bin/vole/vole_triple
+        make test

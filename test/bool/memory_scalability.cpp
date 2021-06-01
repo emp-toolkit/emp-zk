@@ -149,7 +149,7 @@ int main(int argc, char** argv) {
 		std::cout << "usage: bin/bool/memory_scalability PARTY PORT DEPTH_OF_MERKLE_TREE" << std::endl;
 		return -1;
 	} else if (argc==3) {
-		depth = 10;
+		depth = 5;
 	} else {
 		depth = atoi(argv[3]);
 	}

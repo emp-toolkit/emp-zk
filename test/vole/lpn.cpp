@@ -35,7 +35,7 @@ void test_lpn(NetIO *io, int party) {
 	Delta = Delta & ((__uint128_t)0xFFFFFFFFFFFFFFFFLL);
 	Delta = mod(Delta, pr);
 
-	int test_n = 1016832;
+	int test_n = 1016832/2;
 	int test_k = 15800;
 	__uint128_t *mac1 = new __uint128_t[test_n];
 	__uint128_t *mac2 = new __uint128_t[test_k];

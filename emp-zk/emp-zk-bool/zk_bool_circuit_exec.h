@@ -26,7 +26,7 @@ class ZKBoolCircExec:public CircuitExecution { public:
 	block public_label(bool b) override {
 		return pub_label[b];
 	}
-	size_t num_and() override {
+	uint64_t num_and() override {
 		return gid;
 	}
 	void sync() {

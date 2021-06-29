@@ -6,16 +6,14 @@
 
 Protocols
 =====
-The code in this repo implements a fast, scalable, communication-efficient zero-knowledge proof protocol for Boolean/arithmetic circuits and polynomials. The protocols are described in [Wolverine](https://eprint.iacr.org/2020/925), [Quicksilver](https://eprint.iacr.org/2021/076) and Mystique schemes. Additionally, it contains the subfield vector oblivious linear evaluation in [Wolverine](https://eprint.iacr.org/2020/925).
+The code in this repo implements a fast, scalable, communication-efficient zero-knowledge proof protocol for Boolean/arithmetic circuits and polynomials. The protocols are described in [Wolverine](https://eprint.iacr.org/2020/925), [Quicksilver](https://eprint.iacr.org/2021/076) and [Mystique](https://eprint.iacr.org/2021/730).
 
 Installation
 =====
-
 1. `wget https://raw.githubusercontent.com/emp-toolkit/emp-readme/master/scripts/install.py`
-2. `python install.py -install -tool -ot`
+2. `python install.py -install -tool -ot -zk`
     1. By default it will build for Release. `-DCMAKE_BUILD_TYPE=[Release|Debug]` option is also available.
     2. No sudo? Change [`CMAKE_INSTALL_PREFIX`](https://cmake.org/cmake/help/v2.8.8/cmake.html#variable%3aCMAKE_INSTALL_PREFIX).
-3. `git clone [this repo] && cmake . && make`
 
 Test
 =====
@@ -64,4 +62,4 @@ Question
 Please send email to Chenkai Weng (ckweng@u.northwestern.edu).
 
 ## Acknowledgement
-This work was supported in part DARPA under Contract No. HR001120C0087. Any opinions, findings and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of DARPA. The authors would also like to thank the support from PlatON Network and ChainLink Lab.
+This work was supported in part DARPA under Contract No. HR001120C0087. Any opinions, findings and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of DARPA. The authors would also like to thank the support from PlatON Network.

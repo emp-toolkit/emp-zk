@@ -134,12 +134,7 @@ public:
 		delete[] chi;
 	}
 
-	void consistency_check_msg_gen(__uint128_t& chi_alpha, __uint128_t& W, IO *io2, __uint128_t beta) {
-		PRG prg;
-		block seed;
-		prg.random_block(&seed, 1);
-		io2->send_data(&seed, sizeof(block));
-		io2->flush();
+	void consistency_check_msg_gen(__uint128_t& chi_alpha, __uint128_t& W, IO *io2, __uint128_t beta, block seed) {
 		__uint128_t *chi = new __uint128_t[leave_n];
 		Hash hash;
 		__uint128_t digest = mod(_mm_extract_epi64(hash.hash_for_block(&seed, sizeof(block)), 0));

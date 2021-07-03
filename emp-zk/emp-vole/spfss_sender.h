@@ -105,9 +105,7 @@ class SpfssSenderFp { public:
 	}
 
 	// consistency check: Protocol PI_spsVOLE
-	void consistency_check_msg_gen(__uint128_t& V, IO *io2) {
-		block seed;
-		io2->recv_data(&seed, sizeof(block));
+	void consistency_check_msg_gen(__uint128_t& V, IO *io2, block seed) {
 		__uint128_t *chi = new __uint128_t[leave_n];
 		Hash hash;
 		__uint128_t digest = mod(_mm_extract_epi64(hash.hash_for_block(&seed, sizeof(block)), 0));

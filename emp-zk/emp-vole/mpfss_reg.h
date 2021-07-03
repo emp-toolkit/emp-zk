@@ -185,6 +185,7 @@ public:
 		} else {
 			prg.random_block(&sd, 1);
 			netio->send_data(&sd, sizeof(block));
+			netio->flush();
 		}
 		PRG prg2(&sd);
 		prg2.random_block(seed, threads);

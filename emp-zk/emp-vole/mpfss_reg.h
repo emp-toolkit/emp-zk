@@ -145,10 +145,8 @@ public:
 					for (auto i = start; i < end; ++i) {
 						if(party == ALICE) {
 							senders[i]->consistency_check_msg_gen(check_VW_buf[i], ios[start/width], seed[start/width]);
-							ios[start/width]->flush();
 						} else {
 							recvers[i]->consistency_check_msg_gen(check_chialpha_buf[i], check_VW_buf[i], ios[start/width], triple_yz[i], seed[start/width]);
-							ios[start/width]->flush();
 						}
 					}
 				}));
@@ -159,10 +157,8 @@ public:
 			for (auto i = start; i < end; ++i) {
 				if(party == ALICE){
 					senders[i]->consistency_check_msg_gen(check_VW_buf[i], ios[threads-1], seed[threads-1]);
-					ios[threads-1]->flush();
 				} else {
 					recvers[i]->consistency_check_msg_gen(check_chialpha_buf[i], check_VW_buf[i], ios[threads-1], triple_yz[i], seed[threads-1]);
-					ios[threads-1]->flush();
 				}
 			}
 			for (auto & f : fut) f.get();

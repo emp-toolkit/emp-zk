@@ -5,7 +5,7 @@ jobs:
   build_x86:
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, macos-latest]
         build_type: [Debug, Release]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30

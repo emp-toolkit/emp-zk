@@ -38,9 +38,9 @@ inline uint64_t mod(uint64_t x) {
 }
 
 template<typename T>
-T mod(T k, T p) {
-	T i = (k & p) + (k >> MERSENNE_PRIME_EXP);
-	return (i >= p) ? i - p : i;
+T mod(T k, T pv) {
+	T i = (k & pv) + (k >> MERSENNE_PRIME_EXP);
+	return (i >= pv) ? i - pv : i;
 }
 
 inline block vec_partial_mod(block i) {
@@ -184,18 +184,18 @@ void uni_hash_coeff_gen(T* coeff, T seed, int sz) {
 
 template<typename T>
 T vector_inn_prdt_sum_red(const T *a, const T *b, int sz) {
-	T r = (T)0;
+	T res = (T)0;
 	for(int i = 0; i < sz; ++i)
-		r = add_mod(r, mult_mod(a[i], b[i]));
-	return r;
+		res = add_mod(res, mult_mod(a[i], b[i]));
+	return res;
 }
 
 template<typename S, typename T>
 T vector_inn_prdt_sum_red(const S *a, const T *b, int sz) {
-	T r = (T)0;
+	T res = (T)0;
 	for(int i = 0; i < sz; ++i)
-		r = add_mod(r, mult_mod((T)a[i], b[i]));
-	return r;
+		re = add_mod(res, mult_mod((T)a[i], b[i]));
+	return res;
 }
 /*
 void feq_send(NetIO *io, void* in, int nbytes) {

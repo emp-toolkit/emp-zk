@@ -162,6 +162,7 @@ public:
 				}
 			}
 			for (auto & f : fut) f.get();
+			delete[] seed;
 		}
 
 		if(is_malicious) {

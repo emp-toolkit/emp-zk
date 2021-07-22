@@ -194,7 +194,7 @@ template<typename S, typename T>
 T vector_inn_prdt_sum_red(const S *a, const T *b, int sz) {
 	T res = (T)0;
 	for(int i = 0; i < sz; ++i)
-		re = add_mod(res, mult_mod((T)a[i], b[i]));
+		res = add_mod(res, mult_mod((T)a[i], b[i]));
 	return res;
 }
 /*

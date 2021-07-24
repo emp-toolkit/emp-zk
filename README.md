@@ -64,4 +64,4 @@ Question
 Please send email to Chenkai Weng (ckweng@u.northwestern.edu) and Xiao Wang (wangxiao1254@gmail.com).
 
 ## Acknowledgement
-This work was supported in part DARPA under Contract No. HR001120C0087, and research awards from Facebook and PlatON Network. Any opinions, findings and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of DARPA.
+This software is produced by wizkit team members in the SIEVE project. This work was supported in part DARPA under Contract No. HR001120C0087, and research awards from Facebook and PlatON Network. Any opinions, findings and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of DARPA.

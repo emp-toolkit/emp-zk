@@ -51,7 +51,7 @@ void test_lpn(NetIO *io, int party) {
 		svole->triple_gen_recv(mac2, test_k);
 	}
 
-	ThreadPool pool(4);
+	ThreadPool pool(1);
 	LpnFp<10> lpn(test_n, test_k, &pool, pool.size());
 	auto start = clock_start();
 	if(party == ALICE) {

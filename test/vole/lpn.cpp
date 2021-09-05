@@ -35,8 +35,8 @@ void test_lpn(NetIO *io, int party) {
 	Delta = Delta & ((__uint128_t)0xFFFFFFFFFFFFFFFFLL);
 	Delta = mod(Delta, pr);
 
-	int test_n = 1016832/2;
-	int test_k = 15800;
+	int test_n = 1016832;
+	int test_k = 158000;
 	__uint128_t *mac1 = new __uint128_t[test_n];
 	__uint128_t *mac2 = new __uint128_t[test_k];
 
@@ -50,7 +50,7 @@ void test_lpn(NetIO *io, int party) {
 		svole->triple_gen_recv(mac2, test_k);
 	}
 
-	ThreadPool pool(1);
+	ThreadPool pool(4);
 	LpnFp<10> lpn(test_n, test_k, &pool, pool.size());
 	auto start = clock_start();
 	if(party == ALICE) {

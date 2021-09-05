@@ -31,85 +31,79 @@ class LpnFp { public:
 		round = d / 4;
 		leftover = d % 4;
 
-		this->k_mask = k_mask_gen(k);
-	}
-
-	uint32_t k_mask_gen(int kin) {
-		int ksz = kin;
-		int sz = 0;
-		while(ksz > 1) {
-			sz++;
-			ksz = ksz>>1;
+		k_mask = 1;
+		while(k_mask < k) {
+			k_mask <<=1;
+			k_mask = k_mask | 0x1;
 		}
-		return (1<<sz)-1;
 	}
 
-	void add2(int idx1, int* idx2, uint64_t* mult) {
-		__uint128_t res[2], valM[2];
+	void add2(int idx1, int* idx2) {
+		block Midx1 = (block)M[idx1];
 		for(int j = 0; j < 5; ++j) {
-			valM[0] = preM[idx2[2*j]];
-			valM[1] = preM[idx2[2*j+1]];
-			mult_mod_bch2((block*)res, (block*)valM, mult+2*j);
-			M[idx1] = (__uint128_t)add_mod((block)M[idx1], (block)res[0]);
-			M[idx1] = (__uint128_t)add_mod((block)M[idx1], (block)res[1]);
+			Midx1 = _mm_add_epi64(Midx1, (block) preM[idx2[j]]);
 		}
+		Midx1 = vec_mod(Midx1);
+		for(int j = 5; j < 10; ++j) {
+			Midx1 = _mm_add_epi64(Midx1, (block) preM[idx2[j]]);
+		}
+		Midx1 = vec_mod(Midx1);
+
+		M[idx1] = (__uint128_t)(Midx1);
 	}
 
-	void add1(int idx1, int* idx2, uint64_t* mult) {
-		uint64_t res[2], valK[2];
-		for(int j = 0; j < 5; ++j) {
-			valK[0] = preK[idx2[2*j]];
-			valK[1] = preK[idx2[2*j+1]];
-			mult_mod_bch2(res, valK, mult+2*j);
-			K[idx1] = (__uint128_t)add_mod(K[idx1], res[0]);
-			K[idx1] = (__uint128_t)add_mod(K[idx1], res[1]);
-		}
+	void add1(int idx1, int* idx2) {
+		uint64_t Kidx1 = 0;
+		for(int j = 0; j < 5; ++j) 
+			Kidx1 = Kidx1 + preK[idx2[j]];
+		Kidx1 = mod(Kidx1);
+		for(int j = 5; j < 10; ++j)
+			Kidx1 = Kidx1 + preK[idx2[j]];
+		K[idx1] +=  mod(Kidx1);
 	}
 
-	void __compute4(int i, PRP *prp, std::function<void(int, int*, uint64_t*)> add_func) {
-		block tmp[30];
-		for(int m = 0; m < 30; ++m)
+	void __compute4(int i, PRP *prp, std::function<void(int, int*)> add_func) {
+		block tmp[10];
+		for(int m = 0; m < 10; ++m)
 			tmp[m] = makeBlock(i, m);
-		prp->permute_block(tmp, 30);
+		prp->permute_block(tmp, 10);
 		uint32_t* r = (uint32_t*)(tmp);
-		uint64_t* mult = (uint64_t*)(tmp+10);
 		for(int m = 0; m < 4; ++m) {
 			int index[d];
 			for (int j = 0; j < d; ++j) {
 				index[j] = r[m*d+j]&k_mask;
-				mult[m*d+j] = mod(mult[m*d+j]);
+				index[j] = index[j] >= k? index[j]-k:index[j];
 			}
-			add_func(i+m, index, mult+m*d);
+			add_func(i+m, index);
 		}
 	}
 
-	void __compute1(int i, PRP *prp, std::function<void(int, int*, uint64_t*)> add_func) {
-		block tmp[8];
-		for(int m = 0; m < 8; ++m)
+	void __compute1(int i, PRP *prp, std::function<void(int, int*)> add_func) {
+		block tmp[3];
+		for(int m = 0; m < 3; ++m)
 			tmp[m] = makeBlock(i, m);
-		prp->permute_block(tmp, 8);
+		prp->permute_block(tmp, 3);
 		uint32_t* r = (uint32_t*)(tmp);
-		uint64_t* mult = (uint64_t*)(tmp+3);
 
 		int index[d];
 		for (int j = 0; j < d; ++j) {
 			index[j] = r[j]&k_mask;
-			mult[j] = mod(mult[j]);
+			index[j] = index[j] >= k? index[j]-k:index[j];
 		}
-		add_func(i, index, mult);
+		add_func(i, index);
 	}
 
 	void task(int start, int end) {
 		PRP prp(seed);
 		int j = start;
 		if(party == 1) {
-			std::function<void(int, int*, uint64_t*)> add_func1 = std::bind(&LpnFp::add1, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+			std::function<void(int, int*)> add_func1 = std::bind(&LpnFp::add1, this, std::placeholders::_1, std::placeholders::_2);
 			for(; j < end-4; j+=4)
 				__compute4(j, &prp, add_func1);
 			for(; j < end; ++j)
 				__compute1(j, &prp, add_func1);
 		} else {
-			std::function<void(int, int*, uint64_t*)> add_func2 = std::bind(&LpnFp::add2, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+			std::function<void(int, int*)> add_func2 = std::bind(&LpnFp::add2, this, std::placeholders::_1, std::placeholders::_2);
 			for(; j < end-4; j+=4)
 				__compute4(j, &prp, add_func2);
 			for(; j < end; ++j)

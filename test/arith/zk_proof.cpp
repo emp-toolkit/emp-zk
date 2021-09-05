@@ -13,7 +13,7 @@ void test_circuit_zk(BoolIO<NetIO> *ios[threads], int party) {
 	std::cout << "performance test" << std::endl;
 	auto start = clock_start();
 	setup_zk_arith<BoolIO<NetIO>>(ios, threads, party);
-	auto timesetup = time_from(start);
+/*	auto timesetup = time_from(start);
 	cout << "\tsetup: " << timesetup*1000 <<" "<<party<<" "<<endl;
 
 	__uint128_t ar = 2, br = 3, cr = 4;
@@ -29,18 +29,17 @@ void test_circuit_zk(BoolIO<NetIO> *ios[threads], int party) {
 	cr = (cr + ar)%pr;
 
 	start = clock_start();
-/*	for(int i = 0; i < test_n; ++i) {
+	for(int i = 0; i < test_n; ++i) {
 		b = b + a;
 		a = b * a;
 	}
 	c = a * b;
 	c = c + a;
 
-	c.reveal(cr);*/
-	for(int i = 0; i < threads; ++i)ios[i]->flush();
+	c.reveal(cr);
 	auto timeuse = time_from(start);
 	cout << "\taverage time per gate: " << (timeuse+timesetup)/test_n*1000<<" ns "<<party<<endl;
-/*
+
 	std::cout << "correctness check test" << std::endl;
 	srand(time(NULL));
 	int sz = 10000;

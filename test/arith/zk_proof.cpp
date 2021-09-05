@@ -37,6 +37,7 @@ void test_circuit_zk(BoolIO<NetIO> *ios[threads], int party) {
 	c = c + a;
 
 	c.reveal(cr);
+	for(int i = 0; i < threads; ++i)ios[i]->flush();
 	auto timeuse = time_from(start);
 	cout << "\taverage time per gate: " << (timeuse+timesetup)/test_n*1000<<" ns "<<party<<endl;
 /*

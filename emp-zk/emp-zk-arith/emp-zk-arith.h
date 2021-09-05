@@ -19,14 +19,14 @@ inline void setup_zk_arith(IO** ios, int threads, int party, bool enable_convers
 
 	if(party == ALICE) {
 		ZKFpExec::zk_exec = new ZKFpExecPrv<IO>(ios, threads);
-		FpPolyProof<IO>::fppolyproof = new FpPolyProof<IO>(ALICE, (IO*)ios[0], ((ZKFpExecPrv<IO>*)(ZKFpExec::zk_exec))->ostriple);
+		//FpPolyProof<IO>::fppolyproof = new FpPolyProof<IO>(ALICE, (IO*)ios[0], ((ZKFpExecPrv<IO>*)(ZKFpExec::zk_exec))->ostriple);
 
 		if(enable_conversion)
 			EdaBits<IO>::conv = new EdaBits<IO>(ALICE, threads, ios, ((ZKFpExecPrv<IO>*)(ZKFpExec::zk_exec))->ostriple->vole);
 		
 	} else {
 		ZKFpExec::zk_exec = new ZKFpExecVer<IO>(ios, threads);
-		FpPolyProof<IO>::fppolyproof = new FpPolyProof<IO>(BOB, (IO*)ios[0], ((ZKFpExecVer<IO>*)(ZKFpExec::zk_exec))->ostriple);
+		//FpPolyProof<IO>::fppolyproof = new FpPolyProof<IO>(BOB, (IO*)ios[0], ((ZKFpExecVer<IO>*)(ZKFpExec::zk_exec))->ostriple);
 		if(enable_conversion) {
 			EdaBits<IO>::conv = new EdaBits<IO>(BOB, threads, ios, ((ZKFpExecVer<IO>*)(ZKFpExec::zk_exec))->ostriple->vole);
 			EdaBits<IO>::conv->install_boolean(((ZKBoolCircExecVer<IO>*)CircuitExecution::circ_exec)->delta);

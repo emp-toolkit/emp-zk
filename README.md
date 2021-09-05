@@ -13,7 +13,7 @@ The code in this repo implements a fast, scalable, communication-efficient zero-
 Installation
 =====
 1. `wget https://raw.githubusercontent.com/emp-toolkit/emp-readme/master/scripts/install.py`
-2. `python install.py -install -tool -ot -zk`
+2. `python[3] install.py --deps --tool --ot --zk`
     1. By default it will build for Release. `-DCMAKE_BUILD_TYPE=[Release|Debug]` option is also available.
     2. No sudo? Change [`CMAKE_INSTALL_PREFIX`](https://cmake.org/cmake/help/v2.8.8/cmake.html#variable%3aCMAKE_INSTALL_PREFIX).
 

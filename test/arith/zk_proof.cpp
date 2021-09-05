@@ -39,7 +39,7 @@ void test_circuit_zk(BoolIO<NetIO> *ios[threads], int party) {
 	c.reveal(cr);
 	auto timeuse = time_from(start);
 	cout << "\taverage time per gate: " << (timeuse+timesetup)/test_n*1000<<" ns "<<party<<endl;
-
+/*
 	std::cout << "correctness check test" << std::endl;
 	srand(time(NULL));
 	int sz = 10000;
@@ -77,7 +77,6 @@ void test_circuit_zk(BoolIO<NetIO> *ios[threads], int party) {
 
 	std::cout << std::endl;
 
-	finalize_zk_arith<BoolIO<NetIO>>();
 
 	delete[] d;
 	delete[] e;
@@ -85,6 +84,8 @@ void test_circuit_zk(BoolIO<NetIO> *ios[threads], int party) {
 	delete[] fi;
 	delete[] ei;
 	delete[] dd;
+*/
+	finalize_zk_arith<BoolIO<NetIO>>();
 }
 
 int main(int argc, char** argv) {

@@ -137,10 +137,10 @@ public:
 
 	void setup() {
 		// initialize the main process
-		ThreadPool pool_tmp(1);
-		auto fut = pool_tmp.enqueue([this](){
+		//ThreadPool pool_tmp(1);
+		//auto fut = pool_tmp.enqueue([this](){
 			extend_initialization();
-		});
+		//});
 
 		// space for pre-processing triples
 		__uint128_t *pre_yz0 = new __uint128_t[n_pre0];
@@ -200,7 +200,7 @@ public:
 
 		delete[] pre_yz0;
 
-		fut.get();
+		//fut.get();
 	}
 
 	void extend(__uint128_t *data_yz, int num) {

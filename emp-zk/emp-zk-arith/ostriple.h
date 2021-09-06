@@ -51,9 +51,9 @@ public:
 			delta_gen();
 			vole->setup(delta);
 		}
-		//vole->extend_inplace(auth_buffer_andgate, FP_ANDGATE_BUFFER_MEM_SZ);
+		vole->extend_inplace(auth_buffer_andgate, FP_ANDGATE_BUFFER_MEM_SZ);
 
-		auth_helper = new FpAuthHelper<IO>(party, io);
+		//auth_helper = new FpAuthHelper<IO>(party, io);
 	}
 
 	~FpOSTriple () {

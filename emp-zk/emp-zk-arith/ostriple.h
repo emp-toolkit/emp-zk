@@ -51,7 +51,7 @@ public:
 			delta_gen();
 			vole->setup(delta);
 		}
-		vole->extend_inplace(auth_buffer_andgate, FP_ANDGATE_BUFFER_MEM_SZ);
+		//vole->extend_inplace(auth_buffer_andgate, FP_ANDGATE_BUFFER_MEM_SZ);
 
 		//auth_helper = new FpAuthHelper<IO>(party, io);
 	}
@@ -59,9 +59,9 @@ public:
 	~FpOSTriple () {
 		if(andgate_buf_not_empty())
 			andgate_correctness_check_manage();
-		auth_helper->flush();
-		delete auth_helper;
-		delete vole;
+		//auth_helper->flush();
+		//delete auth_helper;
+		//delete vole;
 		//delete[] auth_buffer_input;
 		delete[] auth_buffer_andgate;
 		delete[] andgate_left_buffer;

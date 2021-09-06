@@ -47,15 +47,13 @@ public:
 		vole = new VoleTriple<IO>(3-party, threads, ios);
 		if(party == ALICE) {
 			vole->setup();
-			//vole->extend(auth_buffer_input, FP_INPUT_BUFFER_SZ);
 		} else {
 			delta_gen();
 			vole->setup(delta);
-			//vole->extend(auth_buffer_input, FP_INPUT_BUFFER_SZ);
 		}
-		vole->extend_inplace(auth_buffer_andgate, FP_ANDGATE_BUFFER_MEM_SZ);
+		//vole->extend_inplace(auth_buffer_andgate, FP_ANDGATE_BUFFER_MEM_SZ);
 
-		auth_helper = new FpAuthHelper<IO>(party, io);
+		//auth_helper = new FpAuthHelper<IO>(party, io);
 	}
 
 	~FpOSTriple () {

@@ -46,10 +46,10 @@ public:
 		andgate_right_buffer = new __uint128_t[FP_ANDGATE_BUFFER_SZ/FP_CHECK_DIV_SZ];
 		vole = new VoleTriple<IO>(3-party, threads, ios);
 		if(party == ALICE) {
-			vole->setup();
+		//	vole->setup();
 		} else {
 			delta_gen();
-			vole->setup(delta);
+		//	vole->setup(delta);
 		}
 		//vole->extend_inplace(auth_buffer_andgate, FP_ANDGATE_BUFFER_MEM_SZ);
 

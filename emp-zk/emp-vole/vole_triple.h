@@ -3,6 +3,7 @@
 #include "emp-zk/emp-vole/mpfss_reg.h"
 #include "emp-zk/emp-vole/base_svole.h"
 #include "emp-zk/emp-vole/lpn.h"
+#include "emp-zk/emp-vole/dual_lpn_fp.h"
 #include "emp-zk/emp-vole/constants.h"
 
 template<typename IO>
@@ -12,19 +13,13 @@ public:
 	IO **ios;
 	int party;
 	int threads;
-	int n, t, k, log_bin_sz;
-	int n_pre, t_pre, k_pre, log_bin_sz_pre;
-	int n_pre0, t_pre0, k_pre0, log_bin_sz_pre0;
 	int noise_type;
-	int M;
+	int M, n;
 	int ot_used, ot_limit;
 	bool is_malicious;
 	bool extend_initialized;
-	bool pre_ot_inplace;
 	__uint128_t *pre_yz = nullptr;
-	__uint128_t *pre_x = nullptr;
 	__uint128_t *vole_triples = nullptr;
-	__uint128_t *vole_x = nullptr;
 
 	BaseCot<IO> *cot;
 	OTPre<IO> *pre_ot = nullptr;
@@ -39,43 +34,22 @@ public:
 		this->threads = threads;
 		this->party = party;
 		this->ios = ios;
-		set_param();
-		set_preprocessing_param();
 		this->extend_initialized = false;
 
 		cot = new BaseCot<IO>(party, io, true);
 		cot->cot_gen_pre();
 
 		pool = new ThreadPool(threads);
+		n = N_REG_Fp;
 	}
 
 	~VoleTriple() {
 		if(pre_yz != nullptr) delete[] pre_yz;
-		if(pre_x != nullptr) delete[] pre_x;
 		if(pre_ot != nullptr) delete pre_ot;
 		if(lpn != nullptr) delete lpn;
 		if(pool != nullptr) delete pool;
 		if(mpfss != nullptr) delete mpfss;
 		if(vole_triples != nullptr) delete[] vole_triples;
-		if(vole_x != nullptr) delete[] vole_x;
-	}
-
-	void set_param() {
-		this->n = N_REG_Fp;
-		this->k = K_REG_Fp;
-		this->t = T_REG_Fp;
-		this->log_bin_sz = BIN_SZ_REG_Fp;
-	}
-
-	void set_preprocessing_param() {
-		this->n_pre = N_PRE_REG_Fp;
-		this->k_pre = K_PRE_REG_Fp;
-		this->t_pre = T_PRE_REG_Fp;
-		this->log_bin_sz_pre = BIN_SZ_PRE_REG_Fp;
-		this->n_pre0 = N_PRE0_REG_Fp;
-		this->k_pre0 = K_PRE0_REG_Fp;
-		this->t_pre0 = T_PRE0_REG_Fp;
-		this->log_bin_sz_pre0 = BIN_SZ_PRE0_REG_Fp;
 	}
 
 	void setup(__uint128_t delta) {
@@ -93,13 +67,13 @@ public:
 	}
 
 	void extend_initialization() {
-		lpn = new LpnFp<LPN_D>(n, k, pool, pool->size());
-		mpfss = new MpfssRegFp<IO>(party, threads, n, t, log_bin_sz, pool, ios); 
+		lpn = new LpnFp<LPN_D>(N_REG_Fp, K_REG_Fp, pool, pool->size());
+		mpfss = new MpfssRegFp<IO>(party, threads, N_REG_Fp, T_REG_Fp, BIN_SZ_REG_Fp, pool, ios); 
 		mpfss->set_malicious();
 
 		pre_ot = new OTPre<IO>(io, mpfss->tree_height-1, mpfss->tree_n);
-		M = k + t + 1;
-		ot_limit = n - M;
+		M = K_REG_Fp + T_REG_Fp + 1;
+		ot_limit = N_REG_Fp - M;
 		ot_used = ot_limit;
 		extend_initialized = true;
 	}
@@ -135,6 +109,79 @@ public:
 		memcpy(pre_yz, buffer+ot_limit, M*sizeof(__uint128_t));
 	}
 
+	void extend_once_dual_lpn(__uint128_t *vole_pre_data_buf,
+			int n, int np, int t, int logbin) {
+		__uint128_t *vole_pre_data_buf_input = new __uint128_t[np];
+		memset(vole_pre_data_buf_input, 0, np*sizeof(__uint128_t));
+
+		block shared_seed;
+		if(party == ALICE) {
+			PRG prg;
+			prg.random_block(&shared_seed, 1);
+			ios[0]->send_data(&shared_seed, sizeof(block));
+			ios[0]->flush();
+		} else {
+			ios[0]->recv_data(&shared_seed, sizeof(block));
+		}
+
+		// pre-processing tools
+		DualLpnFp dual_lpn(n, np, pool, 1); // TODO
+		MpfssRegFp<IO> mpfss_pre(party, threads, np, t, logbin,
+				pool, ios);
+		mpfss_pre.set_malicious();
+		OTPre<IO> pre_ot(ios[0], logbin, t);
+
+		// generate tree_n*(depth-1) COTs
+		cot->cot_gen(&pre_ot, pre_ot.n);
+
+		// generate t+1 pre voles and extend
+		Base_svole<IO> *svole;
+		int pre_vole_n = 1+t;
+		__uint128_t *pre_vole = new __uint128_t[pre_vole_n];
+		if(party == ALICE) {
+			svole = new Base_svole<IO>(party, ios[0], Delta);
+			svole->triple_gen_send(pre_vole, pre_vole_n);
+
+			mpfss_pre.sender_init(Delta);
+			mpfss_pre.mpfss(&pre_ot, pre_vole, vole_pre_data_buf_input);
+			dual_lpn.compute_opt(vole_pre_data_buf, vole_pre_data_buf_input);
+		} else {
+			svole = new Base_svole<IO>(party, ios[0]);
+			svole->triple_gen_recv(pre_vole, pre_vole_n);
+
+			mpfss_pre.recver_init();
+			mpfss_pre.mpfss(&pre_ot, pre_vole, vole_pre_data_buf_input);
+			dual_lpn.compute_opt(vole_pre_data_buf, vole_pre_data_buf_input);
+		}
+		delete svole;
+		delete[] pre_vole;
+		delete[] vole_pre_data_buf_input;
+	}
+
+	void extend_once_primal_lpn(__uint128_t *vole_pre_data_buf,
+			__uint128_t *vole_pre_data_buf_input,
+			int n, int k, int t, int logbin) {
+
+		// pre-processing tools
+		LpnFp<LPN_D> lpn_pre(n, k, pool, pool->size());
+		MpfssRegFp<IO> mpfss_pre(party, threads, n, t, logbin, pool, ios);
+		mpfss_pre.set_malicious();
+		OTPre<IO> pre_ot(ios[0], logbin, t);
+
+		// generate tree_n*(depth-1) COTs
+		cot->cot_gen(&pre_ot, pre_ot.n);
+
+		// generate 2*tree_n+k_pre triples and extend
+		if(party == ALICE) {
+			extend_send(vole_pre_data_buf, &mpfss_pre, &pre_ot,
+					&lpn_pre, vole_pre_data_buf_input);
+		} else {
+			extend_recv(vole_pre_data_buf, &mpfss_pre, &pre_ot,
+					&lpn_pre, vole_pre_data_buf_input);
+		}	
+
+	}
+
 	void setup() {
 		// initialize the main process
 		ThreadPool pool_tmp(1);
@@ -143,60 +190,19 @@ public:
 		});
 
 		// space for pre-processing triples
-		__uint128_t *pre_yz0 = new __uint128_t[n_pre0];
-		memset(pre_yz0, 0, n_pre0*sizeof(__uint128_t));
+		__uint128_t *pre_yz0 = new __uint128_t[N_REG_DUAL_RD0_Fp];
+		memset(pre_yz0, 0, N_REG_DUAL_RD0_Fp*sizeof(__uint128_t));
 
-		// pre-processing tools
-		LpnFp<LPN_D> lpn_pre0(n_pre0, k_pre0, pool, pool->size());
-		MpfssRegFp<IO> mpfss_pre0(party, threads, n_pre0, t_pre0, log_bin_sz_pre0, pool, ios);
-		mpfss_pre0.set_malicious();
-		OTPre<IO> pre_ot_ini0(ios[0], mpfss_pre0.tree_height-1, mpfss_pre0.tree_n);
-
-		// generate tree_n*(depth-1) COTs
-		int M_pre0 = pre_ot_ini0.n;
-		cot->cot_gen(&pre_ot_ini0, M_pre0);
-
-		// generate 2*tree_n+k_pre triples and extend
-		Base_svole<IO> *svole0;
-		int triple_n0 = 1+mpfss_pre0.tree_n+k_pre0;
-		if(party == ALICE) {
-			__uint128_t *key = new __uint128_t[triple_n0];
-			svole0 = new Base_svole<IO>(party, ios[0], Delta);
-			svole0->triple_gen_send(key, triple_n0);
-
-			extend_send(pre_yz0, &mpfss_pre0, &pre_ot_ini0, &lpn_pre0, key);
-			delete[] key;
-		} else {
-			__uint128_t *mac = new __uint128_t[triple_n0];
-			svole0 = new Base_svole<IO>(party, ios[0]);
-			svole0->triple_gen_recv(mac, triple_n0);
-
-			extend_recv(pre_yz0, &mpfss_pre0, &pre_ot_ini0, &lpn_pre0, mac);
-			delete[] mac;
-		}
-		delete svole0;
+		extend_once_dual_lpn(pre_yz0, N_REG_DUAL_RD0_Fp, NP_REG_DUAL_RD0_Fp,
+				T_REG_DUAL_RD0_Fp, BIN_SZ_REG_DUAL_RD0_Fp);
 
 		// space for pre-processing triples
-		pre_yz = new __uint128_t[n_pre];
-		memset(pre_yz, 0, n_pre*sizeof(__uint128_t));
+		if(pre_yz == nullptr)
+			pre_yz = new __uint128_t[N_REG_PRIMAL_RD1_Fp];
+		memset(pre_yz, 0, N_REG_PRIMAL_RD1_Fp*sizeof(__uint128_t));
 
-		// pre-processing tools
-		LpnFp<LPN_D> lpn_pre(n_pre, k_pre, pool, pool->size());
-		MpfssRegFp<IO> mpfss_pre(party, threads, n_pre, t_pre, log_bin_sz_pre, pool, ios);
-		mpfss_pre.set_malicious();
-		OTPre<IO> pre_ot_ini(ios[0], mpfss_pre.tree_height-1, mpfss_pre.tree_n);
-
-		// generate tree_n*(depth-1) COTs
-		int M_pre = pre_ot_ini.n;
-		cot->cot_gen(&pre_ot_ini, M_pre);
-
-		// generate 2*tree_n+k_pre triples and extend
-		if(party == ALICE) {
-			extend_send(pre_yz, &mpfss_pre, &pre_ot_ini, &lpn_pre, pre_yz0);
-		} else {
-			extend_recv(pre_yz, &mpfss_pre, &pre_ot_ini, &lpn_pre, pre_yz0);
-		}
-		pre_ot_inplace = true;
+		extend_once_primal_lpn(pre_yz, pre_yz0,
+				N_REG_PRIMAL_RD1_Fp, K_REG_PRIMAL_RD1_Fp, T_REG_PRIMAL_RD1_Fp, BIN_SZ_REG_PRIMAL_RD1_Fp);
 
 		delete[] pre_yz0;
 
@@ -205,7 +211,7 @@ public:
 
 	void extend(__uint128_t *data_yz, int num) {
 		if(vole_triples == nullptr) {
-			vole_triples = new __uint128_t[n];
+			vole_triples = new __uint128_t[N_REG_Fp];
 			//memset(vole_triples, 0, n*sizeof(__uint128_t));
 		}
 		if(extend_initialized == false) 
@@ -244,7 +250,7 @@ public:
 	}
 
 	uint64_t extend_inplace(__uint128_t *data_yz, int byte_space) {
-		if(byte_space < n) error("space not enough");
+		if(byte_space < N_REG_Fp) error("space not enough");
 		uint64_t tp_output_n = byte_space - M;
 		if(tp_output_n % ot_limit != 0) error("call byte_memory_need_inplace \
 				to get the correct length of memory space");
@@ -259,13 +265,19 @@ public:
 
 	uint64_t byte_memory_need_inplace(uint64_t tp_need) {
 		int round = (tp_need - 1) / ot_limit;
-		return round * ot_limit + n;
+		return round * ot_limit + N_REG_Fp;
 	}
 
 	int silent_ot_left() {
 		return ot_limit - ot_used;
 	}
 
+	uint64_t comm() {
+		uint64_t sum = 0;
+		for(int i = 0; i < threads; ++i)
+			sum += ios[i]->counter;
+		return sum;
+	}
 	// debug function
 	void check_triple(__uint128_t x, __uint128_t* y, int size) {
 		if(party == ALICE) {

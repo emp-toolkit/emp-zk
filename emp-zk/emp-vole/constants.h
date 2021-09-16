@@ -9,13 +9,18 @@ const static int N_REG_Fp = 10168320;
 const static int T_REG_Fp = 4965;
 const static int K_REG_Fp = 158000;
 const static int BIN_SZ_REG_Fp = 11;
-const static int N_PRE_REG_Fp = 166400;
-const static int T_PRE_REG_Fp = 2600;
-const static int K_PRE_REG_Fp = 5060;
-const static int BIN_SZ_PRE_REG_Fp = 6;
-const static int N_PRE0_REG_Fp = 9600;
-const static int T_PRE0_REG_Fp = 600;
-const static int K_PRE0_REG_Fp = 1220;
-const static int BIN_SZ_PRE0_REG_Fp = 4;
+// need pre-vole: 162966
+
+const static int N_REG_PRIMAL_RD1_Fp = 166400;
+const static int T_REG_PRIMAL_RD1_Fp = 2600;
+const static int K_REG_PRIMAL_RD1_Fp = 5060;
+const static int BIN_SZ_REG_PRIMAL_RD1_Fp = 6;
+// need pre-vole: 7661
+
+const static int N_REG_DUAL_RD0_Fp = 7680;
+const static int NP_REG_DUAL_RD0_Fp = 16384;
+const static int T_REG_DUAL_RD0_Fp = 128;
+const static int BIN_SZ_REG_DUAL_RD0_Fp = 7;
+// need pre-vole: 129
 
 #endif //FP_CONSTANTS_H__

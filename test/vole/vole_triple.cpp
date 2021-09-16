@@ -28,12 +28,12 @@ void test_vole_triple(NetIO *ios[threads+1], int party) {
 		auto start = clock_start();
 		vtriple.setup(Delta);
 		std::cout << "setup " << time_from(start)/1000 << " ms" << std::endl;
-		vtriple.check_triple(Delta, vtriple.pre_yz, vtriple.n_pre);
+		vtriple.check_triple(Delta, vtriple.pre_yz, N_REG_PRIMAL_RD1_Fp);
 	} else {
 		auto start = clock_start();
 		vtriple.setup();
 		std::cout << "setup " << time_from(start)/1000 << " ms" << std::endl;
-		vtriple.check_triple(0, vtriple.pre_yz, vtriple.n_pre);
+		vtriple.check_triple(0, vtriple.pre_yz, N_REG_PRIMAL_RD1_Fp);
 	}
 
 	int triple_need = vtriple.ot_limit;

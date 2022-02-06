@@ -78,7 +78,7 @@ public:
 		delete[] chi;
 	}
 
-	inline void zkp_poly_deg2(__uint128_t *polyx, __uint128_t* polyy, uint64_t *coeff, int len) {
+	inline void zkp_poly_deg2(const __uint128_t *polyx, const __uint128_t* polyy, const uint64_t *coeff, int len) {
 		if(num >= buffer_sz) batch_check();
 
 		if(party == ALICE) {
@@ -116,7 +116,7 @@ public:
 		num++;
 	}
 
-	inline void zkp_inner_prdt(__uint128_t *polyx, __uint128_t *polyy, uint64_t constant, int len) {
+	inline void zkp_inner_prdt(const __uint128_t *polyx, const __uint128_t *polyy, uint64_t constant, int len) {
 		if(num >= buffer_sz) batch_check();
 
 		if(party == ALICE) {

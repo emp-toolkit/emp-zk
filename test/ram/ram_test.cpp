@@ -27,7 +27,7 @@ void bench(BoolIO<NetIO> *ios[threads], int party) {
 	uint64_t com11 = comm2(ios);
 	auto start = clock_start();
 	ZKRAM<BoolIO<NetIO>> *ram = new ZKRAM<BoolIO<NetIO>>(party, index_sz, step_sz, val_sz);
-	int test_n = (1<<index_sz)*4;
+	int test_n = (1<<index_sz)*2;
 	Integer ind(index_sz, 0, PUBLIC);
 	Integer value(val_sz, 0, PUBLIC);
 	for(int i = 0; i < test_n; ++i) {
@@ -65,6 +65,7 @@ void test(BoolIO<NetIO> *ios[threads], int party) {
 			cout <<i<<"something is wrong!!\n";
 		}
 	}
+	ram->check();
 	for(int i = 0; i < (1<<index_sz); ++i) {
 		ram->write(Integer(index_sz, i, PUBLIC), Integer(val_sz, 3*i, PUBLIC));
 		ram->refresh();
@@ -77,7 +78,6 @@ void test(BoolIO<NetIO> *ios[threads], int party) {
 			cout <<i<<"something is wrong!!\n";
 		}
 	}
-
 	ram->check();
 	delete ram;
 	finalize_zk_bool<BoolIO<NetIO>>();
@@ -92,7 +92,6 @@ int main(int argc, char** argv) {
 
 	if (argc > 3)
 		index_sz = atoi(argv[3]);
-//	else index_sz = 10;
 
 	test(ios, party);
 	bench(ios, party);

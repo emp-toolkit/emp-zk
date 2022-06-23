@@ -7,12 +7,12 @@ using namespace std;
 int port, party;
 const int threads = 1;
 //int index_sz = 23, val_sz = 32;
-int index_sz = 15, val_sz = 32;
+int index_sz = 5, val_sz = 32;
 
 void bench(BoolIO<NetIO> *ios[threads], int party) {
 	setup_zk_bool<BoolIO<NetIO>>(ios, threads, party);
 	vector<Integer> data;
-	int test_n = (1<<index_sz)*4;
+	int test_n = (1<<index_sz)*2;
 	for(int i = 0; i < (1<<index_sz); ++i)
 		data.push_back(Integer(val_sz, 2*i, PUBLIC));
 	sync_zk_bool<BoolIO<NetIO>>();
@@ -22,11 +22,9 @@ void bench(BoolIO<NetIO> *ios[threads], int party) {
 	std::cout <<"init:"<<time_from(start)/1000<<endl;
 	Integer ind(index_sz, 0, PUBLIC);
 	start=clock_start();
-	for(int j = 0; j < test_n/(1<<index_sz); ++j) {
-		for(int i = 0; i < (1<<index_sz); ++i)
+	for(int j = 0; j < test_n/(1<<index_sz); ++j)
 			Integer res = ram->read(ind);
-		ram->check();
-	}
+	ram->check();
 	std::cout <<" total (us):"<<time_from(start)/test_n<<endl;
 	std::cout << "access (us): " << ram->check1/test_n << std::endl;
 	std::cout << "check condition (us): " << ram->check2/test_n << std::endl;
@@ -65,7 +63,6 @@ int main(int argc, char** argv) {
 
 	if (argc > 3)
 		index_sz = atoi(argv[3]);
-	else index_sz = 10;
 
 	test(ios, party);
 	bench(ios, party);

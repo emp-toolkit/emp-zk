@@ -17,8 +17,5 @@ install(DIRECTORY emp-zk DESTINATION include/)
 install(FILES cmake/emp-zk-config.cmake DESTINATION cmake/)
 install(TARGETS ${NAME} DESTINATION lib)
 
-#set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -ggdb -Wno-ignored-attributes")
-#set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -Wno-ignored-attributes")
-
 ENABLE_TESTING()
 ADD_SUBDIRECTORY(test)

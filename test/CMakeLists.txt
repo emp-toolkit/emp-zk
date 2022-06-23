@@ -41,3 +41,6 @@ add_test_case_with_run(vole vole_triple)
 add_test_case_with_run(vole cope)
 add_test_case_with_run(vole base_svole)
 add_test_case_with_run(vole lpn)
+
+add_test_case_with_run(ram ram_test)
+add_test_case_with_run(ram ro_ram_test)

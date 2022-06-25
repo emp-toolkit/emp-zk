@@ -23,18 +23,12 @@ class LpnF2k { public:
 		this->threads = threads;
 		this->seed = seed;
 
-		this->k_mask = k_mask_gen(k);
-	}
-
-	uint32_t k_mask_gen(int kin) {
-		int ksz = kin;
-		int sz = 0;
-		while(ksz > 1) {
-			sz++;
-			ksz = ksz>>1;
+		k_mask = 1;
+		while(k_mask < (uint32_t)k) {
+			k_mask <<=1;
+			k_mask = k_mask | 0x1;
 		}
-		return (1<<sz)-1;
-	}	
+	}
 
 	void add2(int idx1, uint32_t* idx2) {
 		for(int j = 0; j < d; ++j) {
@@ -55,8 +49,10 @@ class LpnF2k { public:
 			tmp[m] = makeBlock(i, m);
 		prp->permute_block(tmp, 10);
 		uint32_t* r = (uint32_t*)(tmp);
-		for(int j = 0; j < 4*d; ++j)
+		for(int j = 0; j < 4*d; ++j) {
 			r[j] = r[j] & k_mask;
+			r[j] = r[j] >= k? r[j]-k:r[j];
+		}
 		for(int m = 0; m < 4; ++m) {
 			add_func(i+m, r+m*d);
 		}
@@ -68,8 +64,10 @@ class LpnF2k { public:
 			tmp[m] = makeBlock(i, m);
 		prp->permute_block(tmp, 3);
 		uint32_t* r = (uint32_t*)(tmp);
-		for (int j = 0; j < d; ++j)
+		for (int j = 0; j < d; ++j) {
 			r[j] = r[j] & k_mask;
+			r[j] = r[j] >= k? r[j]-k:r[j];
+		}
 		add_func(i, r);
 	}
 

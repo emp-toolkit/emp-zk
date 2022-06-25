@@ -1,8 +1,6 @@
 #ifndef FP_CONSTANTS_H__
 #define FP_CONSTANTS_H__
 
-#define N_THREADS 5
-
 #define LPN_D 10
 
 const static int N_REG_Fp = 10168320;

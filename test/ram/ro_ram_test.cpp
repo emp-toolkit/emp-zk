@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
 		index_sz = atoi(argv[3]);
 
 	test(ios, party);
-//	bench(ios, party);
+	bench(ios, party);
 
 	for(int i = 0; i < threads; ++i) {
 		delete ios[i]->io;

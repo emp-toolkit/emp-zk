@@ -27,7 +27,7 @@ add_test_case_with_run(bool polynomial)
 add_test_case_with_run(bool inner_prdt)
 add_test_case_with_run(bool lowmc)
 
-#add_test_case_with_run(arith abconversion)
+add_test_case_with_run(arith abconversion)
 add_test_case_with_run(arith zk_proof)
 add_test_case_with_run(arith ostriple)
 add_test_case_with_run(arith input_scalability)

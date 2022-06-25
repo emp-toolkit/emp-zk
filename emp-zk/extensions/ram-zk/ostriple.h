@@ -80,7 +80,7 @@ public:
 	/* ---------------------arithmetic----------------------*/
 
 	void compute_add_const(block &valb, block &macb,
-			block &vala, block &maca, block &c) {
+			const block &vala, const block &maca, const block &c) {
 		if(party == ALICE) {
 			valb = vala ^ c;
 			macb = maca;

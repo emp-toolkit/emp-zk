@@ -4,9 +4,6 @@
 #include "emp-zk/emp-vole-f2k/svole.h"
 #include "emp-zk/extensions/ram-zk/poly_prdt.h"
 
-const static int PRE_F2K_BUFFER_MEM_SZ = FERRET_BUFFER_MEM_SZ;
-const static int PRE_F2K_BUFFER_SZ = FERRET_BUFFER_SZ;
-const static int MULGATE_BUFFER_SZ = PRE_F2K_BUFFER_SZ;
 
 template<typename IO>
 class F2kOSTriple {
@@ -15,7 +12,6 @@ public:
 	block delta;
 
 	int authf2k_cnt = 0, check_cnt = 0;
-	block* ferret_buffer = nullptr;
 	block* auth_buffer_val = nullptr;
 	block* auth_buffer_mac = nullptr;
 	block* andgate_buffer_left_val = nullptr;
@@ -32,23 +28,26 @@ public:
 	SVoleF2k<IO> *svole = nullptr;
 	F2kPolyPrdt<IO> *polyprdt = nullptr;
 	ThreadPool *pool = nullptr;
+
+	int64_t BUFFER_MEM_SZ = -1, BUFFER_SZ = -1;
 	
 	F2kOSTriple (int party, int threads, IO **ios, FerretCOT<IO> *ferret, ThreadPool *pool) :
 			party(party), threads(threads), ios(ios), ferret(ferret), pool(pool) {
 		if(party == BOB) this->delta = ferret->Delta;
 		else this->delta = zero_block;
 		io = ios[0];
-
-		ferret_buffer = new block[FERRET_BUFFER_MEM_SZ];
-		auth_buffer_val = new block[PRE_F2K_BUFFER_MEM_SZ];
-		auth_buffer_mac = new block[PRE_F2K_BUFFER_MEM_SZ];
-		andgate_buffer_left_val = new block[MULGATE_BUFFER_SZ];
-		andgate_buffer_left_mac = new block[MULGATE_BUFFER_SZ];
-		andgate_buffer_rght_val = new block[MULGATE_BUFFER_SZ];
-		andgate_buffer_rght_mac = new block[MULGATE_BUFFER_SZ];
-
 		svole = new SVoleF2k<IO>(party, threads, ios, ferret);
 		svole->setup(delta);
+		BUFFER_MEM_SZ = svole->param.n;
+		BUFFER_SZ = svole->param.buf_sz();
+
+		auth_buffer_val = new block[BUFFER_MEM_SZ];
+		auth_buffer_mac = new block[BUFFER_MEM_SZ];
+		andgate_buffer_left_val = new block[BUFFER_SZ];
+		andgate_buffer_left_mac = new block[BUFFER_SZ];
+		andgate_buffer_rght_val = new block[BUFFER_SZ];
+		andgate_buffer_rght_mac = new block[BUFFER_SZ];
+
 
 		polyprdt = new F2kPolyPrdt<IO>(party, ios[0], ferret);
 
@@ -61,7 +60,6 @@ public:
 		if(andgate_buf_not_empty()) {
 			andgate_correctness_check_manage();
 		}
-		delete[] ferret_buffer;
 		delete[] auth_buffer_val;
 		delete[] auth_buffer_mac;
 		delete[] andgate_buffer_left_val;
@@ -93,11 +91,11 @@ public:
 
 	void compute_mul(block &valc, block &macc,
 			block &vala, block &maca, block &valb, block &macb) {
-		if(check_cnt == MULGATE_BUFFER_SZ) {
+		if(check_cnt == BUFFER_SZ) {
 			andgate_correctness_check_manage();
 			check_cnt = 0;
 		}
-		if(authf2k_cnt == PRE_F2K_BUFFER_SZ) {
+		if(authf2k_cnt == BUFFER_SZ) {
 			pre_f2k_buffer_refill();
 			authf2k_cnt = 0;
 		}
@@ -303,7 +301,7 @@ public:
 	/* ---------------------helper functions----------------------*/
 	
 	void pre_f2k_buffer_refill() {
-		svole->extend_inplace(auth_buffer_val, auth_buffer_mac, PRE_F2K_BUFFER_MEM_SZ);
+		svole->extend_inplace(auth_buffer_val, auth_buffer_mac, BUFFER_MEM_SZ);
 		authf2k_cnt = 0;
 	}
 

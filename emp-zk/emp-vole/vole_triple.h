@@ -40,7 +40,7 @@ public:
 	PrimalLPNParameterFp61 param;
 	int noise_type;
 	int M;
-	int ot_used, ot_limit;
+	int64_t ot_used, ot_limit;
 	bool is_malicious;
 	bool extend_initialized;
 	bool pre_ot_inplace;
@@ -57,7 +57,7 @@ public:
 	ThreadPool * pool = nullptr;
 	MpfssRegFp<IO> * mpfss = nullptr;
 
-	VoleTriple (int party, int threads, IO **ios, PrimalLPNParameterFp61 param = fp_default) {
+	VoleTriple (int party, int threads, IO **ios, const PrimalLPNParameterFp61 &param = fp_default) {
 		this->io = ios[0];
 		this->threads = threads;
 		this->party = party;
@@ -263,7 +263,7 @@ public:
 	}
 
 	uint64_t byte_memory_need_inplace(uint64_t tp_need) {
-		int round = (tp_need - 1) / ot_limit;
+		int64_t round = (tp_need - 1) / ot_limit;
 		return round * ot_limit + param.n;
 	}
 

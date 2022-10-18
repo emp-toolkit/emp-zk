@@ -6,10 +6,6 @@
 #include "emp-zk/emp-zk-bool/bool_io.h"
 #include "emp-zk/emp-zk-bool/cheat_record.h"
 
-const static int ANDGATE_BUFFER_MEM_SZ= N_REG;
-const static int CHECK_DIV_SZ = 8;
-const static int ANDGATE_BUFFER_SZ = ((N_REG - K_REG - T_REG * BIN_SZ_REG - 128)/CHECK_DIV_SZ)*CHECK_DIV_SZ;
-const static int INPUT_BUFFER_SZ = ANDGATE_BUFFER_SZ;
 
 template<typename IO>
 class OSTriple {
@@ -25,6 +21,8 @@ public:
 	block* andgate_right_buffer = nullptr;
 
 	GaloisFieldPacking pack;
+	const static int64_t CHECK_DIV_SZ = 8;
+	int64_t BUFFER_MEM_SZ = -1, BUFFER_SZ = -1;
 
 	block choice[2], choice2[2];
 	block minusone, one;
@@ -47,18 +45,20 @@ public:
 			ferret = new FerretCOT<IO>(3-party, threads, ios, true, false);
 			ferret->disassemble_state(ferret_state, 10400000);
 		}
+		BUFFER_MEM_SZ = ferret->param.n;
+		BUFFER_SZ = ferret->param.buf_sz();
 		this->delta = ferret->Delta;
 		io = ios[0];
 		this->ios = ios;
 		pool = new ThreadPool(threads);
 
-		auth_buffer_input = new block[ANDGATE_BUFFER_MEM_SZ];//INPUT_BUFFER_SZ];
-		auth_buffer_andgate = new block[ANDGATE_BUFFER_MEM_SZ];
-		andgate_left_buffer = new block[ANDGATE_BUFFER_SZ/CHECK_DIV_SZ];
-		andgate_right_buffer = new block[ANDGATE_BUFFER_SZ/CHECK_DIV_SZ];
+		auth_buffer_input = new block[BUFFER_MEM_SZ];
+		auth_buffer_andgate = new block[BUFFER_MEM_SZ];
+		andgate_left_buffer = new block[BUFFER_SZ/CHECK_DIV_SZ];
+		andgate_right_buffer = new block[BUFFER_SZ/CHECK_DIV_SZ];
 
-		ferret->rcot_inplace(auth_buffer_input, ANDGATE_BUFFER_MEM_SZ);
-		ferret->rcot_inplace(auth_buffer_andgate, ANDGATE_BUFFER_MEM_SZ);
+		ferret->rcot_inplace(auth_buffer_input, BUFFER_MEM_SZ);
+		ferret->rcot_inplace(auth_buffer_andgate, BUFFER_MEM_SZ);
 
 		choice[0] = choice2[0] = zero_block;
 		choice[1] = this->delta;
@@ -99,17 +99,17 @@ public:
 	 * authenticated bits for inputs of the prover
 	 */
 	void authenticated_bits_input(block *auth, const bool* in, int len) {
-		if((input_cnt+len) > INPUT_BUFFER_SZ) {
-			int left = INPUT_BUFFER_SZ - input_cnt;
+		if((input_cnt+len) > BUFFER_SZ) {
+			int left = BUFFER_SZ - input_cnt;
 			memcpy(auth, auth_buffer_input+input_cnt, left*sizeof(block));
-			int round = (len - left) / INPUT_BUFFER_SZ;
-			int finalr = (len - left) % INPUT_BUFFER_SZ;
+			int round = (len - left) / BUFFER_SZ;
+			int finalr = (len - left) % BUFFER_SZ;
 			for(int i = 0; i < round; ++i) {
-				ferret->rcot_inplace(auth_buffer_input, ANDGATE_BUFFER_MEM_SZ);
-				memcpy(auth+left+i*INPUT_BUFFER_SZ, auth_buffer_input, INPUT_BUFFER_SZ*sizeof(block));
+				ferret->rcot_inplace(auth_buffer_input, BUFFER_MEM_SZ);
+				memcpy(auth+left+i*BUFFER_SZ, auth_buffer_input, BUFFER_SZ*sizeof(block));
 			}
-			ferret->rcot_inplace(auth_buffer_input, ANDGATE_BUFFER_MEM_SZ);
-			memcpy(auth+left+round*INPUT_BUFFER_SZ, auth_buffer_input, finalr*sizeof(block));
+			ferret->rcot_inplace(auth_buffer_input, BUFFER_MEM_SZ);
+			memcpy(auth+left+round*BUFFER_SZ, auth_buffer_input, finalr*sizeof(block));
 			input_cnt = finalr;
 		} else {
 			memcpy(auth, auth_buffer_input+input_cnt, len*sizeof(block));
@@ -136,11 +136,11 @@ public:
 	 */
 	block auth_compute_and(block a, block b) {
 		block auth;
-		if(check_cnt == ANDGATE_BUFFER_SZ/CHECK_DIV_SZ) {
+		if(check_cnt == BUFFER_SZ/CHECK_DIV_SZ) {
 			andgate_correctness_check_manage();
 			check_cnt = 0;
-			if (andgate_cnt == ANDGATE_BUFFER_SZ) {
-				ferret->rcot_inplace(auth_buffer_andgate, ANDGATE_BUFFER_MEM_SZ);
+			if (andgate_cnt == BUFFER_SZ) {
+				ferret->rcot_inplace(auth_buffer_andgate, BUFFER_MEM_SZ);
 				andgate_cnt = 0;
 			}
 		}

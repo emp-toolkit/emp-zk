@@ -4,9 +4,6 @@
 
 namespace emp {
 
-const static int FERRET_BUFFER_MEM_SZ = N_REG;
-const static int FERRET_BUFFER_SZ = (N_REG - K_REG - T_REG * BIN_SZ_REG - 128);
-const static int F2K_BUFFER_SZ = FERRET_BUFFER_SZ/128;
 
 template<typename IO>
 class BaseSVoleF2k {
@@ -24,8 +21,16 @@ public:
 	block *f2k_val_buffer = nullptr;
 	block *f2k_mac_buffer = nullptr;
 
+	int64_t FERRET_BUFFER_MEM_SZ;
+	int64_t FERRET_BUFFER_SZ;
+	int64_t F2K_BUFFER_SZ;
+
 	BaseSVoleF2k (int party, IO **ios, FerretCOT<IO> *ferret) :
 		party(party), ios(ios), ferret(ferret) {
+		FERRET_BUFFER_MEM_SZ = ferret_b13.n;
+		FERRET_BUFFER_SZ = ferret_b13.buf_sz();
+		F2K_BUFFER_SZ = ferret_b13.buf_sz()/128;
+
 		if(party == BOB) delta = ferret->Delta;
 		io = ios[0];
 

@@ -3,7 +3,32 @@
 #include "emp-zk/emp-vole/mpfss_reg.h"
 #include "emp-zk/emp-vole/base_svole.h"
 #include "emp-zk/emp-vole/lpn.h"
-#include "emp-zk/emp-vole/constants.h"
+
+class PrimalLPNParameterFp61 { public:
+	int64_t n, t, k, log_bin_sz;
+	int64_t n_pre, t_pre, k_pre, log_bin_sz_pre;
+	int64_t n_pre0, t_pre0, k_pre0, log_bin_sz_pre0;
+
+	PrimalLPNParameterFp61() {}
+	PrimalLPNParameterFp61(int64_t n, int64_t t, int64_t k, int64_t log_bin_sz, 
+								int64_t n_pre, int64_t t_pre, int64_t k_pre, int64_t log_bin_sz_pre,
+								int64_t n_pre0, int64_t t_pre0, int64_t k_pre0, int64_t log_bin_sz_pre0)
+		: n(n), t(t), k(k), log_bin_sz(log_bin_sz),
+		n_pre(n_pre), t_pre(t_pre), k_pre(k_pre), log_bin_sz_pre(log_bin_sz_pre),
+		n_pre0(n_pre0), t_pre0(t_pre0), k_pre0(k_pre0), log_bin_sz_pre0(log_bin_sz_pre0){
+
+		if(n != t * (1<<log_bin_sz) ||
+			n_pre != t_pre * (1<< log_bin_sz_pre) ||
+			n_pre < k + t + 1 )
+			error("LPN parameter not matched");
+	}
+	int64_t buf_sz() const {
+		return n - t - k - 1;
+	}
+};
+
+const static PrimalLPNParameterFp61 fp_default = PrimalLPNParameterFp61(10168320, 4965, 158000, 11, 166400, 2600, 5060, 6, 9600, 600, 1220, 4);
+
 
 template<typename IO>
 class VoleTriple { 
@@ -12,9 +37,7 @@ public:
 	IO **ios;
 	int party;
 	int threads;
-	int n, t, k, log_bin_sz;
-	int n_pre, t_pre, k_pre, log_bin_sz_pre;
-	int n_pre0, t_pre0, k_pre0, log_bin_sz_pre0;
+	PrimalLPNParameterFp61 param;
 	int noise_type;
 	int M;
 	int ot_used, ot_limit;
@@ -30,17 +53,16 @@ public:
 	OTPre<IO> *pre_ot = nullptr;
 
 	__uint128_t Delta;
-	LpnFp<LPN_D> * lpn = nullptr;
+	LpnFp<10> * lpn = nullptr;
 	ThreadPool * pool = nullptr;
 	MpfssRegFp<IO> * mpfss = nullptr;
 
-	VoleTriple (int party, int threads, IO **ios) {
-        	this->io = ios[0];
+	VoleTriple (int party, int threads, IO **ios, PrimalLPNParameterFp61 param = fp_default) {
+		this->io = ios[0];
 		this->threads = threads;
 		this->party = party;
 		this->ios = ios;
-		set_param();
-		set_preprocessing_param();
+		this->param = param;
 		this->extend_initialized = false;
 
 		cot = new BaseCot<IO>(party, io, true);
@@ -60,24 +82,6 @@ public:
 		if(vole_x != nullptr) delete[] vole_x;
 	}
 
-	void set_param() {
-		this->n = N_REG_Fp;
-		this->k = K_REG_Fp;
-		this->t = T_REG_Fp;
-		this->log_bin_sz = BIN_SZ_REG_Fp;
-	}
-
-	void set_preprocessing_param() {
-		this->n_pre = N_PRE_REG_Fp;
-		this->k_pre = K_PRE_REG_Fp;
-		this->t_pre = T_PRE_REG_Fp;
-		this->log_bin_sz_pre = BIN_SZ_PRE_REG_Fp;
-		this->n_pre0 = N_PRE0_REG_Fp;
-		this->k_pre0 = K_PRE0_REG_Fp;
-		this->t_pre0 = T_PRE0_REG_Fp;
-		this->log_bin_sz_pre0 = BIN_SZ_PRE0_REG_Fp;
-	}
-
 	void setup(__uint128_t delta) {
 		this->Delta = delta;
 		setup();
@@ -93,13 +97,13 @@ public:
 	}
 
 	void extend_initialization() {
-		lpn = new LpnFp<LPN_D>(n, k, pool, pool->size());
-		mpfss = new MpfssRegFp<IO>(party, threads, n, t, log_bin_sz, pool, ios); 
+		lpn = new LpnFp<10>(param.n, param.k, pool, pool->size());
+		mpfss = new MpfssRegFp<IO>(party, threads, param.n, param.t, param.log_bin_sz, pool, ios); 
 		mpfss->set_malicious();
 
 		pre_ot = new OTPre<IO>(io, mpfss->tree_height-1, mpfss->tree_n);
-		M = k + t + 1;
-		ot_limit = n - M;
+		M = param.k + param.t + 1;
+		ot_limit = param.n - M;
 		ot_used = ot_limit;
 		extend_initialized = true;
 	}
@@ -108,7 +112,7 @@ public:
 	void extend_send(__uint128_t *y, 
 			MpfssRegFp<IO> *mpfss, 
 			OTPre<IO> *pre_ot, 
-			LpnFp<LPN_D> *lpn,
+			LpnFp<10> *lpn,
 			__uint128_t *key) {
 		mpfss->sender_init(Delta);
 		mpfss->mpfss(pre_ot, key, y);
@@ -119,7 +123,7 @@ public:
 	void extend_recv(__uint128_t *z,
 			MpfssRegFp<IO> *mpfss,
 			OTPre<IO> *pre_ot, 
-			LpnFp<LPN_D> *lpn,
+			LpnFp<10> *lpn,
 			__uint128_t *mac) {
 		mpfss->recver_init();
 		mpfss->mpfss(pre_ot, mac, z);
@@ -143,12 +147,12 @@ public:
 		});
 
 		// space for pre-processing triples
-		__uint128_t *pre_yz0 = new __uint128_t[n_pre0];
-		memset(pre_yz0, 0, n_pre0*sizeof(__uint128_t));
+		__uint128_t *pre_yz0 = new __uint128_t[param.n_pre0];
+		memset(pre_yz0, 0, param.n_pre0*sizeof(__uint128_t));
 
 		// pre-processing tools
-		LpnFp<LPN_D> lpn_pre0(n_pre0, k_pre0, pool, pool->size());
-		MpfssRegFp<IO> mpfss_pre0(party, threads, n_pre0, t_pre0, log_bin_sz_pre0, pool, ios);
+		LpnFp<10> lpn_pre0(param.n_pre0, param.k_pre0, pool, pool->size());
+		MpfssRegFp<IO> mpfss_pre0(party, threads, param.n_pre0, param.t_pre0, param.log_bin_sz_pre0, pool, ios);
 		mpfss_pre0.set_malicious();
 		OTPre<IO> pre_ot_ini0(ios[0], mpfss_pre0.tree_height-1, mpfss_pre0.tree_n);
 
@@ -158,7 +162,7 @@ public:
 
 		// generate 2*tree_n+k_pre triples and extend
 		Base_svole<IO> *svole0;
-		int triple_n0 = 1+mpfss_pre0.tree_n+k_pre0;
+		int triple_n0 = 1+mpfss_pre0.tree_n+param.k_pre0;
 		if(party == ALICE) {
 			__uint128_t *key = new __uint128_t[triple_n0];
 			svole0 = new Base_svole<IO>(party, ios[0], Delta);
@@ -177,12 +181,12 @@ public:
 		delete svole0;
 
 		// space for pre-processing triples
-		pre_yz = new __uint128_t[n_pre];
-		memset(pre_yz, 0, n_pre*sizeof(__uint128_t));
+		pre_yz = new __uint128_t[param.n_pre];
+		memset(pre_yz, 0, param.n_pre*sizeof(__uint128_t));
 
 		// pre-processing tools
-		LpnFp<LPN_D> lpn_pre(n_pre, k_pre, pool, pool->size());
-		MpfssRegFp<IO> mpfss_pre(party, threads, n_pre, t_pre, log_bin_sz_pre, pool, ios);
+		LpnFp<10> lpn_pre(param.n_pre, param.k_pre, pool, pool->size());
+		MpfssRegFp<IO> mpfss_pre(party, threads, param.n_pre, param.t_pre, param.log_bin_sz_pre, pool, ios);
 		mpfss_pre.set_malicious();
 		OTPre<IO> pre_ot_ini(ios[0], mpfss_pre.tree_height-1, mpfss_pre.tree_n);
 
@@ -205,7 +209,7 @@ public:
 
 	void extend(__uint128_t *data_yz, int num) {
 		if(vole_triples == nullptr) {
-			vole_triples = new __uint128_t[n];
+			vole_triples = new __uint128_t[param.n];
 			//memset(vole_triples, 0, n*sizeof(__uint128_t));
 		}
 		if(extend_initialized == false) 
@@ -244,8 +248,9 @@ public:
 	}
 
 	uint64_t extend_inplace(__uint128_t *data_yz, int byte_space) {
-		if(byte_space < n) error("space not enough");
+		if(byte_space < param.n) error("space not enough");
 		uint64_t tp_output_n = byte_space - M;
+		cout << byte_space <<" "<< param.n <<" "<< M<<"\n";
 		if(tp_output_n % ot_limit != 0) error("call byte_memory_need_inplace \
 				to get the correct length of memory space");
 		int round = tp_output_n / ot_limit;
@@ -259,7 +264,7 @@ public:
 
 	uint64_t byte_memory_need_inplace(uint64_t tp_need) {
 		int round = (tp_need - 1) / ot_limit;
-		return round * ot_limit + n;
+		return round * ot_limit + param.n;
 	}
 
 	int silent_ot_left() {

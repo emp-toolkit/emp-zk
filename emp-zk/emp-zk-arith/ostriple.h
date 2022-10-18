@@ -7,10 +7,6 @@
 #define LOW64(x) _mm_extract_epi64((block)x, 0)
 #define HIGH64(x) _mm_extract_epi64((block)x, 1)
 
-const static int FP_INPUT_BUFFER_SZ = 1000;
-const static int FP_ANDGATE_BUFFER_MEM_SZ = N_REG_Fp;
-const static int FP_CHECK_DIV_SZ = 8;
-const static int FP_ANDGATE_BUFFER_SZ = ((N_REG_Fp-K_REG_Fp-T_REG_Fp-5)/FP_CHECK_DIV_SZ)*FP_CHECK_DIV_SZ;
 
 template<typename IO>
 class FpOSTriple {
@@ -20,9 +16,7 @@ public:
 	int triple_n;
 	__uint128_t delta;
 
-	// managing buffers storing COTs
 	int input_cnt = 0, andgate_cnt = 0, check_cnt = 0;
-	//__uint128_t* auth_buffer_input = nullptr;
 	__uint128_t* auth_buffer_andgate = nullptr;
 	__uint128_t* andgate_left_buffer = nullptr;
 	__uint128_t* andgate_right_buffer = nullptr;
@@ -34,26 +28,31 @@ public:
 	FpAuthHelper<IO> *auth_helper = nullptr;
 	ThreadPool *pool = nullptr;
 
+	uint64_t INPUT_BUFFER_SZ = 1000;
+	uint64_t MEM_SZ = -1;
+	uint64_t CHECK_DIV_SZ = 8;
+	uint64_t BUFFER_SZ = -1;
+
 	FpOSTriple (int party, int threads, IO **ios) {
 		this->party = party;
 		this->threads = threads;
 		io = ios[0];
 		this->ios = ios;
 		pool = new ThreadPool(threads);
-		//auth_buffer_input = new __uint128_t[FP_INPUT_BUFFER_SZ];
-		auth_buffer_andgate = new __uint128_t[FP_ANDGATE_BUFFER_MEM_SZ];
-		andgate_left_buffer = new __uint128_t[FP_ANDGATE_BUFFER_SZ/FP_CHECK_DIV_SZ];
-		andgate_right_buffer = new __uint128_t[FP_ANDGATE_BUFFER_SZ/FP_CHECK_DIV_SZ];
 		vole = new VoleTriple<IO>(3-party, threads, ios);
+		MEM_SZ = vole->param.n;
+		BUFFER_SZ = vole->param.buf_sz()/CHECK_DIV_SZ*CHECK_DIV_SZ;
+		auth_buffer_andgate = new __uint128_t[MEM_SZ];
+		andgate_left_buffer = new __uint128_t[BUFFER_SZ/CHECK_DIV_SZ];
+		andgate_right_buffer = new __uint128_t[BUFFER_SZ/CHECK_DIV_SZ];
 		if(party == ALICE) {
 			vole->setup();
-			//vole->extend(auth_buffer_input, FP_INPUT_BUFFER_SZ);
 		} else {
 			delta_gen();
 			vole->setup(delta);
-			//vole->extend(auth_buffer_input, FP_INPUT_BUFFER_SZ);
 		}
-		vole->extend_inplace(auth_buffer_andgate, FP_ANDGATE_BUFFER_MEM_SZ);
+cout <<"!!\n";
+		vole->extend_inplace(auth_buffer_andgate, MEM_SZ);
 
 		auth_helper = new FpAuthHelper<IO>(party, io);
 	}
@@ -77,8 +76,8 @@ public:
 	 */
 	__uint128_t authenticated_val_input(uint64_t w) {
 		__uint128_t mac;
-		/*if(input_cnt == FP_INPUT_BUFFER_SZ) {
-			refill_send(auth_buffer_input, &input_cnt, FP_INPUT_BUFFER_SZ);
+		/*if(input_cnt == INPUT_BUFFER_SZ) {
+			refill_send(auth_buffer_input, &input_cnt, INPUT_BUFFER_SZ);
 		}*/
 		//mac = auth_buffer_input[input_cnt++];
 		vole->extend(&mac, 1);
@@ -104,8 +103,8 @@ public:
 
 	__uint128_t authenticated_val_input() {
 		__uint128_t key;
-		/*if(input_cnt == FP_INPUT_BUFFER_SZ) {
-			refill_recv(auth_buffer_input, &input_cnt, FP_INPUT_BUFFER_SZ);
+		/*if(input_cnt == INPUT_BUFFER_SZ) {
+			refill_recv(auth_buffer_input, &input_cnt, INPUT_BUFFER_SZ);
 		}
 		key = auth_buffer_input[input_cnt++];*/
 		vole->extend(&key, 1);
@@ -138,11 +137,11 @@ public:
 	 */
 	__uint128_t auth_compute_mul_send(__uint128_t Ma, __uint128_t Mb) {
 		__uint128_t mac;
-		if(check_cnt == FP_ANDGATE_BUFFER_SZ/FP_CHECK_DIV_SZ) {
+		if(check_cnt == BUFFER_SZ/CHECK_DIV_SZ) {
 			andgate_correctness_check_manage();
 			check_cnt = 0;
-			if(andgate_cnt == FP_ANDGATE_BUFFER_SZ) {
-				vole->extend_inplace(auth_buffer_andgate, FP_ANDGATE_BUFFER_MEM_SZ);
+			if(andgate_cnt == BUFFER_SZ) {
+				vole->extend_inplace(auth_buffer_andgate, MEM_SZ);
 				andgate_cnt = 0;
 			}
 		}
@@ -164,11 +163,11 @@ public:
 
 	__uint128_t auth_compute_mul_recv(__uint128_t Ka, __uint128_t Kb) {
 		__uint128_t key;
-		if(check_cnt == FP_ANDGATE_BUFFER_SZ/FP_CHECK_DIV_SZ) {
+		if(check_cnt == BUFFER_SZ/CHECK_DIV_SZ) {
 			andgate_correctness_check_manage();
 			check_cnt = 0;
-			if(andgate_cnt == FP_ANDGATE_BUFFER_SZ) {
-				vole->extend_inplace(auth_buffer_andgate, FP_ANDGATE_BUFFER_MEM_SZ);
+			if(andgate_cnt == BUFFER_SZ) {
+				vole->extend_inplace(auth_buffer_andgate, MEM_SZ);
 				andgate_cnt = 0;
 			}
 		}

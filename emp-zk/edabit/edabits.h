@@ -49,8 +49,8 @@ public:
 		this->edabit_offset = 0;
 		this->rand_pt = 0;
 		this->edabit_num = 0;
-		arith_candidate = new __uint128_t[cot_fp->n];
-		cot_fp->extend_inplace(arith_candidate, cot_fp->n); 	// check the size
+		arith_candidate = new __uint128_t[cot_fp->param.n];
+		cot_fp->extend_inplace(arith_candidate, cot_fp->param.n); 	// check the size
 
 		this->ell = B * N + C; 		// batch size
 		this->ell_faulty = ell - N;
@@ -81,7 +81,7 @@ public:
 		//auto start = clock_start();
 		// If the buffer is used up, refill the Fp shares
 		if(np_pt + ell > np_sz) {
-			cot_fp->extend_inplace(arith_candidate, cot_fp->n);
+			cot_fp->extend_inplace(arith_candidate, cot_fp->param.n);
 			np_pt = 0;
 		}
 		np_rg = np_pt + ell;

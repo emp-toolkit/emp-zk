@@ -23,10 +23,9 @@ class PrimalLPNParameterF2128 { public:
 	}
 };
 
-//TODO update
-const static PrimalLPNParameterF2128 f2k_b13 = PrimalLPNParameterF2128(10485760, 1280, 452000, 13, 470016, 918, 32768, 9);
-const static PrimalLPNParameterF2128 f2k_b12 = PrimalLPNParameterF2128(10268672, 2507, 238000, 12, 268800, 1050, 17384, 8);
-const static PrimalLPNParameterF2128 f2k_b11 = PrimalLPNParameterF2128(10180608, 4971, 124000, 11, 178944, 699, 17384, 8);
+const static PrimalLPNParameterF2128 f2k_b13 = PrimalLPNParameterF2128(10485760, 1280, 425000, 13, 470016, 918, 32768, 9);
+const static PrimalLPNParameterF2128 f2k_b12 = PrimalLPNParameterF2128(10268672, 2507, 225000, 12, 268800, 1050, 17384, 8);
+const static PrimalLPNParameterF2128 f2k_b11 = PrimalLPNParameterF2128(10180608, 4971, 118000, 11, 178944, 699, 17384, 8);
 
 
 template<typename IO>
@@ -54,7 +53,7 @@ public:
 	OTPre<IO> *ot_pre = nullptr;
 
 	block Delta;
-	LpnF2k<LPN_D> *lpn = nullptr;
+	LpnF2k<10> *lpn = nullptr;
 	ThreadPool *pool = nullptr;
 
 	SVoleF2k (int party, int threads, IO **ios, FerretCOT<IO> *ferret, PrimalLPNParameterF2128 param = f2k_b13) {
@@ -97,7 +96,7 @@ public:
 	}
 
 	void extend_initialization() {
-		lpn = new LpnF2k<LPN_D>(param.n, param.k, pool, pool->size());
+		lpn = new LpnF2k<10>(param.n, param.k, pool, pool->size());
 		base_svole = new BaseSVoleF2k<IO>(party, ios, ferret);
 		ot_pre = new OTPre<IO>(ios[0], param.log_bin_sz, param.t);
 		mpfss = new MpfssRegF2k<IO>(3-party, threads, param.n, param.t, param.log_bin_sz, pool, ios);
@@ -116,7 +115,7 @@ public:
 			int tt,
 			MpfssRegF2k<IO> *mpfss,
 			OTPre<IO> *ot_pre,
-			LpnF2k<LPN_D> *lpn) {
+			LpnF2k<10> *lpn) {
 		mpfss->recver_init();
 		mpfss->mpfss(ot_pre, pre_val, pre_mac, mac);
 		mpfss->set_vec_x(val);
@@ -129,7 +128,7 @@ public:
 			int tt,
 			MpfssRegF2k<IO> *mpfss,
 			OTPre<IO> *ot_pre,
-			LpnF2k<LPN_D> *lpn) {
+			LpnF2k<10> *lpn) {
 		mpfss->sender_init(Delta);
 		mpfss->mpfss(ot_pre, pre_mac, mac);
 		lpn->compute_recv(pre_mac+tt, mac);
@@ -166,7 +165,7 @@ public:
 		}
 
 		// pre-processing tools
-		LpnF2k<LPN_D> lpn_pre(param.n_pre, param.k_pre, pool, pool->size());
+		LpnF2k<10> lpn_pre(param.n_pre, param.k_pre, pool, pool->size());
 		BaseSVoleF2k<IO> base_svole_pre(party, ios, ferret);
 		OTPre<IO> ot_pre1(ios[0], param.log_bin_sz_pre, param.t_pre);
 		MpfssRegF2k<IO> mpfss_pre(3-party, threads, param.n_pre, param.t_pre, param.log_bin_sz_pre, pool, ios);

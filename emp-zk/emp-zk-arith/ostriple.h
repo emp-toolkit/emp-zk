@@ -51,7 +51,6 @@ public:
 			delta_gen();
 			vole->setup(delta);
 		}
-cout <<"!!\n";
 		vole->extend_inplace(auth_buffer_andgate, MEM_SZ);
 
 		auth_helper = new FpAuthHelper<IO>(party, io);

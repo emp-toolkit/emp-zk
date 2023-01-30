@@ -18,11 +18,11 @@ class ZkRamExt { public:
 	block Delta;
 	GaloisFieldPacking gfp;
 	F2kOSTriple<IO> *ostriple = nullptr;
-	double online = 0, check1 = 0, check2 = 0;
+	//double online = 0, check1 = 0, check2 = 0;
 	ZkRamExt(int _party, int _index_sz, int _step_sz, std::size_t _val_sz) : party(_party), index_sz(_index_sz), step_sz(_step_sz), val_sz(_val_sz) {
-        if(_val_sz % 64 != 0) {
+        /*if(_val_sz % 64 != 0) {
             throw invalid_argument("input size in bytes should be divided by 8");
-        }
+        }*/
 		capacity = (capacity << index_sz);
         val_uint64_sz = (val_sz + 63) / 64;
 		if(_party == ALICE) mem.resize(capacity);
@@ -87,7 +87,7 @@ class ZkRamExt { public:
 	}
 
 	void read(vector<Integer> &val, const Integer &index) {
-auto t1 = clock_start();
+//auto t1 = clock_start();
 		uint64_t clear_index = index.reveal<uint64_t>(ALICE);
 		vector<uint64_t> val_in_mem;
         val.resize(val_uint64_sz);
@@ -108,11 +108,11 @@ auto t1 = clock_start();
 		pack(m, index, val, Integer(step_sz, step, PUBLIC), Bit(false, PUBLIC));
 		check_MAC.push_back(m);
 		step++;
-online += time_from(t1);
+//online += time_from(t1);
 	}
 
 	void write(const vector<Integer> & value, const Integer & index) {
-auto t1 = clock_start();
+//auto t1 = clock_start();
 		uint64_t clear_index = index.reveal<uint64_t>(ALICE);
         vector<uint64_t> clear_value(val_uint64_sz);
         for(std::size_t i = 0; i < val_uint64_sz; ++i) {
@@ -128,7 +128,7 @@ auto t1 = clock_start();
 		pack(m, index, value, Integer(step_sz, step, PUBLIC), Bit(true, PUBLIC));
 		check_MAC.push_back(m);
 		step++;
-online += time_from(t1);
+//online += time_from(t1);
 	}
 
 	void refresh() {
@@ -145,7 +145,7 @@ online += time_from(t1);
 	}
 
 	void check() {
-auto t1 = clock_start();
+//auto t1 = clock_start();
 		vector<vector<__uint128_t>> sorted_list;
 		if(party == ALICE) {
 			sorted_list = vector<vector<__uint128_t>>(list.begin(), list.end());
@@ -223,7 +223,7 @@ auto t1 = clock_start();
 		for(size_t i = 0; i < step; ++i) {
 			pack(sorted_MAC[i], sort_index[i], sort_value[i], sort_step[i], sort_op[i]);
 		}
-        check1 += time_from(t1);
+        //check1 += time_from(t1);
 
         // compress
         block seed = io->get_hash_block();
@@ -306,7 +306,7 @@ auto t1 = clock_start();
 	}
 
 	void check_set_equality(vector<block> &sorted_X, vector<block>& sorted_MAC, vector<block>& check_X, vector<block>& check_MAC) {
-auto t1 = clock_start();
+//auto t1 = clock_start();
 		block r, val[2], mac[2];
 		r = io->get_hash_block();
 		inn_prdt_bch4(val[0], mac[0], sorted_X, sorted_MAC, r);
@@ -324,7 +324,7 @@ auto t1 = clock_start();
 				error("check set equality failed!\n");
 			}
 		}
-check2 += time_from(t1);
+//check2 += time_from(t1);
 	}
 };
 #endif// ZK_RAM_EXT_H__

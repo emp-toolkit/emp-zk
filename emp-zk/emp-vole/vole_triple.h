@@ -250,7 +250,6 @@ public:
 	uint64_t extend_inplace(__uint128_t *data_yz, int byte_space) {
 		if(byte_space < param.n) error("space not enough");
 		uint64_t tp_output_n = byte_space - M;
-		cout << byte_space <<" "<< param.n <<" "<< M<<"\n";
 		if(tp_output_n % ot_limit != 0) error("call byte_memory_need_inplace \
 				to get the correct length of memory space");
 		int round = tp_output_n / ot_limit;

@@ -6,7 +6,7 @@ using namespace std;
 
 int port, party;
 const int threads = 1;
-int index_sz = 12, step_sz = 18, val_sz = 640;
+int index_sz = 5, step_sz = 18, val_sz = 640;
 
 void test(BoolIO<NetIO> *ios[threads], int party) {
 	setup_zk_bool<BoolIO<NetIO>>(ios, threads, party);

@@ -26,7 +26,7 @@ void test(BoolIO<NetIO> *ios[threads], int party) {
 		ram->read(res, Integer(index_sz, i, PUBLIC));
 		ram->refresh();
         for(int j = 0; j < block_sz; ++j) {
-		    Bit eq = res[j].equal(Integer(val_sz, i*2+j, ALICE));
+		    Bit eq = res[j].equal(Integer(64, i*2+j, ALICE));
             if(eq.reveal(PUBLIC) != true) {
 			    cout <<i<<"something is wrong!!\n";
             }

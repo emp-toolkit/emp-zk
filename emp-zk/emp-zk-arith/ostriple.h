@@ -16,8 +16,8 @@ public:
 	int triple_n;
 	__uint128_t delta;
 
-	int input_cnt = 0, andgate_cnt = 0, check_cnt = 0;
-	__uint128_t* auth_buffer_andgate = nullptr;
+	int check_cnt = 0;
+	__uint128_t* andgate_out_buffer = nullptr;
 	__uint128_t* andgate_left_buffer = nullptr;
 	__uint128_t* andgate_right_buffer = nullptr;
 
@@ -28,10 +28,7 @@ public:
 	FpAuthHelper<IO> *auth_helper = nullptr;
 	ThreadPool *pool = nullptr;
 
-	uint64_t INPUT_BUFFER_SZ = 1000;
-	uint64_t MEM_SZ = -1;
-	uint64_t CHECK_DIV_SZ = 8;
-	uint64_t BUFFER_SZ = -1;
+	uint64_t CHECK_SZ = 1024*1024;
 
 	FpOSTriple (int party, int threads, IO **ios) {
 		this->party = party;
@@ -40,30 +37,29 @@ public:
 		this->ios = ios;
 		pool = new ThreadPool(threads);
 		vole = new VoleTriple<IO>(3-party, threads, ios);
-		MEM_SZ = vole->param.n;
-		BUFFER_SZ = vole->param.buf_sz()/CHECK_DIV_SZ*CHECK_DIV_SZ;
-		auth_buffer_andgate = new __uint128_t[MEM_SZ];
-		andgate_left_buffer = new __uint128_t[BUFFER_SZ/CHECK_DIV_SZ];
-		andgate_right_buffer = new __uint128_t[BUFFER_SZ/CHECK_DIV_SZ];
+
+		andgate_out_buffer = new __uint128_t[CHECK_SZ];
+		andgate_left_buffer = new __uint128_t[CHECK_SZ];
+		andgate_right_buffer = new __uint128_t[CHECK_SZ];
 		if(party == ALICE) {
 			vole->setup();
 		} else {
 			delta_gen();
 			vole->setup(delta);
 		}
-		vole->extend_inplace(auth_buffer_andgate, MEM_SZ);
+		__uint128_t tmp;
+		vole->extend(&tmp, 1);
 
 		auth_helper = new FpAuthHelper<IO>(party, io);
 	}
 
 	~FpOSTriple () {
-		if(andgate_buf_not_empty())
+		if(check_cnt != 0) 
 			andgate_correctness_check_manage();
 		auth_helper->flush();
 		delete auth_helper;
 		delete vole;
-		//delete[] auth_buffer_input;
-		delete[] auth_buffer_andgate;
+		delete[] andgate_out_buffer;
 		delete[] andgate_left_buffer;
 		delete[] andgate_right_buffer;
 	}
@@ -75,10 +71,6 @@ public:
 	 */
 	__uint128_t authenticated_val_input(uint64_t w) {
 		__uint128_t mac;
-		/*if(input_cnt == INPUT_BUFFER_SZ) {
-			refill_send(auth_buffer_input, &input_cnt, INPUT_BUFFER_SZ);
-		}*/
-		//mac = auth_buffer_input[input_cnt++];
 		vole->extend(&mac, 1);
 
 		uint64_t lam = PR - w;
@@ -102,10 +94,6 @@ public:
 
 	__uint128_t authenticated_val_input() {
 		__uint128_t key;
-		/*if(input_cnt == INPUT_BUFFER_SZ) {
-			refill_recv(auth_buffer_input, &input_cnt, INPUT_BUFFER_SZ);
-		}
-		key = auth_buffer_input[input_cnt++];*/
 		vole->extend(&key, 1);
 
 		uint64_t lam;
@@ -136,15 +124,11 @@ public:
 	 */
 	__uint128_t auth_compute_mul_send(__uint128_t Ma, __uint128_t Mb) {
 		__uint128_t mac;
-		if(check_cnt == BUFFER_SZ/CHECK_DIV_SZ) {
+		if(check_cnt == CHECK_SZ) {
 			andgate_correctness_check_manage();
 			check_cnt = 0;
-			if(andgate_cnt == BUFFER_SZ) {
-				vole->extend_inplace(auth_buffer_andgate, MEM_SZ);
-				andgate_cnt = 0;
-			}
 		}
-		mac = auth_buffer_andgate[andgate_cnt];
+		vole->extend(&mac, 1);
 		andgate_left_buffer[check_cnt] = Ma;
 		andgate_right_buffer[check_cnt] = Mb;
 		
@@ -154,7 +138,7 @@ public:
 		io->send_data(&s, sizeof(uint64_t));
 
 		mac = (__uint128_t)makeBlock(d, LOW64(mac));
-		auth_buffer_andgate[andgate_cnt++] = mac;
+		andgate_out_buffer[check_cnt] = mac;
 		check_cnt++;
 
 		return mac;
@@ -162,15 +146,11 @@ public:
 
 	__uint128_t auth_compute_mul_recv(__uint128_t Ka, __uint128_t Kb) {
 		__uint128_t key;
-		if(check_cnt == BUFFER_SZ/CHECK_DIV_SZ) {
+		if(check_cnt == CHECK_SZ) {
 			andgate_correctness_check_manage();
 			check_cnt = 0;
-			if(andgate_cnt == BUFFER_SZ) {
-				vole->extend_inplace(auth_buffer_andgate, MEM_SZ);
-				andgate_cnt = 0;
-			}
 		}
-		key = auth_buffer_andgate[andgate_cnt];
+		vole->extend(&key, 1);
 		andgate_left_buffer[check_cnt] = Ka;
 		andgate_right_buffer[check_cnt] = Kb;
 
@@ -179,7 +159,7 @@ public:
 		d = mult_mod(d, delta);
 		key = add_mod(key, d);
 
-		auth_buffer_andgate[andgate_cnt++] = key;
+		andgate_out_buffer[check_cnt] = key;
 		check_cnt++;
 		return key;
 	}
@@ -264,7 +244,7 @@ public:
 		if(task_n == 0) return;
 		__uint128_t *left = andgate_left_buffer;
 		__uint128_t *right = andgate_right_buffer;
-		__uint128_t *gateout = auth_buffer_andgate + andgate_cnt - check_cnt;
+		__uint128_t *gateout = andgate_out_buffer;
 
 		uint64_t *chi = new uint64_t[task_n];
 		uint64_t seed = mod(LOW64(chi_seed[thr_idx]));
@@ -482,11 +462,6 @@ public:
 		for(int i = 0; i < threads; ++i)
 			res += ios[i]->counter;
 		return res;
-	}
-
-	bool andgate_buf_not_empty() {
-		if(andgate_cnt == 0) return false;
-		else return true;
 	}
 
 	/* ---------------------debug functions----------------------*/

@@ -14,15 +14,13 @@ public:
 	block delta;
 
 	// managing buffers storing COTs
-	int input_cnt = 0, andgate_cnt = 0, check_cnt = 0;
-	block* auth_buffer_input = nullptr;
-	block* auth_buffer_andgate = nullptr;
+	int check_cnt = 0;
+	block* andgate_out_buffer = nullptr;
 	block* andgate_left_buffer = nullptr;
 	block* andgate_right_buffer = nullptr;
 
 	GaloisFieldPacking pack;
-	const static int64_t CHECK_DIV_SZ = 8;
-	int64_t BUFFER_MEM_SZ = -1, BUFFER_SZ = -1;
+	int64_t CHECK_SZ = 1024*1024;
 
 	block choice[2], choice2[2];
 	block minusone, one;
@@ -45,20 +43,17 @@ public:
 			ferret = new FerretCOT<IO>(3-party, threads, ios, true, false);
 			ferret->disassemble_state(ferret_state, 10400000);
 		}
-		BUFFER_MEM_SZ = ferret->param.n;
-		BUFFER_SZ = ferret->param.buf_sz();
 		this->delta = ferret->Delta;
 		io = ios[0];
 		this->ios = ios;
 		pool = new ThreadPool(threads);
 
-		auth_buffer_input = new block[BUFFER_MEM_SZ];
-		auth_buffer_andgate = new block[BUFFER_MEM_SZ];
-		andgate_left_buffer = new block[BUFFER_SZ/CHECK_DIV_SZ];
-		andgate_right_buffer = new block[BUFFER_SZ/CHECK_DIV_SZ];
+		andgate_out_buffer = new block[CHECK_SZ];
+		andgate_left_buffer = new block[CHECK_SZ];
+		andgate_right_buffer = new block[CHECK_SZ];
 
-		ferret->rcot_inplace(auth_buffer_input, BUFFER_MEM_SZ);
-		ferret->rcot_inplace(auth_buffer_andgate, BUFFER_MEM_SZ);
+		block tmp;
+		ferret->rcot(&tmp, 1);
 
 		choice[0] = choice2[0] = zero_block;
 		choice[1] = this->delta;
@@ -71,7 +66,7 @@ public:
 	}	
 
 	~OSTriple () {
-		if(andgate_buf_not_empty()) {
+		if(check_cnt!=0) {
 			andgate_correctness_check_manage();
 		}
 		if(!auth_helper->finalize())
@@ -79,8 +74,7 @@ public:
 		if(ferret_state != nullptr)
 			ferret->assemble_state(ferret_state, 10400000);
 		delete ferret;
-		delete[] auth_buffer_input;
-		delete[] auth_buffer_andgate;
+		delete[] andgate_out_buffer;
 		delete[] andgate_left_buffer;
 		delete[] andgate_right_buffer;
 		delete auth_helper;
@@ -99,22 +93,7 @@ public:
 	 * authenticated bits for inputs of the prover
 	 */
 	void authenticated_bits_input(block *auth, const bool* in, int len) {
-		if((input_cnt+len) > BUFFER_SZ) {
-			int left = BUFFER_SZ - input_cnt;
-			memcpy(auth, auth_buffer_input+input_cnt, left*sizeof(block));
-			int round = (len - left) / BUFFER_SZ;
-			int finalr = (len - left) % BUFFER_SZ;
-			for(int i = 0; i < round; ++i) {
-				ferret->rcot_inplace(auth_buffer_input, BUFFER_MEM_SZ);
-				memcpy(auth+left+i*BUFFER_SZ, auth_buffer_input, BUFFER_SZ*sizeof(block));
-			}
-			ferret->rcot_inplace(auth_buffer_input, BUFFER_MEM_SZ);
-			memcpy(auth+left+round*BUFFER_SZ, auth_buffer_input, finalr*sizeof(block));
-			input_cnt = finalr;
-		} else {
-			memcpy(auth, auth_buffer_input+input_cnt, len*sizeof(block));
-			input_cnt += len;
-		}
+		ferret->rcot(auth, len);
 
 		if(party == ALICE) {
 			for(int i = 0; i < len; ++i) {
@@ -136,15 +115,12 @@ public:
 	 */
 	block auth_compute_and(block a, block b) {
 		block auth;
-		if(check_cnt == BUFFER_SZ/CHECK_DIV_SZ) {
+		if(check_cnt == CHECK_SZ) {
 			andgate_correctness_check_manage();
 			check_cnt = 0;
-			if (andgate_cnt == BUFFER_SZ) {
-				ferret->rcot_inplace(auth_buffer_andgate, BUFFER_MEM_SZ);
-				andgate_cnt = 0;
-			}
 		}
-		auth = auth_buffer_andgate[andgate_cnt];
+
+		ferret->rcot(&auth, 1);
 		andgate_left_buffer[check_cnt] = a;
 		andgate_right_buffer[check_cnt] = b;
 
@@ -158,12 +134,11 @@ public:
 			auth = auth ^ choice[d];
 			set_zero_bit(auth);
 		}
-		auth_buffer_andgate[andgate_cnt] = auth;
-		andgate_cnt++;
+		andgate_out_buffer[check_cnt] = auth;
 		check_cnt++;
 		return auth;
 	}
-
+	
 	/* ---------------------check----------------------*/
 
 	void andgate_correctness_check_manage() {
@@ -234,7 +209,7 @@ public:
 		if(task_n == 0) return;
 		block *left = andgate_left_buffer;
 		block *right = andgate_right_buffer;
-		block *gateout = auth_buffer_andgate + andgate_cnt - check_cnt;
+		block *gateout = andgate_out_buffer;
 
 		if(party == ALICE) {
 			block ch_tmp[2];
@@ -298,11 +273,6 @@ public:
 	void set_value_in_block(block &b, bool v) {
 		b = b & minusone;
 		b = b ^ choice2[v];
-	}
-
-	bool andgate_buf_not_empty() {
-		if(andgate_cnt == 0) return false;
-		else return true;
 	}
 
 	void sync() {

@@ -3,8 +3,6 @@
 
 #include "emp-tool/emp-tool.h"
 
-#define MAC_CHECK_BUFFER_SZ 8192
-
 template<typename IO>
 class TripleAuth { public:
 	int party;

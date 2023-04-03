@@ -47,8 +47,6 @@ void test_compute_and_gate_check(OSTriple<BoolIO<NetIO>> *os, BoolIO<NetIO> *io)
 	os->check_compute_and(a, a+len, a+2*len, len, io);
 	std::cout << "check for computing AND gate\n";
 
-	std::cout << "number of triples computed in buffer: " << os->andgate_cnt << "\n";
-
 	delete[] a;
 	delete[] ain;
 	io->flush();

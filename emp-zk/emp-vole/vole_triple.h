@@ -80,6 +80,7 @@ public:
 		if(mpfss != nullptr) delete mpfss;
 		if(vole_triples != nullptr) delete[] vole_triples;
 		if(vole_x != nullptr) delete[] vole_x;
+		if(cot != nullptr) delete cot;
 	}
 
 	void setup(__uint128_t delta) {

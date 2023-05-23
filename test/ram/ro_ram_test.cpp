@@ -23,7 +23,8 @@ void bench(BoolIO<NetIO> *ios[threads], int party) {
 	Integer ind(index_sz, 0, PUBLIC);
 	start=clock_start();
 	for(int j = 0; j < test_n/(1<<index_sz); ++j)
-			Integer res = ram->read(ind);
+		for(int i = 0; i < (1<<index_sz); ++i)
+			Integer res = ram->read(Integer(index_sz, i, ALICE));
 	ram->check();
 	std::cout <<" total (us):"<<time_from(start)/test_n<<endl;
 	std::cout << "access (us): " << ram->check1/test_n << std::endl;

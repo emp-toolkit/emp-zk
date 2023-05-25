@@ -27,20 +27,24 @@ void bench(BoolIO<NetIO> *ios[threads], int party) {
 	uint64_t com11 = comm2(ios);
 	auto start = clock_start();
 	ZKRAM<BoolIO<NetIO>> *ram = new ZKRAM<BoolIO<NetIO>>(party, index_sz, step_sz, val_sz);
-	int test_n = (1<<index_sz)*2;
-	Integer ind(index_sz, 0, PUBLIC);
-	Integer value(val_sz, 0, PUBLIC);
-	for(int i = 0; i < test_n; ++i) {
-		ram->read(ind);//Bit(false, PUBLIC), ind, value);
+	for (int i = 0; i < (1 << index_sz); ++i) {
+		ram->write(Integer(index_sz, i, PUBLIC), Integer(val_sz, i, PUBLIC));
 		ram->refresh();
 	}
+	int test_n = (1<<index_sz);
+	Integer ind(index_sz, 0, PUBLIC);
+	Integer value(val_sz, 0, PUBLIC);
+	for (int j = 0; j < test_n / (1<<index_sz); ++j) // same as ro_ram_test
+	  for(int i = 0; i < (1<<index_sz); ++i) {
+	    ram->read(Integer(index_sz, i, PUBLIC));
+		ram->refresh();
+	  }
 	ram->check();
-	std::cout << "total (us):"<<time_from(start)/test_n<<endl;
+	std::cout << "total (us): " << time_from(start)/test_n << std::endl;
 	std::cout << "access (us): " << ram->online/test_n << std::endl;
 	std::cout << "check condition (us): " << ram->check1/test_n << std::endl;
 	std::cout << "check set equality (us):" << ram->check2/test_n << std::endl;
 	delete ram;
-
 	finalize_zk_bool<BoolIO<NetIO>>();
 
 	uint64_t com2 = comm(ios) - com1;

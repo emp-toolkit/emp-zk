@@ -142,14 +142,16 @@ auto t1 = clock_start();
 			high = high>>1;
 			sort_step.push_back(Integer(step_sz, high & step_mask, ALICE));
 			val = val>>(step_sz+1);
-			sort_index.push_back(Integer(index_sz, val & idx_mask, ALICE));
+			sort_index.push_back(Integer(index_sz+1, val & idx_mask, ALICE));
 		}
 
 		Bit condition = Bit(true, PUBLIC);
 		for(size_t i = 1; i < step; ++i) {
-			auto neq = sort_index[i-1] != sort_index[i];
-			condition = condition & (sort_step[i-1] < sort_step[i] | neq); // neq why?
-			condition = condition & (sort_value[i-1] == sort_value[i] | neq | sort_op[i]);
+			auto eq = sort_index[i-1] == sort_index[i];
+			condition = condition & ( (sort_index[i-1] < sort_index[i]) | (eq & (sort_step[i-1] < sort_step[i])));
+			condition = condition & ( (sort_value[i-1] == sort_value[i]) | sort_op[i]);
+			condition = condition & (eq | sort_op[i]);
+			
 		}
 		if(!condition.reveal()) cout<<"wrong!!\n";
 

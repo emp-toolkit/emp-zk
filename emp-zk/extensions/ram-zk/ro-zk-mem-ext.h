@@ -6,6 +6,22 @@ inline void get_raw(vector<uint64_t>& raw, const vector<Integer>& input, int par
     for (int i = 0 ; i <  input.size(); i ++) tmp.push_back(input[i].reveal<uint64_t>(party));
     raw = tmp;
 }
+inline void multiply_const(block &val, block &mac,
+                           const block& x, const block& m, const block& cst, int party) {
+                            
+    // cout << "=====before ==== \n";
+    // cout << (cst) << endl; 
+    //  cout << (x) << endl;     
+    // cout << (val) << endl;                       
+    if(party == ALICE) {
+        gfmul(x, cst, &val);//   cout << mac << endl;
+    }
+    gfmul(m, cst, &mac);
+    // cout << "====after ===== \n";
+    // cout << (cst) << endl; 
+    // cout << (x) << endl;     
+    // cout << (val) << endl; 
+ }
 
 template<typename IO>
 class ROZkRamExt {
@@ -13,9 +29,11 @@ public:
     double	check1 = 0, check2 = 0, check3 = 0;
     int party;
     int index_sz;
+    int val_sz;
     int step_sz;
     uint64_t step = 0;
     vector<vector<uint64_t>> clear_mem;
+    GaloisFieldPacking gp;
     vector<pair<uint64_t, vector<uint64_t>>> clear_access_record;
     vector< pair<Integer, vector<Integer>>> access_record;
     vector<block> hash_block;
@@ -24,12 +42,13 @@ public:
     block Delta;
     F2kOSTriple<IO> *ostriple = nullptr;
 
-    ROZkRamExt(int _party, int _index_sz, int _step_sz): party(_party), index_sz(_index_sz), step_sz(_step_sz) {
+    ROZkRamExt(int _party, int _index_sz, int _val_sz, int _step_sz): party(_party), val_sz(_val_sz), index_sz(_index_sz), step_sz(_step_sz) {
         ZKBoolCircExec<IO> *exec = (ZKBoolCircExec<IO>*)(CircuitExecution::circ_exec);
         io = exec->ostriple->io;
         Delta = exec->ostriple->delta;
         ostriple = new F2kOSTriple<IO>(party, exec->ostriple->threads, exec->ostriple->ios, exec->ostriple->ferret, exec->ostriple->pool);
         for(int i = 0; i < step_sz; i ++){
+            block one_block = makeBlock(0, 1);
             hash_block.push_back(one_block);
         }
         hash_pair.first = zero_block;
@@ -53,11 +72,11 @@ public:
     void get_commit(const vector<uint64_t>& raw, vector<Integer>& input){
         assert ((raw.size() == step_sz));
         vector<Integer> tmp(step_sz);
-        for (int i = 0 ; i <  raw.size(); i ++) tmp[i] = (Integer(32, raw[i], ALICE));
+        for (int i = 0 ; i <  raw.size(); i ++) tmp[i] = (Integer(val_sz, raw[i], ALICE));
         input = tmp;
     }
 
-    vector<Integer> get(const Integer & index) {
+    vector<Integer> read(const Integer & index) {
         uint64_t clear_index = index.reveal<uint64_t>(ALICE);
         vector<uint64_t> tmp(step_sz);
         if(party == ALICE) {
@@ -84,7 +103,7 @@ public:
         vector<vector<Integer>> sorted_access;
         for (int i = 0; i < access_record.size(); i ++){
             auto item  = sorted_clear_access[i];
-            sorted_index.push_back(Integer(index_sz, item.first, ALICE));
+            sorted_index.push_back(Integer(index_sz+1, item.first, ALICE));
             vector<Integer> tmp; 
             get_commit(item.second, tmp); 
             sorted_access.push_back(tmp);
@@ -130,6 +149,7 @@ public:
         access_record.resize(clear_mem.size());
         clear_access_record.resize(clear_mem.size());
         step = 0;
+        check_zero_MAC(zero_block, 1);
         sync_zk_bool<IO>();
 
     }
@@ -166,6 +186,29 @@ public:
         get_mac(hash_mac_get, hash_value, 128);
         check_zero_MAC(hash_mac_get ^ hash_mac);
         return hash_value;
+    }
+
+    void check_zero_MAC(block MAC, int end = 0) {
+        static Hash hash;
+        hash.put(&MAC, sizeof(block));
+        if (end == 1) {
+            BoolIO<NetIO>* io = ostriple->io;
+            int party = ostriple->party;
+            char dig[Hash::DIGEST_SIZE];
+            hash.digest(dig);
+
+            if(party == ALICE) {
+                io->send_data(dig, sizeof(dig));
+            } else {
+                char receive[Hash::DIGEST_SIZE];
+                io->recv_data(receive, sizeof(receive));
+                if (memcmp(receive, dig, sizeof(dig))!=0) {
+                    error("check_zero failed!\n");
+                }else {
+                }
+            }
+            return;
+        }
     }
 
 

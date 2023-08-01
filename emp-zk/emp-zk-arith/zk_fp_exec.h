@@ -7,32 +7,34 @@
 
 class ZKFpExec {
 public:
-	int64_t gid = 0;
-	__uint128_t pub_mac;
-	int B, c;
+  int64_t gid = 0;
+  __uint128_t pub_mac;
+  int B, c;
 
-	static ZKFpExec *zk_exec;
+  static ZKFpExec *zk_exec;
 
-	ZKFpExec() {}
-	virtual ~ZKFpExec() {}
+  ZKFpExec() {}
+  virtual ~ZKFpExec() {}
 
-	virtual void feed(__uint128_t& label, const uint64_t& value) = 0;
+  virtual void feed(__uint128_t &label, const uint64_t &value) = 0;
 
-	virtual void feed(__uint128_t *label, const uint64_t *value, int len) = 0;
+  virtual void feed(__uint128_t *label, const uint64_t *value, int len) = 0;
 
-	virtual void reveal(__uint128_t *label, uint64_t *value, int len) = 0;
+  virtual void reveal(__uint128_t *label, uint64_t *value, int len) = 0;
 
-	virtual void reveal_check(__uint128_t *label, const uint64_t *value, int len) = 0;
+  virtual void reveal_check(__uint128_t *label, const uint64_t *value,
+                            int len) = 0;
 
-	virtual void reveal_check_zero(__uint128_t *label, int len) = 0;
+  virtual void reveal_check_zero(__uint128_t *label, int len) = 0;
 
-	virtual __uint128_t add_gate(const __uint128_t& a, const __uint128_t& b) = 0;
+  virtual __uint128_t add_gate(const __uint128_t &a, const __uint128_t &b) = 0;
 
-	virtual __uint128_t mul_gate(const __uint128_t& a, const __uint128_t& b) = 0;
+  virtual __uint128_t mul_gate(const __uint128_t &a, const __uint128_t &b) = 0;
 
-	virtual __uint128_t mul_const_gate(const __uint128_t& a, const uint64_t& b) = 0;
+  virtual __uint128_t mul_const_gate(const __uint128_t &a,
+                                     const uint64_t &b) = 0;
 
-	virtual __uint128_t pub_label(const uint64_t&a) = 0;
+  virtual __uint128_t pub_label(const uint64_t &a) = 0;
 };
 
 // ZKFpExec * ZKFpExec::zk_exec = nullptr;

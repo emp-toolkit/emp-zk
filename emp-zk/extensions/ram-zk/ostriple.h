@@ -89,8 +89,8 @@ public:
     }
   }
 
-  void compute_mul(block &valc, block &macc, block &vala, block &maca,
-                   block &valb, block &macb) {
+  void compute_mul(block &valc, block &macc, block vala, block maca,
+                   block valb, block macb) {
     if (check_cnt == BUFFER_SZ) {
       andgate_correctness_check_manage();
       check_cnt = 0;

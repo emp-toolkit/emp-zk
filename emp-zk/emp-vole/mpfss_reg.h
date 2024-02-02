@@ -67,7 +67,7 @@ public:
 
   void set_vec_x(__uint128_t *out, __uint128_t *in) {
     for (int i = 0; i < tree_n; ++i) {
-      int pt = i * leave_n + (item_pos_recver[i] % leave_n);
+      int64_t pt = (int64_t)i * leave_n + ((int64_t)item_pos_recver[i] % leave_n);
       out[pt] = out[pt] ^ (__uint128_t)makeBlock(in[i], 0x0LL);
     }
   }

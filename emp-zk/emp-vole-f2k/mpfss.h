@@ -67,7 +67,7 @@ public:
     if (triple_x == nullptr or party == ALICE)
       error("mpfss: set value vector error");
     for (int i = 0; i < tree_n; ++i) {
-      int pt = i * leave_n + item_pos_recver[i];
+      int64_t pt = (int64_t)i * leave_n + (int64_t)item_pos_recver[i];
       out[pt] = out[pt] ^ triple_x[i];
     }
   }

@@ -8,7 +8,8 @@ int port, party;
 const int threads = 1;
 
 void test_circuit_zk(BoolIO<NetIO> *ios[threads], int party) {
-  int test_n = 1024 * 1024 * 8;
+  // int test_n = 1024 * 1024 * 8;
+  int test_n = 10;
 
   std::cout << "performance test" << std::endl;
   auto start = clock_start();
@@ -16,6 +17,7 @@ void test_circuit_zk(BoolIO<NetIO> *ios[threads], int party) {
   auto timesetup = time_from(start);
   cout << "\tsetup: " << timesetup * 1000 << " " << party << " " << endl;
 
+  ios[0]->counter = 0;
   __uint128_t ar = 2, br = 3, cr = 4;
   IntFp a((uint64_t)ar, ALICE);
   IntFp b((uint64_t)br, ALICE);
@@ -36,11 +38,12 @@ void test_circuit_zk(BoolIO<NetIO> *ios[threads], int party) {
   c = a * b;
   c = c + a;
 
-  c.reveal(cr);
+  // cout << "c = " << c.reveal(cr) << "\n";
   auto timeuse = time_from(start);
   cout << "\taverage time per gate: " << (timeuse + timesetup) / test_n * 1000
        << " ns " << party << endl;
 
+  ios[0]->counter = 0;
   std::cout << "correctness check test" << std::endl;
   srand(time(NULL));
   int sz = 10000;
@@ -68,15 +71,23 @@ void test_circuit_zk(BoolIO<NetIO> *ios[threads], int party) {
     fi[i] = ei[i] + fi[i];
   }
   std::cout << "\treveal" << std::endl;
+  cout << "Comm: " << ios[0]->counter / sz << " bytes \n";
+
   uint64_t *dd = new uint64_t[sz];
   batch_reveal(di, dd, sz);
   if (memcmp(dd, d, sz * sizeof(uint64_t)) != 0)
     error("reveal fails");
   std::cout << "\treveal check" << std::endl;
+
+  cout << "Comm: " << ios[0]->counter / sz << " bytes \n";
   batch_reveal_check(ei, e, sz);
+
   std::cout << "\treveal check zero" << std::endl;
+  cout << "Comm: " << ios[0]->counter / sz << " bytes \n";
+
   batch_reveal_check_zero(fi, sz);
 
+  cout << "Comm: " << ios[0]->counter / sz << " bytes \n";
   std::cout << std::endl;
 
   finalize_zk_arith<BoolIO<NetIO>>();

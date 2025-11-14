@@ -224,15 +224,15 @@ public:
     uint64_t sum;
     next_edabits(edab_f2, edab_fp);
 
-    sum_fp = intfp_add(arith_candidate[edab_fp], in);
+    sum_fp = intfp_add(arith_candidate[edab_fp], in);   // add r_p
     if (party == ALICE)
       auth_helper->open_check_send(&sum, &sum_fp, 1);
     else
-      auth_helper->open_check_recv(&sum, &sum_fp, 1);
+      auth_helper->open_check_recv(&sum, &sum_fp, 1);   // both parties get z
 
-    Integer sum_boo = Integer(62, sum, PUBLIC);
-    sum_boo = sum_boo - bool_candidate[edab_f2];
-    return sum_boo.select(sum_boo.bits[61], sum_boo + int_boo_pr);
+    Integer sum_boo = Integer(62, sum, PUBLIC);         // decompose public z
+    sum_boo = sum_boo - bool_candidate[edab_f2];        // both parties add z_2i and r_2i
+    return sum_boo.select(sum_boo.bits[61], sum_boo + int_boo_pr);      // ?? why (this will convert neg to pos)
   }
 
   void arith2bool(Integer *out, const __uint128_t *in, size_t len) {

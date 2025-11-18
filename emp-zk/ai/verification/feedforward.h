@@ -140,7 +140,12 @@ class VerifiableFeedForwardNeuralNetwork {
                 profiling(layers[i]);
             }
         } else {
-            
+            if (!verification_result && do_backsubstitution) {
+                // perform backsubstitution
+                cout << "couldn't verify... performing backsubstitution....\n";
+                this->layers[this->num_layers - 1]->backsubstitute(this->layers[0]);
+                verification_result = ((Output<T>*) layers[this->num_layers-1])->verified;
+            }
         }
 
         return verification_result;

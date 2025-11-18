@@ -41,30 +41,29 @@ void test_verification(BoolIO<NetIO> *ios[threads], int party) {
   };
   int num_layers = (sizeof(layer_specs)/sizeof(int))/4;
 
+  int num_examples_verified = 0;
 
   // float 
-  std::ofstream file(std::string(LOGS_PATH) + (do_backsubstitution ? "_float_bs.txt" : "_float.txt"));
-  std::streambuf* original_buf = std::cout.rdbuf(file.rdbuf());
+  // std::ofstream file(std::string(LOGS_PATH) + (do_backsubstitution ? "_float_bs.txt" : "_float.txt"));
+  // std::streambuf* original_buf = std::cout.rdbuf(file.rdbuf());
 
-  VerifiableFeedForwardNeuralNetwork<float>* model_float = create_model<float>(num_layers, layer_specs);
-  model_float->load_input(INPUTS_PATH);
-  model_float->load_weights_and_biases(PARAMETERS_PATH);
-  model_float->set_epsilon(epsilon);
+  // VerifiableFeedForwardNeuralNetwork<float>* model_float = create_model<float>(num_layers, layer_specs);
+  // model_float->load_input(INPUTS_PATH);
+  // model_float->load_weights_and_biases(PARAMETERS_PATH);
+  // model_float->set_epsilon(epsilon);
 
-  int num_examples_verified = 0;
-  for(int i = num_examples-1; i < num_examples; i++){
-    // bool verified = model_float->forward(true);
-    bool verified = verify_example<float>(model_float, INPUTS_PATH, 1 + i*785, do_backsubstitution);
-    num_examples_verified += (int) verified;
-  }
-  cout << "Verified " << num_examples_verified << "/" << num_examples << " examples\n";
+  // for(int i = 0; i < num_examples; i++){
+  //   bool verified = verify_example<float>(model_float, INPUTS_PATH, i*785, do_backsubstitution);
+  //   num_examples_verified += (int) verified;
+  // }
+  // cout << "Verified " << num_examples_verified << "/" << num_examples << " examples\n";
 
-  model_float->describe(false);
+  // model_float->describe(false);
 
-  std::cout.rdbuf(original_buf);  
-  cout << "Float completed...\n";
+  // std::cout.rdbuf(original_buf);  
+  // cout << "Float completed...\n";
 
-  /*
+  
   // field
   std::ofstream field_file(std::string(LOGS_PATH) + (do_backsubstitution ? "_bs.txt" : ".txt"));
   std::streambuf* original_buf2 = std::cout.rdbuf(field_file.rdbuf());
@@ -74,18 +73,18 @@ void test_verification(BoolIO<NetIO> *ios[threads], int party) {
   model_field->load_weights_and_biases(PARAMETERS_PATH);
   model_field->set_epsilon(epsilon);
 
+
   num_examples_verified = 0;
   for(int i = 0; i < num_examples; i++){
-    // bool verified = model_field->forward(true);
-    bool verified = verify_example<IntFp>(model_field, INPUTS_PATH, 1 + i*785, false);
+    bool verified = verify_example<IntFp>(model_field, INPUTS_PATH, i*785, do_backsubstitution);
     num_examples_verified += (int) verified;
   }
   cout << "Verified " << num_examples_verified << "/" << num_examples << " examples\n";
 
-  model_field->describe(false);
+  // model_field->describe(false);
 
   std::cout.rdbuf(original_buf2);
-  */
+  
 }
 
 int main(int argc, char **argv) {
@@ -108,7 +107,7 @@ int main(int argc, char **argv) {
     do_backsubstitution = (bool) atoi(argv[5]);
   }
 
-
+  // fflush(stdout);
   test_verification(ios, party);
 
   for (int i = 0; i < threads; ++i) {

@@ -8,6 +8,7 @@
 #include <emp-zk/ai/verification/output.h>
 #include <emp-zk/ai/verification/feedforward.h>
 
+#include <emp-zk/ai/verification/bounds_utils.h>
 #include <emp-zk/ai/verification/verification_utils.h>
 
 

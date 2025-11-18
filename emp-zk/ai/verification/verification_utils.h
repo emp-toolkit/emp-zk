@@ -22,7 +22,6 @@ enum SPEC_LABELS{
 
 template <typename T>
 VerifiableFeedForwardNeuralNetwork<T>* create_model(int num_layers, int* layer_specs){
-    
     Layer<T>** layers = new Layer<T>*[num_layers];
     for(int i = 0; i < num_layers; i++){
         switch (layer_specs[i*(SPEC_LABELS::MAX_COEFFS_INDEX+1) + LAYER_TYPE_INDEX]){
@@ -70,11 +69,22 @@ VerifiableFeedForwardNeuralNetwork<T>* create_model(int num_layers, int* layer_s
 
 template <typename T>
 bool verify_example(VerifiableFeedForwardNeuralNetwork<T>* model, const char* input_file, int input_offset, bool do_backsubstitution){
+    model->reset();
     model->load_input(input_file, input_offset);
-    // model->reset();
     bool verified = model->forward(do_backsubstitution, true);
     return verified;
 }   
 
+
+void preprocess_bounds(int n, float* bounds, float mean, float sdev){
+    for(int i = 0; i < n; i++){
+        bounds[i] = (bounds[i] - mean)/sdev;
+    }
+}
+
+
+void preprocess_bounds(int dims, int n_per_dim){
+    ;
+}
 
 #endif

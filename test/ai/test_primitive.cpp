@@ -248,6 +248,62 @@ void test_Integer_normalization(BoolIO<NetIO> *ios[threads], int party){
 }
 
 
+void test_constructor(BoolIO<NetIO> *ios[threads], int party){
+    auto start = clock_start();    
+    setup_plain_prot(false, "");
+    setup_zk_arith<BoolIO<NetIO>>(ios, threads, party);
+
+    int sz = 1000;
+    Integer* a_Integer = new Integer[sz];
+    IntFp* a_IntFp = new IntFp[sz];
+
+    for(int i = 0; i < sz; i++){
+        a_IntFp[i] = new IntFp(i, ALICE);
+    }
+
+    for(int i = 0; i < sz; i++){
+        a_Integer[i] = new Integer(FXPBW, a_IntFp[i].reveal(), ALICE);
+    }
+
+    for(int i = 0; i < sz; i++){
+        a_IntFp[i] = new IntFp(a_Integer[i].reveal<uint64_t>(), ALICE);
+    }
+
+
+    finalize_zk_arith<BoolIO<NetIO>>();
+
+    double tt = time_from(start);
+    cout << "Time for Constructors = " << (tt/sz)/(1e6) << " seconds\n";
+    cout << "Comm for Constructors = " << ios[0]->counter << "\n";
+}
+
+void test_eda(BoolIO<NetIO> *ios[threads], int party){
+    auto start = clock_start();    
+    setup_plain_prot(false, "");
+    setup_zk_bool<BoolIO<NetIO>>(ios, threads, party);
+    setup_zk_arith<BoolIO<NetIO>>(ios, threads, party, true);
+
+    ios[0]->counter = 0;
+    int sz = 1000;
+    Integer* a_Integer = new Integer[sz];
+    IntFp* a_IntFp = new IntFp[sz];
+
+    for(int i = 0; i < sz; i++){
+        a_IntFp[i] = new IntFp(i, ALICE);
+    }
+
+    arith2bool<BoolIO<NetIO>>(a_Integer, a_IntFp, sz);
+    bool2arith<BoolIO<NetIO>>(a_IntFp, a_Integer, sz);
+    
+    finalize_zk_bool<BoolIO<NetIO>>();
+    finalize_zk_arith<BoolIO<NetIO>>();
+
+    double tt = time_from(start);
+    cout << "Time for Eda = " << (tt/sz)/(1e6) << " seconds\n";
+    cout << "Comm for Eda = " << ios[0]->counter << "\n";
+}
+
+
 int main(int argc, char** argv){
     parse_party_and_port(argv, &party, &port);
     BoolIO<NetIO> *ios[threads];
@@ -264,5 +320,9 @@ int main(int argc, char** argv){
     // test_Integer(ios, party);
     // test_double_mult(ios, party);
     // test_IntFp_signed(ios, party);
-    test_Integer_normalization(ios, party);
+    // test_Integer_normalization(ios, party);
+
+    test_constructor(ios, party);
+    test_eda(ios, party);
+
 }

@@ -1,0 +1,12 @@
+Layer 1 (INPUT) : 0.060588 seconds
+Layer 2 (AFFINE) : 0.657421 seconds
+Layer 3 (RELU) : 0.002659 seconds
+Layer 4 (AFFINE) : 16.1167 seconds
+Layer 5 (RELU) : 0.001091 seconds
+Layer 6 (AFFINE) : 3.36658 seconds
+Layer 7 (RELU) : 0.000121 seconds
+PREDICTED CLASS: 7
+VERIFIED: YES
+
+Layer 8 (OUTPUT) : 7.5e-05 seconds
+Verified 1/1 examples

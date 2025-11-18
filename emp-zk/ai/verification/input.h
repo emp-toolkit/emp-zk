@@ -45,7 +45,7 @@ class Input : public Layer<T> {
         this->epsilon = constant<T>(epsilon);
     }
 
-    void forward(Layer<T>* prev_layer, bool do_inference = true){
+    void forward(Layer<T>* input_layer, Layer<T>* prev_layer, bool do_inference = true){
         assert(prev_layer == NULL && "Input layer should not have any input from a previous layer!\n");
 
         compute_lower_bounds();
@@ -57,6 +57,8 @@ class Input : public Layer<T> {
         for(int i = 0; i < this->input_size; i++){
             this->output[i] = T(this->input[i]);
         }
+
+        this->prev_layer = NULL;
     }
 
 
@@ -121,7 +123,7 @@ class Input : public Layer<T> {
         this->upper_constraints = new T[this->output_size*this->max_coeffs];
     }
 
-    void describe(bool print_parameters = false){
+    void describe(bool print_parameters = false, bool print_expressions = false){
         cout << "Type: " << get_layer_type(this->type) << "\n";
         cout << "Inputs:\n";
         for(int i = 0; i < this->input_size; i++){

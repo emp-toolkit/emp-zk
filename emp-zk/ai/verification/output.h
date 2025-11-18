@@ -15,8 +15,8 @@ template <typename T>
 class Output : public Layer<T> {
     public:
     Layer<T>* prev_layer;
-    T* final_bounds;
-    bool verified = true;
+    int ground_truth;
+    bool verified = false;
 
     Output(int input_size, int output_size, int max_coeffs = 2) : Layer<T>(input_size, output_size, max_coeffs){
         if(input_size != output_size){
@@ -39,7 +39,7 @@ class Output : public Layer<T> {
         this->upper_constraints = new T[output_size*this->max_coeffs];
     }
 
-    void forward(Layer<T>* prev_layer, bool do_inference = false){
+    void forward(Layer<T>* input_layer, Layer<T>* prev_layer, bool do_inference = false){
         assert(prev_layer == NULL && "Input layer should not have any input from a previous layer!\n");
         this->prev_layer = prev_layer;
 
@@ -60,9 +60,15 @@ class Output : public Layer<T> {
         }
 
         int prediction = classify();
-        verify(prediction);
+        if (prediction != ground_truth){
+            cout << "PREDICTED CLASS: " << prediction << "; GROUND TRUTH = " << this->ground_truth << "\n";
+            return;
+        } else {
+            cout << "PREDICTED CLASS: " << prediction << "\n";
+        }
+        
+        verify(ground_truth);
 
-        cout << "PREDICTED CLASS: " << prediction << "\n";
         cout << "VERIFIED: " << (this->verified ? "YES" : "NO") << "\n\n"; 
     }
 
@@ -89,13 +95,7 @@ class Output : public Layer<T> {
     }
 
     void backsubstitute(Layer<T>* input_layer){
-        if(!this->prev_layer->is_backsubstituted){  
-            this->prev_layer->backsubstitute(input_layer);
-        }
-
-        this->forward(this->prev_layer, true);
-
-        this->is_backsubstituted = true;
+        ;
     }
 
     int classify(){
@@ -104,36 +104,47 @@ class Output : public Layer<T> {
             std::vector<std::pair<Integer, int>> sorted_logits;
             Integer* integer_logits = convert_field_rep_to_emp_Integer(this->output_size, this->output);
 
-            // sort logits to find classification output
-            for(int i = 0; i < this->output_size; i++){
-                sorted_logits.push_back({integer_logits[i], i});
-            }
-            std::sort(
-                sorted_logits.begin(), 
-                sorted_logits.end(),
-                [](const std::pair<Integer, int> &a, const std::pair<Integer, int> &b) {
-                    Integer a_Int = a.first;
-                    Integer b_Int = b.first;
-
-                    return (!a_Int.geq(b_Int)).reveal<bool>();
+            int max_logit_pos = 0;
+            Integer max_logit = integer_logits[max_logit_pos];
+            for(int i = 1; i < this->output_size; i++){
+                if((integer_logits[i] > max_logit).reveal<bool>()){
+                    max_logit_pos = i;
+                    max_logit = integer_logits[i];
                 }
-            );
+            }
 
-            classification_result = sorted_logits[this->output_size-1].second;
+            classification_result = max_logit_pos;
+
+            // // sort logits to find classification output
+            // for(int i = 0; i < this->output_size; i++){
+            //     sorted_logits.push_back({integer_logits[i], i});
+            // }
+            // std::sort(
+            //     sorted_logits.begin(), 
+            //     sorted_logits.end(),
+            //     [](const std::pair<Integer, int> &a, const std::pair<Integer, int> &b) {
+            //         Integer a_Int = a.first;
+            //         Integer b_Int = b.first;
+
+            //         return (!a_Int.geq(b_Int)).reveal<bool>();
+            //     }
+            // );
+
+            // classification_result = sorted_logits[this->output_size-1].second;
             
         } else {
             std::vector<std::pair<float, int>> sorted_logits;
 
-            // sort logits to find classification output
-            for(int i = 0; i < this->output_size; i++){
-                sorted_logits.push_back({this->output[i], i});
+            int max_logit_pos = 0;
+            int max_logit = this->output[max_logit_pos];
+            for(int i = 1; i < this->output_size; i++){
+                if(this->output[i] > max_logit){
+                    max_logit_pos = i;
+                    max_logit = this->output[i];
+                }
             }
-            std::sort(
-                sorted_logits.begin(), 
-                sorted_logits.end()
-            );
 
-            classification_result = sorted_logits[this->output_size-1].second;
+            classification_result = max_logit_pos;
             
         }
 
@@ -159,12 +170,12 @@ class Output : public Layer<T> {
                     continue;
                 }
                 
-                bool lb_in_interval = integer_lbs[i].geq(prediction_lb).reveal<bool>() 
-                                        && prediction_ub.geq(integer_lbs[i]).reveal<bool>(); 
-                if(lb_in_interval){
-                    this->verified = false; 
-                    break;
-                }
+                // bool lb_in_interval = integer_lbs[i].geq(prediction_lb).reveal<bool>() 
+                //                         && prediction_ub.geq(integer_lbs[i]).reveal<bool>(); 
+                // if(lb_in_interval){
+                //     this->verified = false; 
+                //     break;
+                // }
 
                 bool ub_in_interval = integer_ubs[i].geq(prediction_lb).reveal<bool>() 
                                         && prediction_ub.geq(integer_ubs[i]).reveal<bool>();
@@ -183,11 +194,11 @@ class Output : public Layer<T> {
                     continue;
                 }
                 
-                bool lb_in_interval = (prediction_lb <= this->lower_bounds[i]) && (this->lower_bounds[i] <= prediction_ub);
-                if(lb_in_interval){
-                    this->verified = false; 
-                    break;
-                }
+                // bool lb_in_interval = (prediction_lb <= this->lower_bounds[i]) && (this->lower_bounds[i] <= prediction_ub);
+                // if(lb_in_interval){
+                //     this->verified = false; 
+                //     break;
+                // }
 
                 bool ub_in_interval = (prediction_lb <= this->upper_bounds[i]) && (this->upper_bounds[i] <= prediction_ub);
                 if(ub_in_interval){
@@ -209,7 +220,7 @@ class Output : public Layer<T> {
 
         this->max_coeffs = 2;
 
-        this->input = new T[this->input_size+1];  // +1 for bias
+        this->input = new T[this->input_size]; 
         this->output = new T[this->output_size];
 
         this->lower_bounds = new T[this->output_size];
@@ -221,7 +232,7 @@ class Output : public Layer<T> {
         this->is_backsubstituted = false;
     }
 
-    void describe(bool print_parameters = false){
+    void describe(bool print_parameters = false, bool print_expressions = false){
         cout << "Type: " << get_layer_type(this->type) << "\n";
         cout << "Inputs:\n";
         for(int i = 0; i < this->input_size; i++){

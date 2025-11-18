@@ -15,6 +15,8 @@ macro (add_test_case_with_run folder _name)
 
 endmacro()
 
+add_compile_options(-w)
+
 # Test cases
 add_test_case_with_run(bool example)
 add_test_case_with_run(bool ostriple)
@@ -66,3 +68,4 @@ add_test_case_with_run(ai cifar_7_1024)
 add_test_case_with_run(ai mnist_5_100)
 add_test_case_with_run(ai mnist_3_100)
 add_test_case_with_run(ai mnist_3_50)
+add_test_case_with_run(ai mnist_9_200)

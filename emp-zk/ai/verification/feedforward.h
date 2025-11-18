@@ -82,13 +82,19 @@ class VerifiableFeedForwardNeuralNetwork {
         }
     }
 
-
     void load_input(const char* input_file_path, int input_offset = 0){
         assert(layers != NULL && "Layers not yet initialized, cannot load inputs!");
         assert(layers[0]->type == INPUT && "The first layer should be an INPUT layer, cannot load inputs!");
 
         Layer<T>* input_layer = layers[0];
+
+        // read ground truth
+        float gt;
+        read_next_elements(1, &gt, input_offset, input_file_path);
+        ((Output<T>*) layers[num_layers-1])->ground_truth = int(gt);
+        input_offset++;
         
+        // read inputs
         if constexpr (std::is_same<T, IntFp>::value){
             float* raw_inputs = new float[input_layer->input_size];
             read_next_elements(input_layer->input_size, raw_inputs, input_offset, input_file_path);
@@ -117,32 +123,49 @@ class VerifiableFeedForwardNeuralNetwork {
         }
     }
 
+
     bool forward(bool do_backsubstitution = false, bool do_inference = true){
         Layer<T>* prev_layer = nullptr;
+        Layer<T>* input_layer = layers[0];
+
         for(int i = 0; i < num_layers; i++){
-            // skip INPUT and OUTPUT layers
             layers[i]->layer_num = i+1;
-            layers[i]->forward(prev_layer, do_inference);
+            layers[i]->forward(input_layer, prev_layer, do_inference);
+
             prev_layer = layers[i];
         }
         bool verification_result = ((Output<T>*) layers[this->num_layers-1])->verified;
 
-        if (!verification_result && do_backsubstitution) {
-            // perform backsubstitution
-            cout << "couldn't verify... performing backsubstitution....\n";
-            this->layers[this->num_layers - 1]->backsubstitute(this->layers[0]);
-            verification_result = ((Output<T>*) layers[this->num_layers-1])->verified;
+        for(int i = 0; i < num_layers; i++){
+            profiling(layers[i]);
         }
 
         return verification_result;
     }
 
-    void describe(bool print_parameters = true){
+    void describe(bool print_parameters = true, bool print_expressions = false){
         for(int i = 0; i < num_layers; i++){
             cout << "LAYER " << (i+1) << "\n";
-            layers[i]->describe(print_parameters);
+            layers[i]->describe(print_parameters, print_expressions);
         }
     }
 };
+
+template <typename T>
+void profiling(Layer<T>* layer){
+    if(layer->type != AFFINE){
+        return;
+    }
+    cout << "==============================================================================\n";
+    cout << "Layer " << layer->layer_num << ":: " << get_layer_type(layer->type) << "\n";
+    cout << "Time for FP: " << layer->time_for_fp/1e6 << " seconds\n";
+    cout << "Time for BS: " << layer->time_for_bs/1e6 << " seconds\n";
+    cout << "|\n";
+    cout << "-----> Bound Computation: " << layer->time_for_bs_in_bounds/1e6 << " seconds\n|\n";
+    cout << "-----> Update using ReLU: " << layer->time_for_bs_using_act/1e6 << " seconds\n|\n";
+    cout << "-----> Update using Affn: " << layer->time_for_bs_using_affine/1e6 << " seconds\n";
+
+    cout << "==============================================================================\n\n";
+}
 
 #endif

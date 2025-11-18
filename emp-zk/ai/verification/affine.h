@@ -68,10 +68,12 @@ class Affine : public Layer<T> {
         double tt = time_from(start);
         this->time_for_fp += tt;
 
-        start = clock_start();
-        backsubstitute(input_layer);
-        tt = time_from(start);
-        this->time_for_bs += tt;
+        if(DO_DP_BS){
+            start = clock_start();
+            backsubstitute(input_layer);
+            tt = time_from(start);
+            this->time_for_bs += tt;
+        }
 
         // cout << "Layer " << this->layer_num << " done!\n";
 
@@ -179,7 +181,31 @@ class Affine : public Layer<T> {
             this->max_coeffs = this->input_size + 1;
 
         } else {
+            if(this->prev_layer->type == INPUT){
+                this->is_backsubstituted = true;
+                int num_inputs = input_layer->input_size;
+                this->max_coeffs = num_inputs + 1;
+                return;
+            }
+            
+            if(!this->prev_layer->is_backsubstituted){
+                this->prev_layer->backsubstitute(input_layer);
+            }
 
+            int num_inputs = input_layer->input_size;
+            this->max_coeffs = num_inputs + 1;
+            
+            this->backsubstitute_lower_constraints(num_inputs);
+            this->backsubstitute_upper_constraints(num_inputs);
+            this->is_backsubstituted = true;
+
+            this->compute_lower_bounds_after_backsubstitution(input_layer);
+            this->compute_upper_bounds_after_backsubstitution(input_layer);
+
+
+            // this->prev_layer = input_layer;
+            // this->compute_lower_bounds();
+            // this->compute_upper_bounds();
         }
     }
 

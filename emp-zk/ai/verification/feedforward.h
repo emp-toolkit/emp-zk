@@ -131,13 +131,16 @@ class VerifiableFeedForwardNeuralNetwork {
         for(int i = 0; i < num_layers; i++){
             layers[i]->layer_num = i+1;
             layers[i]->forward(input_layer, prev_layer, do_inference);
-
             prev_layer = layers[i];
         }
         bool verification_result = ((Output<T>*) layers[this->num_layers-1])->verified;
 
-        for(int i = 0; i < num_layers; i++){
-            profiling(layers[i]);
+        if(DO_DP_BS){
+            for(int i = 0; i < num_layers; i++){
+                profiling(layers[i]);
+            }
+        } else {
+            
         }
 
         return verification_result;

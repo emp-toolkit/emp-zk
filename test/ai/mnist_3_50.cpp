@@ -41,6 +41,8 @@ void test_verification(BoolIO<NetIO> *ios[threads], int party) {
   };
   int num_layers = (sizeof(layer_specs)/sizeof(int))/4;
 
+  auto start = clock_start();
+
   int num_examples_verified = 0;
 
   // float 
@@ -79,7 +81,12 @@ void test_verification(BoolIO<NetIO> *ios[threads], int party) {
     bool verified = verify_example<IntFp>(model_field, INPUTS_PATH, i*785, do_backsubstitution);
     num_examples_verified += (int) verified;
   }
-  cout << "Verified " << num_examples_verified << "/" << num_examples << " examples\n";
+
+  finalize_zk_arith<BoolIO<NetIO>>();
+
+  double tt = time_from(start);
+  cout << "Avg. time to verify: " << (tt/1000000)/num_examples << " s\n";
+  cout << "Communication: " << ios[0]->counter << " bytes\n";
 
   // model_field->describe(false);
 

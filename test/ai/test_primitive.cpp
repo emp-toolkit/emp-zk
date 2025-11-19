@@ -303,6 +303,50 @@ void test_eda(BoolIO<NetIO> *ios[threads], int party){
     cout << "Comm for Eda = " << ios[0]->counter << "\n";
 }
 
+void test_comparison(BoolIO<NetIO> *ios[threads], int party){
+    auto start = clock_start();    
+    setup_plain_prot(false, "");
+    setup_zk_arith<BoolIO<NetIO>>(ios, threads, party);
+
+    int sz = 1000;
+    Integer* a_Integer = new Integer[sz];
+    IntFp* a_IntFp = new IntFp[sz];
+
+    for(int i = 0; i < sz; i++){
+        a_IntFp[i] = new IntFp(i, ALICE);
+    }
+
+    // start = clock_start();
+    // for(int i = 0; i < sz; i++){
+    //     a_Integer[i] = new Integer(FXPBW, a_IntFp[i].reveal(), ALICE);
+    // }
+    // double tt = time_from(start);
+
+    // cout << "Time for conversion: " << (tt/sz)/1e6 << " seconds\n";
+
+    // Integer ZERO(FXPBW, 0);
+    // start = clock_start();
+    // for(int i = 0; i < sz; i++){
+    //     bool res = a_Integer[i].geq(ZERO).reveal<bool>();
+    // }
+    // tt = time_from(start);
+    // cout << "Time for comparison = " << (tt/sz)/(1e6) << " seconds\n";
+
+    // finalize_zk_arith<BoolIO<NetIO>>();
+
+    // tt = time_from(start);
+    // cout << "Comm for Constructors = " << ios[0]->counter << "\n";
+
+    start = clock_start();
+    for(int j = 0; j < 100*100; j++){
+        for(int i = 0; i < 100; i++){
+            greater_eq_zero<IntFp>(a_IntFp[i], false);
+        }
+    }
+
+    double tt = time_from(start);
+    cout << "Time for comparison = " << (tt)/(1e6) << " seconds\n";
+}
 
 int main(int argc, char** argv){
     parse_party_and_port(argv, &party, &port);
@@ -321,8 +365,8 @@ int main(int argc, char** argv){
     // test_double_mult(ios, party);
     // test_IntFp_signed(ios, party);
     // test_Integer_normalization(ios, party);
+    // test_constructor(ios, party);
+    // test_eda(ios, party);
 
-    test_constructor(ios, party);
-    test_eda(ios, party);
-
+    test_comparison(ios, party);
 }

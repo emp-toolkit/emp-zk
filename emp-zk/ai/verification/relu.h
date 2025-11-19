@@ -299,7 +299,7 @@ class ReLU : public Layer<T> {
         cout << "\n\n";
     }
 
-    /*
+    
     void backsubstitute_lower_constraints(int num_inputs){
         T* new_lower_constraints = new T[this->output_size*this->max_coeffs];
 
@@ -442,7 +442,7 @@ class ReLU : public Layer<T> {
             this->upper_bounds[i] = this->upper_bounds[i] + this->upper_constraints[(i+1)*this->max_coeffs - 1];
         }
     }
-    */
+    
 };
 
 

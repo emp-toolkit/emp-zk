@@ -95,7 +95,17 @@ class Output : public Layer<T> {
     }
 
     void backsubstitute(Layer<T>* input_layer){
-        ;
+        if (DO_DP_BS){
+            ;
+        } else {
+            if(!this->prev_layer->is_backsubstituted){  
+                this->prev_layer->backsubstitute(input_layer);
+            }
+
+            this->forward(input_layer, this->prev_layer, true);
+
+            this->is_backsubstituted = true;
+        }
     }
 
     int classify(){

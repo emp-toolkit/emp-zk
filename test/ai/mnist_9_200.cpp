@@ -73,7 +73,7 @@ void test_verification(BoolIO<NetIO> *ios[threads], int party) {
   int num_examples_verified = 0;
 
   auto start = clock_start();
-  for(int i = 5; i < num_examples; i++){
+  for(int i = 0; i < num_examples; i++){
     bool verified = verify_example<float>(model_float, INPUTS_PATH, i*785, do_backsubstitution);
     num_examples_verified += (int) verified;
     model_float->describe(false);
@@ -100,10 +100,10 @@ void test_verification(BoolIO<NetIO> *ios[threads], int party) {
     num_examples_verified = 0;
 
     start = clock_start();
-    for(int i = 5; i < num_examples; i++){
+    for(int i = 0; i < num_examples; i++){
       bool verified = verify_example<IntFp>(model_field, INPUTS_PATH, i*785, do_backsubstitution);
       num_examples_verified += (int) verified;
-      model_field->describe(false);
+      // model_field->describe(false);
     }
     tt = time_from(start);
     cout << "Verified " << num_examples_verified << "/" << num_examples << " examples\n";

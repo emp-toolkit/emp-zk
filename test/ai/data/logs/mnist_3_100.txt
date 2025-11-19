@@ -1,4 +1,115 @@
-PREDICTED CLASS: 7
-VERIFIED: NO
+AFFINE LAYER 4::PREV LAYER 2
+Time for Comparisons = 25.4479 seconds
+Time for Inner-Product = 4.97169 seconds
 
-Verified 0/1 examples
+
+AFFINE LAYER 6::PREV LAYER 4
+Time for Comparisons = 0.316164 seconds
+Time for Inner-Product = 0.065939 seconds
+
+
+AFFINE LAYER 6::PREV LAYER 2
+Time for Comparisons = 2.60254 seconds
+Time for Inner-Product = 0.484732 seconds
+
+
+PREDICTED CLASS: 7
+VERIFIED: YES
+
+==============================================================================
+Layer 1:: INPUT
+Time for FP: 0 seconds
+Time for BS: 0 seconds
+|
+-----> Bound Computation: 0 seconds
+|
+-----> Update using ReLU: 0 seconds
+|
+-----> Update using Affn: 0 seconds
+==============================================================================
+
+==============================================================================
+Layer 2:: AFFINE
+Time for FP: 0.612316 seconds
+Time for BS: 0.598946 seconds
+|
+-----> Bound Computation: 0.301315 seconds
+|
+-----> Update using ReLU: 0 seconds
+|
+-----> Update using Affn: 0 seconds
+==============================================================================
+
+==============================================================================
+Layer 3:: RELU
+Time for FP: 0.009723 seconds
+Time for BS: 0 seconds
+|
+-----> Bound Computation: 0 seconds
+|
+-----> Update using ReLU: 0 seconds
+|
+-----> Update using Affn: 0 seconds
+==============================================================================
+
+==============================================================================
+Layer 4:: AFFINE
+Time for FP: 0.07197 seconds
+Time for BS: 64.0094 seconds
+|
+-----> Bound Computation: 0.377227 seconds
+|
+-----> Update using ReLU: 0.065544 seconds
+|
+-----> Update using Affn: 30.9716 seconds
+==============================================================================
+
+==============================================================================
+Layer 5:: RELU
+Time for FP: 0.005254 seconds
+Time for BS: 0 seconds
+|
+-----> Bound Computation: 0 seconds
+|
+-----> Update using ReLU: 0 seconds
+|
+-----> Update using Affn: 0 seconds
+==============================================================================
+
+==============================================================================
+Layer 6:: AFFINE
+Time for FP: 0.007743 seconds
+Time for BS: 7.14263 seconds
+|
+-----> Bound Computation: 0.039649 seconds
+|
+-----> Update using ReLU: 0.017537 seconds
+|
+-----> Update using Affn: 3.52059 seconds
+==============================================================================
+
+==============================================================================
+Layer 7:: RELU
+Time for FP: 0.00022 seconds
+Time for BS: 0 seconds
+|
+-----> Bound Computation: 0 seconds
+|
+-----> Update using ReLU: 0 seconds
+|
+-----> Update using Affn: 0 seconds
+==============================================================================
+
+==============================================================================
+Layer 8:: OUTPUT
+Time for FP: 0 seconds
+Time for BS: 0 seconds
+|
+-----> Bound Computation: 0 seconds
+|
+-----> Update using ReLU: 0 seconds
+|
+-----> Update using Affn: 0 seconds
+==============================================================================
+
+Verified 1/1 examples

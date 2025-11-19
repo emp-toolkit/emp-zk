@@ -161,9 +161,9 @@ class VerifiableFeedForwardNeuralNetwork {
 
 template <typename T>
 void profiling(Layer<T>* layer){
-    if(layer->type != AFFINE){
-        return;
-    }
+    // if(layer->type != AFFINE){
+    //     return;
+    // }
     cout << "==============================================================================\n";
     cout << "Layer " << layer->layer_num << ":: " << get_layer_type(layer->type) << "\n";
     cout << "Time for FP: " << layer->time_for_fp/1e6 << " seconds\n";

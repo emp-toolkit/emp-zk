@@ -137,7 +137,7 @@ class VerifiableFeedForwardNeuralNetwork {
 
         if(DO_DP_BS){
             for(int i = 0; i < num_layers; i++){
-                profiling(layers[i]);
+                // profiling(layers[i]);
             }
         } else {
             if (!verification_result && do_backsubstitution) {

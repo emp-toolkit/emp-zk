@@ -273,7 +273,7 @@ void test_constructor(BoolIO<NetIO> *ios[threads], int party){
     finalize_zk_arith<BoolIO<NetIO>>();
 
     double tt = time_from(start);
-    cout << "Time for Constructors = " << (tt/sz)/(1e6) << " seconds\n";
+    cout << "Time for Constructors = " << (tt)/(1e6) << " seconds\n";
     cout << "Comm for Constructors = " << ios[0]->counter << "\n";
 }
 
@@ -299,7 +299,7 @@ void test_eda(BoolIO<NetIO> *ios[threads], int party){
     finalize_zk_arith<BoolIO<NetIO>>();
 
     double tt = time_from(start);
-    cout << "Time for Eda = " << (tt/sz)/(1e6) << " seconds\n";
+    cout << "Time for Eda = " << (tt)/(1e6) << " seconds\n";
     cout << "Comm for Eda = " << ios[0]->counter << "\n";
 }
 
@@ -365,8 +365,8 @@ int main(int argc, char** argv){
     // test_double_mult(ios, party);
     // test_IntFp_signed(ios, party);
     // test_Integer_normalization(ios, party);
-    // test_constructor(ios, party);
-    // test_eda(ios, party);
+    test_constructor(ios, party);
+    test_eda(ios, party);
 
-    test_comparison(ios, party);
+    // test_comparison(ios, party);
 }

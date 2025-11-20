@@ -82,16 +82,16 @@ void test_verification(BoolIO<NetIO> *ios[threads], int party) {
     num_examples_verified += (int) verified;
   }
 
-  finalize_zk_arith<BoolIO<NetIO>>();
 
   double tt = time_from(start);
   cout << "Avg. time to verify: " << (tt/1000000)/num_examples << " s\n";
   cout << "Communication: " << ios[0]->counter << " bytes\n";
 
-  // model_field->describe(false);
+  model_field->describe(false, true);
 
   std::cout.rdbuf(original_buf2);
-  
+
+  finalize_zk_arith<BoolIO<NetIO>>();
 }
 
 int main(int argc, char **argv) {

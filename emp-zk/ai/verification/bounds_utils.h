@@ -63,7 +63,7 @@ void update_lower_bounds_using_prev_layers(Layer<T>* current_layer, Layer<T>* pr
 
 template <typename T>
 void update_lower_constraints_with_affine(Layer<T>* current_layer, Layer<T>* prev_layer){
-    cout << "AFFINE LAYER " << current_layer->layer_num << "::" << "PREV LAYER " << prev_layer->layer_num << "\n";
+    // cout << "AFFINE LAYER " << current_layer->layer_num << "::" << "PREV LAYER " << prev_layer->layer_num << "\n";
     T* new_backsubstituted_lower_constraints = new T[current_layer->output_size * prev_layer->max_coeffs];
 
     double time_for_comp = 0;
@@ -100,8 +100,8 @@ void update_lower_constraints_with_affine(Layer<T>* current_layer, Layer<T>* pre
                                                                                     + current_lower_constraints[current_layer->max_coeffs - 1];
     }
 
-    cout << "Time for Comparisons = " << time_for_comp/1e6 << " seconds\n";
-    cout << "Time for Inner-Product = " << time_for_ip/1e6 << " seconds\n\n\n";
+    // cout << "Time for Comparisons = " << time_for_comp/1e6 << " seconds\n";
+    // cout << "Time for Inner-Product = " << time_for_ip/1e6 << " seconds\n\n\n";
 
     current_layer->max_coeffs = prev_layer->max_coeffs; // check
 

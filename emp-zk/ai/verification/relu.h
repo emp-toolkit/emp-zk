@@ -179,28 +179,30 @@ class ReLU : public Layer<T> {
         if(DO_DP_BS){
             ;
         } else {
-            if(!this->prev_layer->is_backsubstituted){
-                this->prev_layer->backsubstitute(input_layer);
-            }  
+            // if(!this->prev_layer->is_backsubstituted){
+            //     this->prev_layer->backsubstitute(input_layer);
+            // }  
 
-            int num_inputs = input_layer->input_size;
-            this->max_coeffs = num_inputs + 1;
+            // int num_inputs = input_layer->input_size;
+            // this->max_coeffs = num_inputs + 1;
 
-            this->backsubstitute_lower_constraints(num_inputs);
-            this->backsubstitute_upper_constraints(num_inputs);
-            this->is_backsubstituted = true;
+            // this->backsubstitute_lower_constraints(num_inputs);
+            // this->backsubstitute_upper_constraints(num_inputs);
+            // this->is_backsubstituted = true;
 
-            // this->compute_lower_bounds_after_backsubstitution(input_layer);
-            // this->compute_upper_bounds_after_backsubstitution(input_layer);
+            // // this->compute_lower_bounds_after_backsubstitution(input_layer);
+            // // this->compute_upper_bounds_after_backsubstitution(input_layer);
         
-            this->compute_lower_bounds();
-            this->compute_upper_bounds();
+            // this->compute_lower_bounds();
+            // this->compute_upper_bounds();
+            ;
         }
     }
 
     void reset(){
         delete[] this->input;
         delete[] this->output;
+
         delete[] this->lower_bounds;
         delete[] this->upper_bounds;
         delete[] this->lower_constraints;

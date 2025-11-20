@@ -11,7 +11,7 @@
 #define FLOATBW 32
 #define FXPBW 61
 #define FXPSCALE 20
-#define DO_DP_BS true
+#define DO_DP_BS false
 
 #define REVERSE(s) reversed(s)
 

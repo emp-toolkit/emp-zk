@@ -46,50 +46,50 @@ void test_verification(BoolIO<NetIO> *ios[threads], int party) {
   int num_examples_verified = 0;
 
   // float 
-  // std::ofstream file(std::string(LOGS_PATH) + (do_backsubstitution ? "_float_bs.txt" : "_float.txt"));
-  // std::streambuf* original_buf = std::cout.rdbuf(file.rdbuf());
+  std::ofstream file(std::string(LOGS_PATH) + (!DO_DP_BS ? "_float_sankha.txt" : "_float.txt"));
+  std::streambuf* original_buf = std::cout.rdbuf(file.rdbuf());
 
-  // VerifiableFeedForwardNeuralNetwork<float>* model_float = create_model<float>(num_layers, layer_specs);
-  // model_float->load_input(INPUTS_PATH);
-  // model_float->load_weights_and_biases(PARAMETERS_PATH);
-  // model_float->set_epsilon(epsilon);
+  VerifiableFeedForwardNeuralNetwork<float>* model_float = create_model<float>(num_layers, layer_specs);
+  model_float->load_input(INPUTS_PATH);
+  model_float->load_weights_and_biases(PARAMETERS_PATH);
+  model_float->set_epsilon(epsilon);
 
-  // for(int i = 0; i < num_examples; i++){
-  //   bool verified = verify_example<float>(model_float, INPUTS_PATH, i*785, do_backsubstitution);
-  //   num_examples_verified += (int) verified;
-  // }
-  // cout << "Verified " << num_examples_verified << "/" << num_examples << " examples\n";
-
-  // model_float->describe(false);
-
-  // std::cout.rdbuf(original_buf);  
-  // cout << "Float completed...\n";
-
-  
-  // field
-  std::ofstream field_file(std::string(LOGS_PATH) + (do_backsubstitution ? "_bs.txt" : ".txt"));
-  std::streambuf* original_buf2 = std::cout.rdbuf(field_file.rdbuf());
-
-  VerifiableFeedForwardNeuralNetwork<IntFp>* model_field = create_model<IntFp>(num_layers, layer_specs);
-  model_field->load_input(INPUTS_PATH);
-  model_field->load_weights_and_biases(PARAMETERS_PATH);
-  model_field->set_epsilon(epsilon);
-
-
-  num_examples_verified = 0;
   for(int i = 0; i < num_examples; i++){
-    bool verified = verify_example<IntFp>(model_field, INPUTS_PATH, i*785, do_backsubstitution);
+    bool verified = verify_example<float>(model_float, INPUTS_PATH, i*785, !DO_DP_BS);
     num_examples_verified += (int) verified;
   }
+  cout << "Verified " << num_examples_verified << "/" << num_examples << " examples\n";
+
+  model_float->describe(false, true);
+
+  std::cout.rdbuf(original_buf);  
+  cout << "Float completed...\n";
+
+  
+  // // field
+  // std::ofstream field_file(std::string(LOGS_PATH) + (do_backsubstitution ? "_bs.txt" : ".txt"));
+  // std::streambuf* original_buf2 = std::cout.rdbuf(field_file.rdbuf());
+
+  // VerifiableFeedForwardNeuralNetwork<IntFp>* model_field = create_model<IntFp>(num_layers, layer_specs);
+  // model_field->load_input(INPUTS_PATH);
+  // model_field->load_weights_and_biases(PARAMETERS_PATH);
+  // model_field->set_epsilon(epsilon);
 
 
-  double tt = time_from(start);
-  cout << "Avg. time to verify: " << (tt/1000000)/num_examples << " s\n";
-  cout << "Communication: " << ios[0]->counter << " bytes\n";
+  // num_examples_verified = 0;
+  // for(int i = 0; i < num_examples; i++){
+  //   bool verified = verify_example<IntFp>(model_field, INPUTS_PATH, i*785, do_backsubstitution);
+  //   num_examples_verified += (int) verified;
+  // }
 
-  model_field->describe(false, true);
 
-  std::cout.rdbuf(original_buf2);
+  // double tt = time_from(start);
+  // cout << "Avg. time to verify: " << (tt/1000000)/num_examples << " s\n";
+  // cout << "Communication: " << ios[0]->counter << " bytes\n";
+
+  // model_field->describe(false, true);
+
+  // std::cout.rdbuf(original_buf2);
 
   finalize_zk_arith<BoolIO<NetIO>>();
 }

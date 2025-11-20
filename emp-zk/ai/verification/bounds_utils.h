@@ -50,7 +50,11 @@ void update_lower_bounds_using_prev_layers(Layer<T>* current_layer, Layer<T>* pr
     } else if(prev_layer->type == RELU){
         update_lower_constraints_with_activation(current_layer, prev_layer);
     } else {
-        update_lower_constraints_with_affine(current_layer, prev_layer);
+        if(DO_DP_BS){
+            update_lower_constraints_with_affine(current_layer, prev_layer);        
+        } else {
+            update_lower_constraints_with_bsed_affine(current_layer, prev_layer);
+        }
     }
     tt = time_from(start);
 
@@ -141,6 +145,53 @@ void update_lower_constraints_with_activation(Layer<T>* current_layer, Layer<T>*
     current_layer->backsubstituted_lower_constraints = new_backsubstituted_lower_constraints;
 }
 
+template <typename T>
+void update_lower_constraints_with_bsed_affine(Layer<T>* current_layer, Layer<T>* prev_layer){
+    // cout << "AFFINE LAYER " << current_layer->layer_num << "::" << "PREV LAYER " << prev_layer->layer_num << "\n";
+    T* new_backsubstituted_lower_constraints = new T[current_layer->output_size * 785];
+
+    double time_for_comp = 0;
+    double time_for_ip = 0;
+    for(int i = 0; i < current_layer->output_size; i++){
+        T* current_lower_constraints = current_layer->backsubstituted_lower_constraints + (i*current_layer->max_coeffs);
+        T* prev_coeffs_to_mult = new T[prev_layer->output_size];
+        
+        for(int k = 0; k < 785; k++){        // including constant term
+    
+            auto start = clock_start();
+            for(int j = 0; j < prev_layer->output_size; j++){
+                if(greater_eq_zero<T>(current_lower_constraints[j], false)){
+                    prev_coeffs_to_mult[j] = prev_layer->backsubstituted_lower_constraints[j*785 + k];
+                } else {
+                    prev_coeffs_to_mult[j] = prev_layer->backsubstituted_upper_constraints[j*785 + k];
+                }    
+            }
+            double tt = time_from(start);
+            time_for_comp += tt;
+
+            start = clock_start();
+            new_backsubstituted_lower_constraints[i*785 + k] = inner_product_emp(prev_layer->output_size, current_lower_constraints, prev_coeffs_to_mult);
+            tt = time_from(start);
+            time_for_ip += tt;
+        }
+
+        if constexpr (std::is_same<IntFp, T>::value){
+            normalize(785, new_backsubstituted_lower_constraints + i*785, new_backsubstituted_lower_constraints + i*785);
+        }
+
+        // adding constant term to constant product
+        new_backsubstituted_lower_constraints[(i + 1)*785 - 1] = new_backsubstituted_lower_constraints[(i + 1)*785 - 1] 
+                                                                                    + current_lower_constraints[current_layer->max_coeffs - 1];
+    }
+
+    // cout << "Time for Comparisons = " << time_for_comp/1e6 << " seconds\n";
+    // cout << "Time for Inner-Product = " << time_for_ip/1e6 << " seconds\n\n\n";
+
+    current_layer->max_coeffs = 785; // check
+
+    delete[] current_layer->backsubstituted_lower_constraints;
+    current_layer->backsubstituted_lower_constraints = new_backsubstituted_lower_constraints;
+}
 
 
 
@@ -177,7 +228,11 @@ void update_upper_bounds_using_prev_layers(Layer<T>* current_layer, Layer<T>* pr
     } else if(prev_layer->type == RELU){
         update_upper_constraints_with_activation(current_layer, prev_layer);
     } else {
-        update_upper_constraints_with_affine(current_layer, prev_layer);
+        if(DO_DP_BS){
+            update_upper_constraints_with_affine(current_layer, prev_layer);        
+        } else {
+            update_upper_constraints_with_bsed_affine(current_layer, prev_layer);
+        }
     }
 }
 
@@ -248,5 +303,52 @@ void update_upper_constraints_with_activation(Layer<T>* current_layer, Layer<T>*
     current_layer->backsubstituted_upper_constraints = new_backsubstituted_upper_constraints;
 }
 
+template <typename T>
+void update_upper_constraints_with_bsed_affine(Layer<T>* current_layer, Layer<T>* prev_layer){
+    // cout << "AFFINE LAYER " << current_layer->layer_num << "::" << "PREV LAYER " << prev_layer->layer_num << "\n";
+    T* new_backsubstituted_upper_constraints = new T[current_layer->output_size * 785];
+
+    double time_for_comp = 0;
+    double time_for_ip = 0;
+    for(int i = 0; i < current_layer->output_size; i++){
+        T* current_upper_constraints = current_layer->backsubstituted_upper_constraints + (i*current_layer->max_coeffs);
+        T* prev_coeffs_to_mult = new T[prev_layer->output_size];
+        
+        for(int k = 0; k < 785; k++){        // including constant term
+    
+            auto start = clock_start();
+            for(int j = 0; j < prev_layer->output_size; j++){
+                if(greater_eq_zero<T>(current_upper_constraints[j], false)){
+                    prev_coeffs_to_mult[j] = prev_layer->backsubstituted_upper_constraints[j*785 + k];
+                } else {
+                    prev_coeffs_to_mult[j] = prev_layer->backsubstituted_lower_constraints[j*785 + k];
+                }    
+            }
+            double tt = time_from(start);
+            time_for_comp += tt;
+
+            start = clock_start();
+            new_backsubstituted_upper_constraints[i*785 + k] = inner_product_emp(prev_layer->output_size, current_upper_constraints, prev_coeffs_to_mult);
+            tt = time_from(start);
+            time_for_ip += tt;
+        }
+
+        if constexpr (std::is_same<IntFp, T>::value){
+            normalize(785, new_backsubstituted_upper_constraints + i*785, new_backsubstituted_upper_constraints + i*785);
+        }
+
+        // adding constant term to constant product
+        new_backsubstituted_upper_constraints[(i + 1)*785 - 1] = new_backsubstituted_upper_constraints[(i + 1)*785 - 1] 
+                                                                                    + current_upper_constraints[current_layer->max_coeffs - 1];
+    }
+
+    // cout << "Time for Comparisons = " << time_for_comp/1e6 << " seconds\n";
+    // cout << "Time for Inner-Product = " << time_for_ip/1e6 << " seconds\n\n\n";
+
+    current_layer->max_coeffs = 785; // check
+
+    delete[] current_layer->backsubstituted_upper_constraints;
+    current_layer->backsubstituted_upper_constraints = new_backsubstituted_upper_constraints;
+}
 
 #endif

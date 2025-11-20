@@ -181,31 +181,24 @@ class Affine : public Layer<T> {
             this->max_coeffs = this->input_size + 1;
 
         } else {
-            if(this->prev_layer->type == INPUT){
-                this->is_backsubstituted = true;
-                int num_inputs = input_layer->input_size;
-                this->max_coeffs = num_inputs + 1;
-                return;
+            for(int i = 0; i < this->output_size * this->max_coeffs; i++){
+                this->backsubstituted_lower_constraints[i] = T(this->lower_constraints[i]);
+                this->backsubstituted_upper_constraints[i] = T(this->upper_constraints[i]);
             }
-            
-            if(!this->prev_layer->is_backsubstituted){
-                this->prev_layer->backsubstitute(input_layer);
+        
+            Layer<T>* prev_layer = this->prev_layer;
+            while(prev_layer != NULL && (prev_layer->layer_num >= this->layer_num-2)){
+                update_lower_bounds_using_prev_layers(this, prev_layer);     
+                prev_layer = prev_layer->prev_layer;
             }
+            this->max_coeffs = this->input_size + 1;
 
-            int num_inputs = input_layer->input_size;
-            this->max_coeffs = num_inputs + 1;
-            
-            this->backsubstitute_lower_constraints(num_inputs);
-            this->backsubstitute_upper_constraints(num_inputs);
-            this->is_backsubstituted = true;
-
-            this->compute_lower_bounds_after_backsubstitution(input_layer);
-            this->compute_upper_bounds_after_backsubstitution(input_layer);
-
-
-            // this->prev_layer = input_layer;
-            // this->compute_lower_bounds();
-            // this->compute_upper_bounds();
+            prev_layer = this->prev_layer;
+            while(prev_layer != NULL && (prev_layer->layer_num >= this->layer_num-2)){
+                update_upper_bounds_using_prev_layers(this, prev_layer);        
+                prev_layer = prev_layer->prev_layer;
+            }
+            this->max_coeffs = this->input_size + 1;
         }
     }
 

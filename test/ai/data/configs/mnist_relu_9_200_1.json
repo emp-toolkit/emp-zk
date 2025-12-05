@@ -1,0 +1,38 @@
+{
+    "model_name": "mnist_relu_9_200",
+    "num_neurons": 200,
+    "layers": [
+        ["INPUT", 784, 784, -1],
+
+        ["AFFINE", 784, "num_neurons", -1],
+        ["RELU", "num_neurons", "num_neurons", -1],
+
+        ["AFFINE", "num_neurons", "num_neurons", -1],
+        ["RELU", "num_neurons", "num_neurons", -1],
+
+        ["AFFINE", "num_neurons", "num_neurons", -1],
+        ["RELU", "num_neurons", "num_neurons", -1],
+
+        ["AFFINE", "num_neurons", "num_neurons", -1],
+        ["RELU", "num_neurons", "num_neurons", -1],
+
+        ["AFFINE", "num_neurons", "num_neurons", -1],
+        ["RELU", "num_neurons", "num_neurons", -1],
+
+        ["AFFINE", "num_neurons", "num_neurons", -1],
+        ["RELU", "num_neurons", "num_neurons", -1],
+
+        ["AFFINE", "num_neurons", "num_neurons", -1],
+        ["RELU", "num_neurons", "num_neurons", -1],
+
+        ["AFFINE", "num_neurons", "num_neurons", -1],
+        ["RELU", "num_neurons", "num_neurons", -1],
+
+        ["AFFINE", "num_neurons", 10, -1],
+        ["RELU", 10, 10, -1],
+
+        ["OUTPUT", 10, 10, -1]
+    ],
+    "epsilon": 0.01,
+    "do_float": 2
+}

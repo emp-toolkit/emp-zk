@@ -235,7 +235,7 @@ void seq_relu_fxp(BoolIO<NetIO> *ios[threads], int party) {
   
   for(int i = 0; i < sz; i++){
     c[i] = a_int[i].geq(Integer(62, 0, PUBLIC));
-    c_int[i] = Integer(61, &c[i], ALICE);
+    c_int[i] = Integer(62, &c[i], ALICE);
   }
 
   bool2arith<BoolIO<NetIO>>(c_field, c_int, sz);
@@ -244,13 +244,13 @@ void seq_relu_fxp(BoolIO<NetIO> *ios[threads], int party) {
   }
 
   // batch_reveal_check(a_field, a, sz);
+  auto timecrypto = time_from(start);
+  cout << "\nAvg. time for " << test_n << " instances: " << timecrypto / sz << " μs; PARTY =" << party << " " << endl;
 
   finalize_zk_arith<BoolIO<NetIO>>();
   finalize_zk_bool<BoolIO<NetIO>>();
 
-  auto timecrypto = time_from(start);
 
-  cout << "\nAvg. time for " << test_n << " instances: " << timecrypto / sz << " μs; PARTY =" << party << " " << endl;
   cout << "Comm: " << ios[0]->counter / sz << " bytes \n";
 }
 
@@ -279,6 +279,15 @@ void fxp_comp(BoolIO<NetIO> *ios[threads], int party) {
   cout << d.reveal<string>() << " \n";
 }
 
+// int main(){
+//   float a = 5.4384;
+//   float b = 2.4851;
+//   float c;
+//   for(long long i = 0; i < 1e20; i++){
+//     c = a*b;
+//   }
+//   return 0;
+// }
 
 int main(int argc, char **argv) {
   parse_party_and_port(argv, &party, &port);
@@ -298,7 +307,8 @@ int main(int argc, char **argv) {
   // seq_mult_fxp(ios, party);
   // seq_add_fxp(ios, party);
   // seq_comp_fxp(ios, party);
-  fxp_comp(ios, party);
+  seq_relu_fxp(ios, party);
+  // fxp_comp(ios, party);
 
   for (int i = 0; i < threads; ++i) {
     delete ios[i]->io;

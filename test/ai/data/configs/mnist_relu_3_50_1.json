@@ -1,0 +1,19 @@
+{
+    "model_name": "mnist_relu_3_50",
+    "num_neurons": 50,
+    "layers": [
+        ["INPUT", 784, 784, -1],
+        ["AFFINE", 784, "num_neurons", -1],
+        ["RELU", "num_neurons", "num_neurons", -1],
+        ["AFFINE", "num_neurons", "num_neurons", -1],
+        ["RELU", "num_neurons", "num_neurons", -1],
+        ["AFFINE", "num_neurons", 10, -1],
+        ["RELU", 10, 10, -1],
+        ["OUTPUT", 10, 10, -1]
+    ],
+    "epsilon": 0.01,
+    "input_min": 0,
+    "input_max": 1,
+    "do_float": 2,
+    "FXPSCALE": 20
+}

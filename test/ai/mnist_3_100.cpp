@@ -20,85 +20,80 @@ const char* INPUTS_PATH = "test/ai/data/inputs/mnist_test.txt";
 const char* PARAMETERS_PATH = "test/ai/data/parameters/mnist_relu_3_100.txt";
 const char* LOGS_PATH = "test/ai/data/logs/mnist_3_100";
 
+int layer_specs[] = {
+  INPUT, 784, 784, -1,
+
+  AFFINE, 784, num_neurons, -1,
+  RELU, num_neurons, num_neurons, -1,
+
+  AFFINE, num_neurons, num_neurons, -1,
+  RELU, num_neurons, num_neurons, -1,
+
+  AFFINE, num_neurons, 10, -1,
+  RELU, 10, 10, -1,
+
+  OUTPUT, 10, 10, -1
+};
 
 void test_verification(BoolIO<NetIO> *ios[threads], int party) {
   setup_plain_prot(false, "");
+  setup_zk_arith<BoolIO<NetIO>>(ios, threads, party);
 
-  int layer_specs[] = {
-    INPUT, 784, 784, -1,
+  init_verification();
+  startComputation(party);
 
-    AFFINE, 784, num_neurons, -1,
-    RELU, num_neurons, num_neurons, -1,
-
-    AFFINE, num_neurons, num_neurons, -1,
-    RELU, num_neurons, num_neurons, -1,
-
-    AFFINE, num_neurons, 10, -1,
-    RELU, 10, 10, -1,
-
-    OUTPUT, 10, 10, -1
-  };
   int num_layers = (sizeof(layer_specs)/sizeof(int))/4;
 
-
-  // float 
-  std::ofstream file(std::string(LOGS_PATH) + (do_backsubstitution ? "_float_bs.txt" : "_float.txt"));
-  std::streambuf* original_buf = std::cout.rdbuf(file.rdbuf());
-
-  VerifiableFeedForwardNeuralNetwork<float>* model_float = create_model<float>(num_layers, layer_specs);
-  model_float->load_input(INPUTS_PATH);
-  model_float->load_weights_and_biases(PARAMETERS_PATH);
-  model_float->set_epsilon(epsilon);
+  auto start = clock_start();
 
   int num_examples_verified = 0;
 
-  auto start = clock_start();
+  // float 
+  std::ofstream file(std::string(LOGS_PATH) + "_float.txt");
+  std::streambuf* original_buf = std::cout.rdbuf(file.rdbuf());
+
+  VerifiableFeedForwardNeuralNetwork<float>* model_float = create_model<float>(num_layers, layer_specs, party);
+  model_float->load_input(INPUTS_PATH, 0, epsilon);
+  model_float->load_weights_and_biases(PARAMETERS_PATH);
+
   for(int i = 0; i < num_examples; i++){
-    bool verified = verify_example<float>(model_float, INPUTS_PATH, i*785, do_backsubstitution);
+    bool verified = verify_example<float>(model_float, INPUTS_PATH, i*785, epsilon);
     num_examples_verified += (int) verified;
   }
-  double tt = time_from(start);
-
   cout << "Verified " << num_examples_verified << "/" << num_examples << " examples\n";
-  cout << "Avg. time to verify: " << (tt/1000000)/num_examples << " s\n";
 
-  model_float->describe(false);
+  model_float->describe(false, true);
 
   std::cout.rdbuf(original_buf);  
   cout << "Float completed...\n";
 
-  if(!do_only_float){
-    start = clock_start();
-    setup_zk_arith<BoolIO<NetIO>>(ios, threads, party);
-
-    // field
-    std::ofstream field_file(std::string(LOGS_PATH) + (do_backsubstitution ? "_bs.txt" : ".txt"));
-    std::streambuf* original_buf2 = std::cout.rdbuf(field_file.rdbuf());
-
-    VerifiableFeedForwardNeuralNetwork<IntFp>* model_field = create_model<IntFp>(num_layers, layer_specs);
-    model_field->load_input(INPUTS_PATH);
-    model_field->load_weights_and_biases(PARAMETERS_PATH);
-    model_field->set_epsilon(epsilon);
-
-    num_examples_verified = 0;
-
-    for(int i = 0; i < num_examples; i++){
-      bool verified = verify_example<IntFp>(model_field, INPUTS_PATH, i*785, do_backsubstitution);
-      num_examples_verified += (int) verified;
-    }
-    cout << "Verified " << num_examples_verified << "/" << num_examples << " examples\n";
-
-    // model_field->describe(false);
-
-    std::cout.rdbuf(original_buf2);
-
-    finalize_zk_arith<BoolIO<NetIO>>();
-    tt = time_from(start);
   
-    cout << "Avg. time to verify: " << (tt/1000000)/num_examples << " s\n";
-    cout << "Communication: " << ios[0]->counter << " bytes\n";
+  // field
+  std::ofstream field_file(std::string(LOGS_PATH) + ".txt");
+  std::streambuf* original_buf2 = std::cout.rdbuf(field_file.rdbuf());
+
+  VerifiableFeedForwardNeuralNetwork<IntFp>* model_field = create_model<IntFp>(num_layers, layer_specs, party);
+  model_field->load_input(INPUTS_PATH, epsilon);
+  model_field->load_weights_and_biases(PARAMETERS_PATH);
+
+  num_examples_verified = 0;
+  for(int i = 0; i < num_examples; i++){
+    bool verified = verify_example<IntFp>(model_field, INPUTS_PATH, i*785, epsilon);
+    num_examples_verified += (int) verified;
   }
- 
+
+  model_field->describe(false, true);
+
+  std::cout.rdbuf(original_buf2);
+
+  bool cheated = finalize_zk_arith<BoolIO<NetIO>>();
+  if(party == BOB){
+    cout << "\n" << (cheated ? "\033[31mVerfication failed!" : "\033[32mVerfication successful!") << "\033[0m\n";
+  }
+
+  double tt = time_from(start);
+  cout << "\nAvg. time to verify: " << (tt/1000000)/num_examples << " s\n";
+  cout << "Communication: " << ios[0]->counter/(1024.0 * 1024.0) << " MB\n";
 }
 
 int main(int argc, char **argv) {

@@ -15,6 +15,7 @@ using namespace std;
 template <typename T>
 class Layer {
     public:
+    int party = PUBLIC;
     int input_size;         // n
     int output_size;        // m
 
@@ -46,11 +47,14 @@ class Layer {
     double time_for_bs_in_bounds = 0;
 
 
-    Layer(int input_size, int output_size, int max_coeffs){
+    Layer(int input_size, int output_size, int max_coeffs, int party = PUBLIC){
         this->input_size = input_size;
         this->output_size = output_size;
         this->max_coeffs = max_coeffs;
+        this->party = party;
     }
+
+    virtual ~Layer() = default;
 
     void compute_lower_constraints();
 
@@ -60,13 +64,13 @@ class Layer {
 
     void compute_upper_bounds();
 
-    virtual void reset();
+    virtual void reset() = 0;
 
-    virtual void forward(Layer<T>* input_layer, Layer<T>* prev_layer, bool do_inference = true);
+    virtual void forward(Layer<T>* input_layer, Layer<T>* prev_layer, bool do_inference = true) = 0;
 
-    virtual void backsubstitute(Layer<T>* input_layer);
+    virtual void backsubstitute(Layer<T>* input_layer) = 0;
 
-    virtual void describe(bool print_parameters = true, bool print_expressions = false);
+    virtual void describe(bool print_parameters = true, bool print_expressions = false) = 0;
 };
 
 

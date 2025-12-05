@@ -81,7 +81,7 @@ void affine_layer(int m, int n, Integer* params, Integer* input, Integer* output
 void affine_layer(int m, int n, IntFp* params, IntFp* input, IntFp* output){
     // params = Z^{m x n+1} [A_i | b_i]
     // input = Z^{n+1}
-
+    
     for(int i = 0; i < m; i++){
         output[i] = inner_product_emp(n+1, params + i*(n+1), input);
     }

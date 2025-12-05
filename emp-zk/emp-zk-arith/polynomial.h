@@ -40,8 +40,9 @@ public:
   }
 
   void batch_check() {
-    if (num == 0)
+    if (num == 0){
       return;
+    }
     uint64_t seed;
     io->flush();
     uint64_t *chi = new uint64_t[num];

@@ -1,6 +1,8 @@
 #include "emp-tool/emp-tool.h"
 #include <emp-zk/emp-zk.h>
 #include <emp-zk/ai/ai.h>
+#include <emp-zk/ai/utils.h>
+#include <emp-zk/ai/secure-utils.h>
 
 #include <iostream>
 using namespace emp;
@@ -10,6 +12,7 @@ int port, party;
 const int threads = 1;
 int sz = 0;
 
+const char* PARAMS_PATH = "test/ai/data/test.txt";
 
 void test_affine(BoolIO<NetIO> *ios[threads], int party){
     setup_plain_prot(false, "");
@@ -93,6 +96,130 @@ void test_affine(BoolIO<NetIO> *ios[threads], int party){
 }
 
 
+void test_affine_secure(BoolIO<NetIO> *ios[threads], int party){
+    setup_plain_prot(false, "");
+    setup_zk_arith<BoolIO<NetIO>>(ios, threads, party);
+
+    init_verification();
+
+    startComputation(party);
+
+    IntFp* W_IntFp = new IntFp[sz+1];
+    IntFp* x_IntFp = new IntFp[sz+1];
+
+    // cleartext float
+    float* W = new float[sz+1];
+    float* x = new float[sz+1];
+
+    if(party == ALICE){        
+        read_next_elements(sz, W, 0, PARAMS_PATH);
+        read_next_elements(sz, x, sz, PARAMS_PATH);
+    }
+    authenticate_over_field(sz, W, W_IntFp, party);
+    authenticate_over_field(sz, x, x_IntFp, party);
+
+    
+    IntFp y = inner_product_bundle(sz, W_IntFp, x_IntFp, party);
+    cout << y.reveal() << "\n";
+
+    ZKgeneralTruncAny(party, &y, &y, 1, FXPSCALE);
+    cout << y.reveal() << "\n";
+
+    IntFp z(PR - 8.483 * (1 << FXPSCALE), ALICE);
+    IntFp r = inner_product_bundle(1, &y, &z, party);
+    ZKgeneralTruncAny(party, &r, &r, 1, FXPSCALE);
+
+    cout << r.reveal() << "\n";
+
+    bool cheated = finalize_zk_arith<BoolIO<NetIO>>();
+    if(party == BOB && cheated){
+        error("Inner product check failed!\n");
+    }
+}
+    
+
+void test_relu_secure(BoolIO<NetIO> *ios[threads], int party){
+    setup_plain_prot(false, "");
+    setup_zk_arith<BoolIO<NetIO>>(ios, threads, party);
+
+    init_verification();
+    startComputation(party);
+
+    IntFp* lbs_IntFp = new IntFp[sz];
+    IntFp* ubs_IntFp = new IntFp[sz];
+
+    // cleartext float
+    float* lbs = new float[sz];
+    float* ubs = new float[sz];
+
+    if(party == ALICE){        
+        read_next_elements(sz, lbs, 0, PARAMS_PATH);
+        read_next_elements(sz, ubs, sz, PARAMS_PATH);
+    }
+    authenticate_over_field(sz, lbs, lbs_IntFp, party);
+    authenticate_over_field(sz, ubs, ubs_IntFp, party);
+
+    
+    auto constraints = relu_bundle(sz, lbs_IntFp, ubs_IntFp, party);
+
+    cout << "Lower Constraints:\n";
+    for(int i = 0; i < sz; i++){
+        cout << format_EMP_IntFp(constraints.first[i].reveal(), 1) << " " << format_EMP_IntFp(constraints.first[i + sz].reveal(), 1) << "\n";
+    }
+
+    cout << "Upper Constraints:\n";
+    for(int i = 0; i < sz; i++){
+        cout << format_EMP_IntFp(constraints.second[i].reveal(), 1) << " " << format_EMP_IntFp(constraints.second[i + sz].reveal(), 1) << "\n";
+    }
+
+    bool cheated = finalize_zk_arith<BoolIO<NetIO>>();
+    if(party == BOB && cheated){
+        error("Inner product check failed!\n");
+    }
+}
+
+void test_relu2_secure(BoolIO<NetIO> *ios[threads], int party){
+    setup_plain_prot(false, "");
+    setup_zk_arith<BoolIO<NetIO>>(ios, threads, party);
+
+    init_verification();
+    startComputation(party);
+
+    IntFp* lbs_IntFp = new IntFp[sz];
+    IntFp* ubs_IntFp = new IntFp[sz];
+
+    // cleartext float
+    float* lbs = new float[sz];
+    float* ubs = new float[sz];
+
+    if(party == ALICE){        
+        read_next_elements(sz, lbs, 0, PARAMS_PATH);
+        read_next_elements(sz, ubs, sz, PARAMS_PATH);
+    }
+    authenticate_over_field(sz, lbs, lbs_IntFp, party);
+    authenticate_over_field(sz, ubs, ubs_IntFp, party);
+
+    
+    auto constraints = relu_bundle2(sz, lbs_IntFp, ubs_IntFp, party);
+
+    cout << "Lower Constraints:\n";
+    for(int i = 0; i < sz; i++){
+        cout << format_EMP_IntFp(constraints.first[i].reveal(), 1) << " " << format_EMP_IntFp(constraints.first[i + sz].reveal(), 1) << "\n";
+    }
+
+    cout << "Upper Constraints:\n";
+    for(int i = 0; i < sz; i++){
+        cout << format_EMP_IntFp(constraints.second[i].reveal(), 1) << " " << format_EMP_IntFp(constraints.second[i + sz].reveal(), 1) << "\n";
+    }
+
+    bool cheated = finalize_zk_arith<BoolIO<NetIO>>();
+    if(party == BOB && cheated){
+        error("Inner product check failed!\n");
+    }
+}
+    
+
+
 int main(int argc, char** argv){
     parse_party_and_port(argv, &party, &port);
     BoolIO<NetIO> *ios[threads];
@@ -102,5 +229,10 @@ int main(int argc, char** argv){
             party == ALICE);
             
     sz = atoi(argv[3]);
-    test_affine(ios, party);
+    FXPSCALE = atoi(argv[4]);
+    // test_affine(ios, party);
+    test_affine_secure(ios, party);
+    test_relu_secure(ios, party);
+    cout << "\n\n";
+    test_relu2_secure(ios, party);
 }

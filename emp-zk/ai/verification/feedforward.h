@@ -16,16 +16,16 @@ using namespace std;
 template <typename T>
 class VerifiableFeedForwardNeuralNetwork {
     public:
-
+    int party = PUBLIC;
     int num_layers;
     Layer<T>** layers;
     
     int num_inputs;
 
-    VerifiableFeedForwardNeuralNetwork(int num_layers, Layer<T>** layers){
+    VerifiableFeedForwardNeuralNetwork(int num_layers, Layer<T>** layers, int party = PUBLIC){
         this->num_layers = num_layers;
         this->layers = layers;
-
+        this->party = party;
         // validate_layers();
     }
 
@@ -56,19 +56,6 @@ class VerifiableFeedForwardNeuralNetwork {
         }
     }
 
-    void load_network_parameters(const char* param_file_path){
-        int layer_offset = 0;
-        for(int k = 0; k < num_layers; k++){
-            Layer<T>* curr_layer = layers[k];
-            if(curr_layer->type == AFFINE){
-                curr_layer->param->init_param_matrix(param_file_path, layer_offset);
-                layer_offset += curr_layer->param->num_parameters();
-            } else {
-                continue;
-            }
-        }
-    }
-
     void load_weights_and_biases(const char* param_file_path){
         int layer_offset = 0;
         for(int k = 0; k < num_layers; k++){
@@ -76,13 +63,11 @@ class VerifiableFeedForwardNeuralNetwork {
             if(curr_layer->type == AFFINE){
                 ((Affine<T>*) curr_layer)->param->read_weights_and_biases(param_file_path, layer_offset);
                 layer_offset += ((Affine<T>*) curr_layer)->param->num_parameters();
-            } else {
-                continue;
             }
         }
     }
 
-    void load_input(const char* input_file_path, int input_offset = 0){
+    void load_input(const char* input_file_path, int input_offset = 0, float epsilon = 0.1){
         assert(layers != NULL && "Layers not yet initialized, cannot load inputs!");
         assert(layers[0]->type == INPUT && "The first layer should be an INPUT layer, cannot load inputs!");
 
@@ -94,28 +79,58 @@ class VerifiableFeedForwardNeuralNetwork {
         ((Output<T>*) layers[num_layers-1])->ground_truth = int(gt);
         input_offset++;
         
+        
         // read inputs
-        if constexpr (std::is_same<T, IntFp>::value){
-            float* raw_inputs = new float[input_layer->input_size];
-            read_next_elements(input_layer->input_size, raw_inputs, input_offset, input_file_path);
-            
-            input_layer->input = convert_reals_to_field_rep(input_layer->input_size, raw_inputs);
-            input_layer->output = convert_reals_to_field_rep(input_layer->output_size, raw_inputs);
+        float* raw_inputs = new float[input_layer->input_size];
+        read_next_elements(input_layer->input_size, raw_inputs, input_offset, input_file_path);
 
-            delete[] raw_inputs;
+        float* raw_lb = new float[input_layer->input_size];
+        for(int i = 0; i < input_layer->input_size; i++){
+            raw_lb[i] = raw_inputs[i] - epsilon;
+            if(raw_lb[i] < INPUT_MIN){
+                raw_lb[i] = INPUT_MIN;
+            }
+
+            if(raw_lb[i] > INPUT_MAX){
+                raw_lb[i] = INPUT_MAX;
+            }
+        }
+
+        float* raw_ub = new float[input_layer->input_size];
+        for(int i = 0; i < input_layer->input_size; i++){
+            raw_ub[i] = raw_inputs[i] + epsilon;
+            if(raw_ub[i] < INPUT_MIN){
+                raw_ub[i] = INPUT_MIN;
+            }
+
+            if(raw_ub[i] > INPUT_MAX){
+                raw_ub[i] = INPUT_MAX;
+            }
+        }
+            
+        if constexpr (std::is_same<T, IntFp>::value){
+            
+            input_layer->input = convert_reals_to_field_rep(input_layer->input_size, raw_inputs, PUBLIC);
+            input_layer->output = convert_reals_to_field_rep(input_layer->output_size, raw_inputs, PUBLIC);
+            input_layer->lower_bounds = convert_reals_to_field_rep(input_layer->input_size, raw_lb, PUBLIC);
+            input_layer->upper_bounds = convert_reals_to_field_rep(input_layer->input_size, raw_ub, PUBLIC);
+
         } else if constexpr (std::is_same<T, float>::value){
-            read_next_elements(input_layer->input_size, input_layer->input, input_offset, input_file_path);        
-            read_next_elements(input_layer->output_size, input_layer->output, input_offset, input_file_path);  
+            for(int i = 0; i < input_layer->input_size; i++){
+                input_layer->input[i] = raw_inputs[i];
+                input_layer->output[i] = raw_inputs[i];
+                input_layer->lower_bounds[i] = raw_lb[i];
+                input_layer->upper_bounds[i] = raw_ub[i];
+            }
         }
 
         this->num_inputs = input_layer->input_size;
-    }
 
-    void set_epsilon(float epsilon){
-        assert(layers[0]->type == INPUT && "The first layer should be an INPUT layer, cannot set epsilon!\n");
-        ((Input<T>*) layers[0])->set_epsilon(epsilon);
-    }
 
+        delete[] raw_inputs;
+        delete[] raw_lb;
+        delete[] raw_ub;
+    }
     
     void reset(){
         for(int i = 0; i < this->num_layers; i++){
@@ -133,20 +148,25 @@ class VerifiableFeedForwardNeuralNetwork {
             layers[i]->forward(input_layer, prev_layer, do_inference);
             prev_layer = layers[i];
         }
-        bool verification_result = ((Output<T>*) layers[this->num_layers-1])->verified;
+        
+        bool verification_result;
+        verification_result = ((Output<T>*) layers[this->num_layers-1])->verified;
+
 
         if(DO_DP_BS){
-            for(int i = 0; i < num_layers; i++){
-                // profiling(layers[i]);
-            }
+            // for(int i = 0; i < num_layers; i++){
+            //     profiling(layers[i]);
+            // }
         } else {
-            if (!verification_result && do_backsubstitution) {
-                // perform backsubstitution
-                cout << "couldn't verify... performing backsubstitution....\n";
-                this->layers[this->num_layers - 1]->backsubstitute(this->layers[0]);
-                verification_result = ((Output<T>*) layers[this->num_layers-1])->verified;
-            }
+            // if (!verification_result && do_backsubstitution) {
+            //     // perform backsubstitution
+            //     cout << "couldn't verify... performing backsubstitution....\n";
+            //     this->layers[this->num_layers - 1]->backsubstitute(this->layers[0]);
+            //     verification_result = ((Output<T>*) layers[this->num_layers-1])->verified;
+            // }
         }
+
+        layers[num_layers - 1]->describe(false, false);
 
         return verification_result;
     }

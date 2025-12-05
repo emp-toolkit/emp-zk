@@ -1,0 +1,29 @@
+{
+    "model_name": "cifar_relu_4_100",
+    "num_neurons": 100,
+    "layers": [
+        ["INPUT", 3072, 3072, -1],
+
+        ["AFFINE", 3072, "num_neurons", -1],
+        ["RELU", "num_neurons", "num_neurons", -1],
+        
+        ["AFFINE", "num_neurons", "num_neurons", -1],
+        ["RELU", "num_neurons", "num_neurons", -1],
+        
+        ["AFFINE", "num_neurons", "num_neurons", -1],
+        ["RELU", "num_neurons", "num_neurons", -1],
+
+        ["AFFINE", "num_neurons", "num_neurons", -1],
+        ["RELU", "num_neurons", "num_neurons", -1],
+
+        ["AFFINE", "num_neurons", 10, -1],
+        ["RELU", 10, 10, -1],
+        
+        ["OUTPUT", 10, 10, -1]
+    ],
+    "epsilon": 0.008,
+    "input_min": -2.1,
+    "input_max": 2.1,
+    "do_float": 2,
+    "FXPSCALE": 21
+}

@@ -6,6 +6,7 @@
 #include "emp-tool/emp-tool.h"
 #include "emp-zk/emp-zk.h"
 #include "emp-zk/ai/ai.h"
+#include "emp-zk/ai/secure-utils.h"
 #include <iostream>
 
 using namespace emp;
@@ -18,12 +19,14 @@ class Parameters {
     // [m x (n + 1)] matrix [+1 for bias]
     int m;
     int n;
-    
+    int party = PUBLIC;
+
     T* param_matrix;
 
-    Parameters(int m, int n){
+    Parameters(int m, int n, int party = PUBLIC){
         this->m = m;
         this->n = n;
+        this->party = party;
         this->param_matrix = new T[m*(n+1)];
     }
 
@@ -31,20 +34,6 @@ class Parameters {
         return m*(n+1);
     }
 
-    void init_param_matrix(const char* filepath, int offset){
-        // skip the first offset entries in the file as
-        // they belong to previous layer
-
-        if constexpr (std::is_same<T, IntFp>::value){
-            float* raw_params = new float[num_parameters()];
-            read_next_elements(num_parameters(), raw_params, offset, filepath);
-            this->param_matrix = convert_reals_to_field_rep(num_parameters(), raw_params);
-
-            delete[] raw_params;
-        } else if constexpr (std::is_same<T, float>::value) {
-            read_next_elements(num_parameters(), param_matrix, offset, filepath);
-        }
-    }
 
     void read_weights_and_biases(const char* filepath, int offset){
         read_weights(filepath, offset);
@@ -53,18 +42,22 @@ class Parameters {
 
     void read_weights(const char* filepath, int offset){
         float* raw_weights = new float[m*n];
-        read_next_elements(m*n, raw_weights, offset, filepath);
+        if(this->party != BOB){
+            read_next_elements(m*n, raw_weights, offset, filepath);
+        }
 
         if constexpr (std::is_same<T, IntFp>::value){
             IntFp* temp_weights = new IntFp[m*n];
-            temp_weights = convert_reals_to_field_rep(m*n, raw_weights);
-
+            authenticate_over_field(m*n, raw_weights, temp_weights, this->party);
+            
             for(int i = 0; i < m; i++){
                 for(int j = 0; j < n; j++){
-                    param_matrix[i*(n+1) + j] = IntFp(temp_weights[i*n + j]);
+                    param_matrix[i*(n+1) + j] = temp_weights[i*n + j];
                 }
             }
+            
             delete[] temp_weights;
+
         } else if constexpr (std::is_same<T, float>::value) {
             for(int i = 0; i < m; i++){
                 for(int j = 0; j < n; j++){
@@ -78,17 +71,21 @@ class Parameters {
 
     void read_biases(const char* filepath, int offset){
         float* raw_biases = new float[m];
-        read_next_elements(m, raw_biases, offset, filepath);
+
+        if(this->party != BOB){
+            read_next_elements(m, raw_biases, offset, filepath);
+        }
 
         if constexpr (std::is_same<T, IntFp>::value){
             IntFp* temp_biases = new IntFp[m];
-            temp_biases = convert_reals_to_field_rep(m, raw_biases);
+            authenticate_over_field(m, raw_biases, temp_biases, this->party);
 
             for(int i = 0; i < m; i++){
-                param_matrix[(i+1)*n + i] = IntFp(temp_biases[i]);
+                param_matrix[(i+1)*n + i] = temp_biases[i];
             }
 
             delete[] temp_biases;
+
         } else if constexpr (std::is_same<T, float>::value) {
             for(int i = 0; i < m; i++){
                 param_matrix[(i+1)*n + i] = (raw_biases[i]);

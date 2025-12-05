@@ -17,7 +17,7 @@ template <typename T>
 class ReLU : public Layer<T> {
     public:
     
-    ReLU(int input_size, int output_size, int max_coeffs = 2) : Layer<T>(input_size, output_size, max_coeffs){
+    ReLU(int input_size, int output_size, int max_coeffs = 2, int party = PUBLIC) : Layer<T>(input_size, output_size, max_coeffs, party){
         if(input_size != output_size){
             error("ReLU layer should have same input size and output size!\n");
         }
@@ -51,12 +51,9 @@ class ReLU : public Layer<T> {
         
         compute_upper_constraints();
         compute_upper_bounds();
+
         double tt = time_from(start);
         this->time_for_fp += tt;
-
-        if(DO_DP_BS){
-            backsubstitute(input_layer);
-        }
 
         if(do_inference){
             relu_layer(this->input_size, this->input, this->output);
@@ -64,6 +61,71 @@ class ReLU : public Layer<T> {
     }
 
     void compute_lower_bounds(){
+        if constexpr (std::is_same<IntFp, T>::value && SECURE){
+
+            IntFp* prev_lb = this->prev_layer->lower_bounds;
+            ZKcmpPositive(this->party, prev_lb, ZERO_COMP_CONSTANT, this->lower_bounds, this->output_size);
+
+            for(int i = 0; i < this->output_size; i++){
+                this->lower_bounds[i] = this->lower_bounds[i] * prev_lb[i];
+            }
+            
+        } else {
+            cleartext_compute_lower_bounds();
+        }
+    }
+
+    void compute_upper_bounds(){
+        if constexpr (std::is_same<IntFp, T>::value && SECURE){
+
+            IntFp* prev_ub = this->prev_layer->upper_bounds;
+            ZKcmpPositive(this->party, prev_ub, ZERO_COMP_CONSTANT, this->upper_bounds, this->output_size);
+
+            for(int i = 0; i < this->output_size; i++){
+                this->upper_bounds[i] = this->upper_bounds[i] * prev_ub[i];
+            }
+
+        } else {
+            cleartext_compute_upper_bounds();
+        }
+    }
+
+    void compute_lower_constraints(){
+        if constexpr (std::is_same<IntFp, T>::value && SECURE){
+            auto constraints = relu_bundle2(
+                this->output_size, 
+                this->prev_layer->lower_bounds, 
+                this->prev_layer->upper_bounds, 
+                this->party
+            );
+
+            IntFp* lc = constraints.first;
+            IntFp* uc = constraints.second;
+
+            // rearrangement
+            for(int i = 0; i < this->output_size; i++){
+                this->lower_constraints[2*i + 0] = lc[i];
+                this->lower_constraints[2*i + 1] = lc[i + this->output_size];
+
+                this->upper_constraints[2*i + 0] = uc[i];
+                this->upper_constraints[2*i + 1] = uc[i + this->output_size];
+            }
+        } else {
+            cleartext_compute_lower_constraints();
+            cleartext_compute_upper_constraints();
+        }
+    }
+
+    void compute_upper_constraints(){
+        ;
+    }
+
+    void backsubstitute(Layer<T>* input_layer){
+        ;
+    }
+
+
+    void cleartext_compute_lower_bounds(){
         for(int i = 0; i < this->output_size; i++){
             T prev_lb = this->prev_layer->lower_bounds[i];
 
@@ -93,7 +155,7 @@ class ReLU : public Layer<T> {
         }
     }
 
-    void compute_upper_bounds(){
+    void cleartext_compute_upper_bounds(){
         for(int i = 0; i < this->output_size; i++){
             T prev_ub = this->prev_layer->upper_bounds[i];
 
@@ -117,7 +179,7 @@ class ReLU : public Layer<T> {
     }
 
 
-    void compute_lower_constraints(){
+    void cleartext_compute_lower_constraints(){
         for(int i = 0; i < this->output_size; i++){
             T prev_lb = this->prev_layer->lower_bounds[i];
             T prev_ub = this->prev_layer->upper_bounds[i];
@@ -146,7 +208,7 @@ class ReLU : public Layer<T> {
         }
     }
        
-    void compute_upper_constraints(){
+    void cleartext_compute_upper_constraints(){
         for(int i = 0; i < this->output_size; i++){
             T prev_lb = this->prev_layer->lower_bounds[i];
             T prev_ub = this->prev_layer->upper_bounds[i];
@@ -163,41 +225,21 @@ class ReLU : public Layer<T> {
 
                 // |u_i| > |l_i|
                 this->upper_constraints[i*2 + 0] = divide(prev_ub, subtract(prev_ub, prev_lb));
+                // this->upper_constraints[i*2 + 0] = constant<T>(1);
 
                 T prod = prev_lb*prev_ub;
                 if(std::is_same<IntFp, T>::value){
                     normalize(1, (IntFp*)&prod, (IntFp*)&prod);
                 }
                 this->upper_constraints[i*2 + 1] = divide(prod, subtract(prev_lb, prev_ub));
+                // this->upper_constraints[i*2 + 1] = constant<T>(0);
             
             }
         }
     }
 
 
-    void backsubstitute(Layer<T>* input_layer){
-        if(DO_DP_BS){
-            ;
-        } else {
-            // if(!this->prev_layer->is_backsubstituted){
-            //     this->prev_layer->backsubstitute(input_layer);
-            // }  
 
-            // int num_inputs = input_layer->input_size;
-            // this->max_coeffs = num_inputs + 1;
-
-            // this->backsubstitute_lower_constraints(num_inputs);
-            // this->backsubstitute_upper_constraints(num_inputs);
-            // this->is_backsubstituted = true;
-
-            // // this->compute_lower_bounds_after_backsubstitution(input_layer);
-            // // this->compute_upper_bounds_after_backsubstitution(input_layer);
-        
-            // this->compute_lower_bounds();
-            // this->compute_upper_bounds();
-            ;
-        }
-    }
 
     void reset(){
         delete[] this->input;

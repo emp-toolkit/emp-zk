@@ -16,7 +16,7 @@ class Input : public Layer<T> {
     public:
     T epsilon;
 
-    Input(int input_size, int output_size, int max_coeffs = 1, float epsilon = 0.1) : Layer<T>(input_size, output_size, max_coeffs){
+    Input(int input_size, int output_size, int max_coeffs = 1, float epsilon = 0.1, int party = PUBLIC) : Layer<T>(input_size, output_size, max_coeffs, party){
         if(input_size != output_size){
             error("Input layer should have same input size and output size!\n");
         }
@@ -36,14 +36,9 @@ class Input : public Layer<T> {
         this->lower_constraints = new T[output_size*this->max_coeffs];
         this->upper_constraints = new T[output_size*this->max_coeffs];
 
-        this->epsilon = constant<T>(epsilon);
-
         this->is_backsubstituted = true;    // input layer is by default backsubstituted always
     }
 
-    void set_epsilon(float epsilon){
-        this->epsilon = constant<T>(epsilon);
-    }
 
     void forward(Layer<T>* input_layer, Layer<T>* prev_layer, bool do_inference = true){
         assert(prev_layer == NULL && "Input layer should not have any input from a previous layer!\n");
@@ -54,32 +49,16 @@ class Input : public Layer<T> {
         compute_upper_bounds();
         compute_upper_constraints();
 
-        for(int i = 0; i < this->input_size; i++){
-            this->output[i] = T(this->input[i]);
-        }
-
         this->prev_layer = NULL;
     }
 
 
     void compute_lower_bounds(){
-        // l_i = inp_i for input layer
-        for(int i = 0; i <  this->input_size; i++){
-            this->lower_bounds[i] = subtract(this->input[i], this->epsilon);
-            if(!greater_eq_zero<T>(this->lower_bounds[i], false)){
-                this->lower_bounds[i] = constant<T>(0);
-            } 
-        }
+        ;
     }
 
     void compute_upper_bounds(){
-        // u_i = inp_i for input layer
-        for(int i = 0; i <  this->input_size; i++){
-            this->upper_bounds[i] = T(this->input[i]) + this->epsilon;
-            if(greater_eq<T>(this->upper_bounds[i], constant<T>(1), true)){
-                this->upper_bounds[i] = constant<T>(1);
-            }
-        }
+        ;
     }
 
 

@@ -43,7 +43,10 @@ void test_inner_product(BoolIO<NetIO> *ios[threads], int party) {
     fp_zkp_inner_prdt<BoolIO<NetIO>>(x, x + sz, constant, sz);
   }
 
-  finalize_zk_arith<BoolIO<NetIO>>();
+  bool cheated = finalize_zk_arith<BoolIO<NetIO>>();
+  if(party == BOB && cheated){
+    error("Inner product check fails!\n");
+  } 
 
   double tt = time_from(start);
   cout << "prove " << repeat << " degree-2 polynomial of length " << sz << endl;

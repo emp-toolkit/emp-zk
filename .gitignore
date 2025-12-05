@@ -46,3 +46,4 @@ emp-ot/latticeInclude.h
 
 # Eigen source
 eigen/
+*logs*

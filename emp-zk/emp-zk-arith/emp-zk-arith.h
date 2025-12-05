@@ -43,10 +43,11 @@ inline void setup_zk_arith(IO **ios, int threads, int party,
   }
 }
 
-template <typename IO> inline void finalize_zk_arith() {
+template <typename IO> inline bool finalize_zk_arith() {
   if (EdaBits<IO>::conv != nullptr)
     delete EdaBits<IO>::conv;
   delete FpPolyProof<IO>::fppolyproof;
   delete ZKFpExec::zk_exec;
+  return CheatRecord::cheated();
 }
 #endif

@@ -8,20 +8,45 @@
 
 #include <fstream>
 
+#define NUM_THREADS 1
 #define FLOATBW 32
 #define FXPBW 61
-#define FXPSCALE 20
-#define DO_DP_BS false
+// #define FXPSCALE 20
+#define DO_DP_BS true
 
 #define REVERSE(s) reversed(s)
 
 using namespace std;
 using namespace emp;
 
-// IntFp FIELD_ZERO(0, PUBLIC);
+int FXPSCALE = 20;
+
+IntFp FIELD_ZERO;
+IntFp FIELD_ONE;
+IntFp FIELD_SCALED_ONE;
+IntFp FIELD_MINUS_ONE;
+uint64_t ZERO_COMP_CONSTANT = (PR+1)/2;
+uint64_t MINUS_ONE = (PR - 1);
+
+const bool SECURE = 1; // 0 = cleartext, 1 = zk
 
 enum LAYER_TYPE{INPUT, AFFINE, RELU, OUTPUT};
-enum TEST_MODE{CLTFLOAT, CLTFXP, SECURE};
+enum TEST_MODE{CLTFLOAT, CLTFXP, SECUREMODE};
+
+enum DATASETS{MNIST, CIFAR10};
+int NUM_FEATURES[] = {784, 3072};
+int CURR_DATASET = DATASETS::MNIST;
+
+float INPUT_MIN = -1e9;
+float INPUT_MAX = 1e9;
+
+void init_verification(){
+    FIELD_ZERO = IntFp(0, PUBLIC);
+    FIELD_ONE = IntFp(1, PUBLIC);
+    FIELD_SCALED_ONE = IntFp(1 << FXPSCALE, PUBLIC);
+    FIELD_MINUS_ONE = IntFp(PR - 1, PUBLIC);
+}
+
 
 std::string get_layer_type(LAYER_TYPE type){
     switch(type){
@@ -111,18 +136,25 @@ IntFp divide<IntFp>(IntFp x, IntFp y){
     return IntFp(res.reveal<uint64_t>(), PUBLIC);
 }
 
+template<>
+uint64_t divide<uint64_t>(uint64_t x, uint64_t y){
+    x = x << FXPSCALE;
+    x = x / y;
+
+    return x;
+}
 
 
 template <typename T>
-T subtract(T x, T y);
+T subtract(T x, T y, int party = PUBLIC);
 
 template <>
-float subtract<float>(float x, float y){
+float subtract<float>(float x, float y, int party){
     return x - y;
 }
 
 template <>
-IntFp subtract<IntFp>(IntFp x, IntFp y){
+IntFp subtract<IntFp>(IntFp x, IntFp y, int party){
     IntFp res(x + y.negate());
     return res;
 }
@@ -131,16 +163,16 @@ IntFp subtract<IntFp>(IntFp x, IntFp y){
 
 
 template <typename T>
-T constant(float x);
+T constant(float x, int party = PUBLIC);
 
 template<>
-float constant<float>(float x){
+float constant<float>(float x, int party){
     return x;
 }
 
 template<>
-IntFp constant<IntFp>(float x){
-    IntFp c(0, PUBLIC);
+IntFp constant<IntFp>(float x, int party){
+    IntFp c(0, party);
     if(x >= 0){
         c = IntFp(x*(1 << FXPSCALE), PUBLIC);
     } else {
@@ -190,16 +222,16 @@ Integer* convert_fixed_point_to_emp_Integers(int sz, int64_t* fixed_point_intege
     return emp_Integers;
 }
 
-IntFp* convert_fixed_point_to_field_rep(int sz, int64_t* fixed_point_integers){
+IntFp* convert_fixed_point_to_field_rep(int sz, int64_t* fixed_point_integers, int party = PUBLIC){
     IntFp* field_elements = new IntFp[sz];
     for(int i = 0; i < sz; i++){
         uint64_t ring_rep = fixed_point_integers[i] > 0 ? fixed_point_integers[i] : PR + fixed_point_integers[i];
-        field_elements[i] = ring_rep;
+        field_elements[i] = IntFp(ring_rep, party);
     }
     return field_elements;
 }
 
-IntFp* convert_reals_to_field_rep(int sz, float* reals){
+IntFp* convert_reals_to_field_rep(int sz, float* reals, int party = PUBLIC){
     IntFp* field_elements = convert_fixed_point_to_field_rep(
         sz, convert_reals_to_fixed_point_rep(sz, reals)
     );
@@ -222,10 +254,10 @@ float* convert_field_rep_to_reals(int sz, IntFp* field_elements){
 }
 
 
-Integer* convert_field_rep_to_emp_Integer(int sz, IntFp* field_elements){
+Integer* convert_field_rep_to_emp_Integer(int sz, IntFp* field_elements, int party = PUBLIC){
     Integer* emp_Integers = new Integer[sz];
     for(int i = 0; i < sz; i++){
-        emp_Integers[i] = Integer(FXPBW, field_elements[i].reveal(), PUBLIC);
+        emp_Integers[i] = Integer(FXPBW, field_elements[i].reveal(), party);
     }
     return emp_Integers;
 }

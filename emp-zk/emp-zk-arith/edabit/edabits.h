@@ -325,9 +325,9 @@ public:
   bool sender_check_conversion(ZKInt in2, __uint128_t inp) {
     if (party == ALICE) {
       uint64_t a = sender_check_int_value(in2);
-      assert(a < PR);
+      expecting(a < PR, "edabit conversion check: boolean value out of field range");
       uint64_t b = sender_check_int_value(inp);
-      assert(b < PR);
+      expecting(b < PR, "edabit conversion check: arithmetic value out of field range");
       if (a != b) {
         return false;
       }

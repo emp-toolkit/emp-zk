@@ -66,6 +66,9 @@ if(EMP_ZK_INSTALL)
         FILES_MATCHING
             PATTERN "*.h")
 
+    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/emp-zk)
+
     install(EXPORT emp-zkTargets
         NAMESPACE   emp-zk::
         DESTINATION ${_cmake_install_dir}

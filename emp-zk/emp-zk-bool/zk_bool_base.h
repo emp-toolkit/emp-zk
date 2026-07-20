@@ -129,7 +129,7 @@ public:
     // LSB-cleared; subclass ctor flips bit-1 of pub_label[1] (prover)
     // or xors zdelta (verifier).
     pub_label[0] = makeBlock(0, 0);
-    pub_label[1] = makeBlock(0, 1);
+    pub_label[1] = bit0_mask;
     PRP(makeBlock(0, 1)).permute_block(pub_label, 2);
     pub_label[0] = clear_lsb(pub_label[0]);
     pub_label[1] = clear_lsb(pub_label[1]);

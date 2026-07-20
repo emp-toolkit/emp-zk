@@ -6,32 +6,45 @@
 
 > **Which version do I want?**
 >
-> - **Existing projects pinned to a published release: stay on `v0.3.x`** —
->   `python3 install.py --tool=v0.3.x --ot=v0.3.x --zk=v0.3.x`
->   reproduces the prior emp-zk line. Bug fixes will be backported.
-> - **New projects, or willing to migrate: track `main`** — built against
->   the C++20 BooleanContext line of emp-tool / emp-ot v1.0.
->   `emp-zk-bool` is a native `BooleanContext` (`ZKBoolContext`) driven by an
->   explicit `ZKBoolSession` handle — no global backend; gadgets receive the
->   session and circuit values are `Bit_T<ZKBoolContext>` / `Int_T<…>`.
->   `emp-zk-arith` still keeps its own `ZKFpExec::zk_exec` singleton (staged).
->   `BaseCot` and `TwoKeyPRP` (which
->   moved out of emp-ot main) are vendored locally under
->   `emp-zk/emp-vole/`, and the `GaloisFieldPacking::base[]` array
->   that ram-zk indexes is provided by a small `ramzk_gf_base()`
->   helper. The full `emp-zk` umbrella (bool / arith / vole / ram /
->   floats / lowmc) builds and tests pass end-to-end.
+> - **Existing projects pinned to the previous line: stay on `v0.3.x`**
+>   (the `v0.3.x` branch — there is no `0.3.0` tag). It is maintained separately
+>   and receives backported fixes.
+> - **New projects, or willing to migrate: use `v1.0.0-alpha.1`** (or track
+>   `main`), which pairs with emp-tool and emp-ot `v1.0.0-alpha.1`. This is a
+>   pre-1.0 alpha — headers and names may change between alpha tags and before
+>   the final `1.0.0`, so pin to a specific tag and pin the paired emp-tool /
+>   emp-ot tags. CMake package metadata is numeric `1.0.0` (a `project(VERSION)`
+>   cannot carry a prerelease suffix); the alpha status lives in the git tag.
 
-Protocols
-=====
-The code in this repo implements a fast, scalable, communication-efficient zero-knowledge proof protocol for Boolean/arithmetic circuits and polynomials. The protocols are described in [Wolverine](https://eprint.iacr.org/2020/925), [Quicksilver](https://eprint.iacr.org/2021/076) and [Mystique](https://eprint.iacr.org/2021/730).
+## Protocols
+
+This repository implements fast, communication-efficient zero-knowledge proofs
+for Boolean and arithmetic circuits and for polynomial relations, following
+[Wolverine](https://eprint.iacr.org/2020/925),
+[Quicksilver](https://eprint.iacr.org/2021/076), and
+[Mystique](https://eprint.iacr.org/2021/730). It comprises:
+
+- **`emp-zk-bool`** — Boolean-circuit ZK on a native emp-tool `BooleanContext`
+  (`ZKBoolContext`) driven by an explicit `ZKBoolSession` handle: no global
+  backend, gadgets receive the session explicitly, and circuit values are
+  `ZKBit` (`Bit_T`) and the runtime-width `ZKUInt` / `ZKInt`
+  (`UInt_T` / `Int_T<…, 0>` over `ZKBoolContext`); fixed-width integers are
+  available as `Int_T<…, N>`. The correlated-OT engine is emp-ot's
+  `SilentFerret` with sized prepay.
+- **`emp-zk-arith`** — a special-purpose algebraic-ZK library over
+  authenticated field elements (`IntFp`, prime field p = 2⁶¹ − 1): private
+  inputs, multiplication, and inner-product / polynomial-relation gadgets, plus
+  an edabit bool↔arith conversion bridge. Matrix multiplication and SIS are
+  included as tested example constructions (see `test/arith/`).
+- **RAM / ROM / set-membership** ZK gadgets (`ZKRam` / `ZKROM` / `ZKSet`, plus a
+  permutation proof) built on the Boolean session.
 
 ## Requirements
 
-- CMake ≥ 3.21
+- CMake ≥ 3.21 (emp-tool needs ≥ 3.25)
 - A C++20 compiler
-- OpenSSL (≥ 1.1)
-- emp-tool / emp-ot at the matching release line
+- OpenSSL ≥ 3.0
+- emp-tool and emp-ot at the paired tag (`v1.0.0-alpha.1`)
 
 ## Build and install
 
@@ -41,8 +54,8 @@ cmake --build build -j
 sudo cmake --install build      # respects CMAKE_INSTALL_PREFIX
 ```
 
-If emp-tool / emp-ot are in sibling source trees rather than installed,
-point CMake at their build directories:
+If emp-tool / emp-ot are in sibling source trees rather than installed, point
+CMake at their build directories:
 
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Release \
@@ -69,27 +82,47 @@ The `emp-zk::emp-zk` target transitively pulls in `emp-ot::emp-ot` and
 ctest --test-dir build --output-on-failure
 ```
 
-Tests under `test/bool/`, `test/arith/`, `test/vole/`, and `test/ram/`
-exercise every module end-to-end: Boolean / arithmetic ZK,
-polynomial / inner-product proofs, SHA-256 + LowMC circuits, edabit
-bool↔arith conversion, VOLE bootstrap (cope / lpn / base_svole /
-vole_triple / vole_f2k_triple), and RAM ZK (read-only, read-write,
-extended). Two-party tests are driven by the top-level `./run`
-wrapper (spawns party 1 then party 2 on localhost).
+Tests under `test/bool/`, `test/arith/`, and `test/ram-zk/` exercise each
+module: Boolean and arithmetic ZK, polynomial and inner-product proofs, a
+SHA-256 circuit, edabit bool↔arith conversion, and RAM / ROM / set-membership
+ZK. Two-party tests are driven by the top-level `./run` wrapper, which spawns
+party 1 then party 2 on localhost.
 
-For a two-machine run: `./bin/test_bool_<name> 1 <port>` on host A and
-`./bin/test_bool_<name> 2 <port>` on host B; edit the test source if
-the IP needs to be other than `127.0.0.1`.
+For a two-machine run, set the port with `EMP_PORT` and point party 2 at
+party 1 with `EMP_PEER_IP` (only the party id is positional):
+
+```bash
+# host A (party 1)
+EMP_PORT=12345 ./build/test_bool_example 1
+# host B (party 2)
+EMP_PORT=12345 EMP_PEER_IP=<host-A-address> ./build/test_bool_example 2
+```
+
+## Security
+
+Research software; there has been no independent security audit. Please report
+vulnerabilities by email to Xiao Wang (wangxiao1254@gmail.com).
+
+- **Arithmetic soundness is field-bounded, not 128-bit.** `emp-zk-arith` works
+  over the prime field p = 2⁶¹ − 1, so its single-field consistency checks have
+  soundness error on the order of 2⁻⁶¹. Boolean ZK operates at the 128-bit
+  level.
+- **Malicious mode is selective-abort, with provisional output.** A cheating
+  prover is caught at the session's closing checks (`ZKBoolSession::finalize()`
+  on the Boolean side; the arithmetic side settles its checks at teardown), and
+  revealed values are provisional until finalization succeeds — do not act on a
+  revealed value across a trust boundary before that point.
+- There is no systematic constant-time guarantee.
 
 ## Performance
 
-The test is done by two AWS EC2 m5.2xlarge servers with throttled network.
+The tables below are historical numbers from the **v0.3.x line** (a
+multi-threaded engine), measured on two AWS EC2 m5.2xlarge servers with a
+throttled network, in million gates per second. The current `main` engine is
+single-threaded and has not been re-benchmarked, so treat these as context,
+not a benchmark of the alpha.
 
-### Throughput of circuit-based ZK protocol
-
-All values are "million gates per second".
-
-#### Boolean circuits
+### Boolean circuits
 
 |Threads|10 Mbps|20 Mbps|30 Mbps|50 Mbps|Localhost|
 |-------|-------|-------|-------|-------|---------|
@@ -98,7 +131,7 @@ All values are "million gates per second".
 |3|6.3|10.9|14.5|17.3|18|
 |4|6.4|11.4|15.1|19|19.4|
 
-#### Arithmetic circuits
+### Arithmetic circuits
 
 |Threads|100 Mbps|500 Mbps|1 Gbps|2 Gbps|Localhost|
 |-------|-------|-------|-------|-------|---------|
@@ -106,8 +139,8 @@ All values are "million gates per second".
 |2|1.4|5.6|8.7|10.2|10.4|
 |3|1.4|5.9|9.3|11.7|12.5|
 
-(Numbers measured on the v0.3.x line; `main` runs the same protocols,
-so re-measured numbers should be in the same ballpark.)
+(The multi-thread columns reflect the v0.3.x engine and do not apply to the
+current single-threaded `main`.)
 
 ## [Acknowledgement, Reference, and Questions](https://github.com/emp-toolkit/emp-readme/blob/main/README.md#citation)
 

@@ -14,7 +14,7 @@ public:
       : ZKBoolBase(ALICE, io, expected_cots) {
     // PUBLIC label for bit 1 has its LSB set so getLSB() reads back the
     // cleartext value. (Verifier instead xors zdelta into pub_label[1].)
-    pub_label[1] = pub_label[1] ^ makeBlock(0, 1);
+    pub_label[1] = pub_label[1] ^ bit0_mask;
   }
 
   ~ZKBoolProver() override {
@@ -39,7 +39,7 @@ public:
 
   block not_block(block in) override {
     // Canonical XOR-with-1: flips the cleartext LSB; the MAC is unchanged.
-    return in ^ makeBlock(0, 1);
+    return in ^ bit0_mask;
   }
 
   block and_block(block l, block r) override {

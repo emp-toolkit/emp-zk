@@ -17,7 +17,7 @@ public:
 
   ZKBoolVerifier(BoolIO *io, int64_t expected_cots = 0)
       : ZKBoolBase(BOB, io, expected_cots) {
-    zdelta = delta ^ makeBlock(0, 1);
+    zdelta = delta ^ bit0_mask;
     // PUBLIC label for bit 1: xor zdelta in so the wire MAC is right
     // even though there's no cleartext flip.
     pub_label[1] = pub_label[1] ^ zdelta;

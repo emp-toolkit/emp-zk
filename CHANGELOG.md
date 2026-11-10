@@ -4,6 +4,16 @@ Notable changes to emp-zk. Versions are the git tags; CMake package
 metadata is numeric (`project(VERSION)` cannot carry a prerelease suffix,
 so the alpha status lives in the git tag).
 
+## Unreleased
+
+### Changed
+
+- `ZKInt` / `ZKUInt` are now emp-tool's `DynamicInt_T` / `DynamicUInt_T`,
+  which emp-tool split out of `Int_T` / `UInt_T` for runtime-width
+  integers. Code that uses the `ZKInt` / `ZKUInt` names is unchanged.
+  Revealing one into a 64-bit integer now stops the program when the
+  value does not fit, where it used to keep only the low 64 bits.
+
 ## v1.0.0-alpha.1
 
 First tagged alpha of the 1.0 development line, pairing with emp-tool and

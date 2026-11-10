@@ -28,7 +28,7 @@ for Boolean and arithmetic circuits and for polynomial relations, following
   (`ZKBoolContext`) driven by an explicit `ZKBoolSession` handle: no global
   backend, gadgets receive the session explicitly, and circuit values are
   `ZKBit` (`Bit_T`) and the runtime-width `ZKUInt` / `ZKInt`
-  (`UInt_T` / `Int_T<…, 0>` over `ZKBoolContext`); fixed-width integers are
+  (`DynamicUInt_T` / `DynamicInt_T` over `ZKBoolContext`); fixed-width integers are
   available as `Int_T<…, N>`. The correlated-OT engine is emp-ot's
   `SilentFerret` with sized prepay.
 - **`emp-zk-arith`** — a special-purpose algebraic-ZK library over

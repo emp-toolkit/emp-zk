@@ -4,7 +4,12 @@ Notable changes to emp-zk. Versions are the git tags; CMake package
 metadata is numeric (`project(VERSION)` cannot carry a prerelease suffix,
 so the alpha status lives in the git tag).
 
-## Unreleased
+## v1.0.0-alpha.2
+
+Second alpha of the 1.0 development line, pairing with emp-tool and emp-ot
+`v1.0.0-alpha.2`, which it requires: `v1.0.0-alpha.1` does not build against
+emp-tool `v1.0.0-alpha.2`. emp-ot's new Ferret and sVOLE parameters change
+emp-zk's transcripts, so both parties must upgrade together.
 
 ### Changed
 
@@ -13,6 +18,8 @@ so the alpha status lives in the git tag).
   integers. Code that uses the `ZKInt` / `ZKUInt` names is unchanged.
   Revealing one into a 64-bit integer now stops the program when the
   value does not fit, where it used to keep only the low 64 bits.
+- `./run` uses `EMP_PORT` when set and 12345 otherwise, and `ctest` gives each
+  two-party test its own port from 23000 up.
 
 ## v1.0.0-alpha.1
 

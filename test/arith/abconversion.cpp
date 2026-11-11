@@ -8,7 +8,7 @@ using namespace std;
 int party;
 
 void test_mix_circuit(BoolIO *io, int party, int sz) {
-  srand(time(NULL));
+  srand(1);  // both parties draw the same test values
   uint64_t *a = new uint64_t[sz];
   for (int i = 0; i < sz; ++i)
     a[i] = rand() % PR;

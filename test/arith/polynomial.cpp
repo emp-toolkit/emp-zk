@@ -10,7 +10,7 @@ int party;
 int repeat, sz;
 
 void test_polynomial(BoolIO *io, int party) {
-  srand(time(NULL));
+  srand(1);  // both parties draw the same test values
   uint64_t *coeff = new uint64_t[sz + 1];
   uint64_t *witness = new uint64_t[2 * sz];
   memset(witness, 0, 2 * sz * sizeof(uint64_t));

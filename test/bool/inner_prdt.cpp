@@ -8,7 +8,7 @@ int party;
 int repeat, sz;
 
 void test_inner_product(BoolIO *io, int party) {
-  srand(time(NULL));
+  srand(1);  // both parties draw the same test values
   bool constant;
   bool *witness = new bool[2 * sz];
   memset(witness, 0, 2 * sz * sizeof(bool));

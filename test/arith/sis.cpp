@@ -17,7 +17,7 @@ int party;
 
 void test_sis_proof(BoolIO *io, int party, int n, int m) {
 
-  srand(time(NULL));
+  srand(1);  // both parties draw the same test values
 
   int mat_size = n * m;
   uint64_t *A, *s, *t;

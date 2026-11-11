@@ -42,7 +42,7 @@ void test_circuit_zk(BoolIO *io, int party) {
        << " ns " << party << endl;
 
   std::cout << "correctness check test" << std::endl;
-  srand(time(NULL));
+  srand(1);  // both parties draw the same test values
   int sz = 10000;
   uint64_t *d = new uint64_t[sz];
   uint64_t *e = new uint64_t[sz];

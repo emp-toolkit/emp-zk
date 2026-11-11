@@ -8,7 +8,7 @@ int party;
 int sz, repeat;
 
 void test_polynomial(BoolIO *io, int party) {
-  srand(time(NULL));
+  srand(1);  // both parties draw the same test values
   bool *coeff = new bool[sz + 1];
   bool *witness = new bool[2 * sz];
   memset(witness, 0, 2 * sz * sizeof(bool));

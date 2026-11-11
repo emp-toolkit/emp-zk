@@ -9,7 +9,7 @@ int party;
 int repeat, sz;
 
 void test_inner_product(BoolIO *io, int party) {
-  srand(time(NULL));
+  srand(1);  // both parties draw the same test values
   uint64_t constant = 0;
   uint64_t *witness = new uint64_t[2 * sz];
   memset(witness, 0, 2 * sz * sizeof(uint64_t));

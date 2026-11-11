@@ -7,7 +7,7 @@
 // surface) expresses statements with these, while the proof gadgets
 // (polynomial / perm / f2k) keep operating on raw authenticated blocks.
 //
-// ZKInt / ZKUInt are runtime-width (Int_T/UInt_T<Ctx, runtime_width>): width is a
+// ZKInt / ZKUInt are runtime-width (DynamicInt_T / DynamicUInt_T<Ctx>): width is a
 // runtime value and they are intentionally NOT fixed-width WireValues (no static
 // width()/clear codec) — they model RuntimeWidthValue instead. Build/open through
 // ZKBoolSession's runtime overloads sess.input<ZKUInt>(owner, value, width) /
@@ -25,8 +25,8 @@
 namespace emp {
 
 using ZKBit  = Bit_T<ZKBoolContext>;
-using ZKInt  = Int_T<ZKBoolContext, 0>;    // runtime-width signed integer (two's-complement)
-using ZKUInt = UInt_T<ZKBoolContext, 0>;   // runtime-width unsigned integer (zero-extend)
+using ZKInt  = DynamicInt_T<ZKBoolContext>;   // runtime-width signed integer (two's-complement)
+using ZKUInt = DynamicUInt_T<ZKBoolContext>;  // runtime-width unsigned integer (zero-extend)
 
 // --- boundary helpers -------------------------------------------------------
 

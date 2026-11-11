@@ -15,7 +15,7 @@ emp-tool and emp-ot. It implements the VOLE-based ZK line of
   emp-tool `BooleanContext` (`ZKBoolContext`) driven by an explicit
   `ZKBoolSession` handle. There is **no global backend**; every gadget
   receives the session explicitly. Circuit values are `ZKBit` (`Bit_T`)
-  and the runtime-width `ZKUInt` / `ZKInt` (`UInt_T` / `Int_T<…, 0>` over
+  and the runtime-width `ZKUInt` / `ZKInt` (`DynamicUInt_T` / `DynamicInt_T` over
   `ZKBoolContext`; fixed-width via `Int_T<…, N>`). The correlated-OT engine
   is emp-ot's `SilentFerret` with sized prepay (`expected_cots`). The session models
   emp-tool's `Session` / `DirectSession` / `SessionIO` concepts

@@ -4,6 +4,27 @@ Notable changes to emp-zk. Versions are the git tags; CMake package
 metadata is numeric (`project(VERSION)` cannot carry a prerelease suffix,
 so the alpha status lives in the git tag).
 
+## Unreleased
+
+Requires emp-tool and emp-ot newer than `v1.0.0-alpha.2` (their `main`):
+`BoolIO` calls emp-tool's `IOChannel::use_transcript_of`, and the OT and VOLE
+extensions take their session ids from the channel. The session ids change
+every transcript, so both parties must upgrade together.
+
+### Changed
+
+- The OT and VOLE extensions in a proof take fresh session ids from the
+  connection, which both parties agree on, instead of the zero id: `BoolIO`
+  forwards `has_session_root()` and `next_session_id()` to the channel it
+  wraps.
+- `BoolIO` keeps no Fiat-Shamir transcript of its own: it uses its channel's,
+  which already sees all of the proof's traffic. The OT and VOLE extensions
+  used to turn on a second transcript on the `BoolIO` itself, so the proof's
+  byte traffic was hashed twice.
+- `BoolIO` no longer flushes its channel on every byte message. The channel
+  sends what is pending before it blocks on a receive, so the verifier's
+  messages go out batched.
+
 ## v1.0.0-alpha.2
 
 Second alpha of the 1.0 development line, pairing with emp-tool and emp-ot

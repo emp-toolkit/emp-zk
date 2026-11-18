@@ -9,8 +9,8 @@
 > - **Existing projects pinned to the previous line: stay on `v0.3.x`**
 >   (the `v0.3.x` branch — there is no `0.3.0` tag). It is maintained separately
 >   and receives backported fixes.
-> - **New projects, or willing to migrate: use `v1.0.0-alpha.2`** (or track
->   `main`), which pairs with emp-tool and emp-ot `v1.0.0-alpha.2`. This is a
+> - **New projects, or willing to migrate: use `v1.0.0-alpha.2`**, which pairs
+>   with emp-tool and emp-ot `v1.0.0-alpha.2`. This is a
 >   pre-1.0 alpha — headers and names may change between alpha tags and before
 >   the final `1.0.0`, so pin to a specific tag and pin the paired emp-tool /
 >   emp-ot tags. CMake package metadata is numeric `1.0.0` (a `project(VERSION)`
@@ -44,7 +44,7 @@ for Boolean and arithmetic circuits and for polynomial relations, following
 - CMake ≥ 3.21 (emp-tool needs ≥ 3.25)
 - A C++20 compiler
 - OpenSSL ≥ 3.0
-- emp-tool and emp-ot at the paired tag (`v1.0.0-alpha.1`)
+- emp-tool and emp-ot at the paired tag (see the version note above)
 
 ## Build and install
 

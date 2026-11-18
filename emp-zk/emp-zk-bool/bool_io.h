@@ -78,8 +78,9 @@ public:
     return res;
   }
 
-  // `io` sends what is pending before it blocks on a receive, so closing the
-  // chunk is all a byte message needs here.
+  // This relies on `io` sending what is pending before it blocks on a
+  // receive, as NetIO and TLSIO do: closing the chunk is then all a byte
+  // message needs here.
   void send_data_internal(const void *data, int64_t nbyte) override {
     close_chunk_();
     io->send_data(data, nbyte);

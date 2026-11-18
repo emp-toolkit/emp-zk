@@ -1,20 +1,156 @@
 #!/bin/bash
-# Port travels via EMP_PORT (read by peer_port()); only the party id is positional.
-# It is EMP_PORT when set (ctest gives each two-party test its own) and 12345
-# otherwise: a fixed port below the range the OS assigns to outgoing connections
-# (32768 and up on Linux, 49152 and up on macOS), so no outgoing connection can
-# be holding it. The listener sets SO_REUSEADDR, so back-to-back runs can
-# re-bind it.
-#
-# Exits nonzero when either party fails: with party 2's status if it failed,
-# else with party 1's. A failed party 2 stops party 1 rather than waiting for
-# it, since party 1 may be blocked on its peer.
+# Two-party local test harness. The port travels via EMP_PORT (read by
+# peer_port()); only the party id is a positional arg. It is EMP_PORT when set
+# (ctest gives each two-party test its own) and 12345 otherwise: a fixed port
+# below the range the OS assigns to outgoing connections (32768 and up on Linux,
+# 49152 and up on macOS), so no outgoing connection can be holding it. The
+# listener sets SO_REUSEADDR, so back-to-back runs can re-bind it.
 export EMP_PORT=${EMP_PORT:-12345}
-(sleep 0.05; exec "$1" 1 "${@:2}") & p1=$!
-"$1" 2 "${@:2}"; s2=$?
-if [ "$s2" -ne 0 ]; then
-  kill "$p1" 2> /dev/null
-  wait "$p1" 2> /dev/null
-  exit "$s2"
+
+if [[ $# -lt 1 ]]; then
+	echo "usage: $0 <binary> [args]" >&2
+	exit 2
 fi
-wait "$p1"
+
+timeout_seconds=${EMP_RUN_TIMEOUT:-120}
+case "$timeout_seconds" in
+	''|*[!0-9]*)
+		echo "run: EMP_RUN_TIMEOUT must be a positive integer" >&2
+		exit 2
+		;;
+esac
+if (( timeout_seconds <= 0 )); then
+	echo "run: EMP_RUN_TIMEOUT must be a positive integer" >&2
+	exit 2
+fi
+
+program=$1
+shift
+
+alice_pid=
+bob_pid=
+alice_done=0
+bob_done=0
+
+# Stop a party's entire process group, escalating if any descendant ignores
+# TERM. Each party is launched as its group's leader below, so a timed-out
+# wrapper cannot orphan a grandchild that keeps a pipe or socket open.
+terminate_group() {
+	local pid=$1
+	local attempts=0
+
+	if [[ -n "$pid" ]] && kill -0 -- "-$pid" 2>/dev/null; then
+		kill -TERM -- "-$pid" 2>/dev/null || true
+		while kill -0 -- "-$pid" 2>/dev/null && (( attempts < 10 )); do
+			sleep 0.02
+			((attempts += 1))
+		done
+		if kill -0 -- "-$pid" 2>/dev/null; then
+			kill -KILL -- "-$pid" 2>/dev/null || true
+		fi
+	fi
+}
+
+# Stop a party and all of its descendants, then reap the direct child. No
+# Bash 4+ wait -n support is needed (macOS still ships Bash 3.2).
+terminate_and_reap() {
+	local pid=$1
+	terminate_group "$pid"
+	wait "$pid" 2>/dev/null || true
+}
+
+# Any exit path not reached after both waits (signal, timeout, or unexpected
+# shell failure) must not leave a peer blocked in accept()/recv(). Preserve the
+# status that triggered EXIT rather than replacing it with a cleanup status.
+cleanup() {
+	local status=$?
+	trap - EXIT INT TERM HUP
+	if (( !alice_done )); then
+		terminate_and_reap "$alice_pid"
+	fi
+	if (( !bob_done )); then
+		terminate_and_reap "$bob_pid"
+	fi
+	exit "$status"
+}
+
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
+
+# Monitor mode gives each background job its own process group on both Linux
+# and macOS Bash. Disable it immediately after launch; the group membership
+# remains while the rest of the supervisor retains ordinary script semantics.
+# ALICE listens and BOB's connector retries until the listener is ready, so a
+# fixed startup sleep is unnecessary. Quote the program and argument vector so
+# spaces and wildcard characters reach both parties unchanged.
+set -m
+"$program" 1 "$@" &
+alice_pid=$!
+"$program" 2 "$@" &
+bob_pid=$!
+set +m
+
+# SECONDS counts whole seconds, so a deadline of SECONDS + timeout can arrive
+# as soon as the next second starts. One second more means the parties always
+# get the full timeout.
+deadline=$((SECONDS + timeout_seconds + 1))
+alice_status=0
+bob_status=0
+
+# Bash records a completed background child's status until wait consumes it.
+# Polling kill -0 lets this Bash-3.2-compatible loop notice whichever party
+# finishes first, then wait retrieves its real exit status.
+while (( !alice_done || !bob_done )); do
+	if (( !alice_done )) && ! kill -0 "$alice_pid" 2>/dev/null; then
+		wait "$alice_pid"
+		alice_status=$?
+		terminate_group "$alice_pid"
+		alice_done=1
+		if (( alice_status != 0 )); then
+			echo "run: party 1 failed with status $alice_status" >&2
+			if (( !bob_done )); then
+				terminate_and_reap "$bob_pid"
+				bob_done=1
+			fi
+			exit "$alice_status"
+		fi
+	fi
+
+	if (( !bob_done )) && ! kill -0 "$bob_pid" 2>/dev/null; then
+		wait "$bob_pid"
+		bob_status=$?
+		terminate_group "$bob_pid"
+		bob_done=1
+		if (( bob_status != 0 )); then
+			echo "run: party 2 failed with status $bob_status" >&2
+			if (( !alice_done )); then
+				terminate_and_reap "$alice_pid"
+				alice_done=1
+			fi
+			exit "$bob_status"
+		fi
+	fi
+
+	if (( alice_done && bob_done )); then
+		break
+	fi
+
+	if (( SECONDS >= deadline )); then
+		echo "run: parties timed out after ${timeout_seconds}s (EMP_PORT=$EMP_PORT)" >&2
+		if (( !alice_done )); then
+			terminate_and_reap "$alice_pid"
+			alice_done=1
+		fi
+		if (( !bob_done )); then
+			terminate_and_reap "$bob_pid"
+			bob_done=1
+		fi
+		exit 124
+	fi
+
+	sleep 0.01
+done
+
+exit 0

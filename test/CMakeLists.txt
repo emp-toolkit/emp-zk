@@ -32,7 +32,10 @@ function(add_test_case_with_run folder name)
              COMMAND ${PROJECT_SOURCE_DIR}/run $<TARGET_FILE:${target}>
              WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
     next_test_port(port)
-    set_tests_properties(${folder}_${name} PROPERTIES ENVIRONMENT "EMP_PORT=${port}")
+    # A longer timeout than run's default, which the slowest tests exceed in
+    # Debug builds on slow runners.
+    set_tests_properties(${folder}_${name} PROPERTIES
+                         ENVIRONMENT "EMP_PORT=${port};EMP_RUN_TIMEOUT=600")
 endfunction()
 
 # Boolean ZK

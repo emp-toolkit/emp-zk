@@ -40,9 +40,8 @@ int main(int argc, char **argv) {
     PRG prg2(&test_seed);
     prg2.random_bool(data2, LL);
     if (memcmp(data, data2, LL) != 0)
-      cout << "wrong!\n";
-    else
-      cout << "fine!\n";
+      error("BoolIO: the received bits differ from the sent ones");
+    cout << "fine!\n";
   }
   return 0;
 }

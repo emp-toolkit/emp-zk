@@ -5,5 +5,16 @@
 # (32768 and up on Linux, 49152 and up on macOS), so no outgoing connection can
 # be holding it. The listener sets SO_REUSEADDR, so back-to-back runs can
 # re-bind it.
+#
+# Exits nonzero when either party fails: with party 2's status if it failed,
+# else with party 1's. A failed party 2 stops party 1 rather than waiting for
+# it, since party 1 may be blocked on its peer.
 export EMP_PORT=${EMP_PORT:-12345}
-(sleep 0.05; $1 1 ${@:2}) &  $1 2 ${@:2}
+(sleep 0.05; exec "$1" 1 "${@:2}") & p1=$!
+"$1" 2 "${@:2}"; s2=$?
+if [ "$s2" -ne 0 ]; then
+  kill "$p1" 2> /dev/null
+  wait "$p1" 2> /dev/null
+  exit "$s2"
+fi
+wait "$p1"

@@ -58,8 +58,10 @@ void test_mix_circuit(BoolIO *io, int party, int sz) {
     if (sess.reveal(ret, PUBLIC).value_or(false) != 1)
       incorrect_cnt++;
   }
-  if (incorrect_cnt)
+  if (incorrect_cnt) {
     std::cout << "incorrect boolean: " << incorrect_cnt << std::endl;
+    error("abconversion: wrong boolean values");
+  }
   std::cout << "end check boolean" << std::endl;
 
   batch_reveal_check(x, a, sz);

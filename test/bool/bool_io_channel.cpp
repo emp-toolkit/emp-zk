@@ -3,7 +3,9 @@
 // that connection. Checks that (1) a byte message that closes a partial chunk
 // of bits leaves the two parties' transcripts in agreement, and BoolIO's digest
 // is its channel's; (2) BoolIO reports its channel's session root, and two
-// proofs over one BoolIO give their Ferrets fresh ids that both parties share.
+// proofs over one BoolIO, whose Ferrets turn the transcript on through it,
+// leave it on its channel's transcript and give the Ferrets fresh ids that both
+// parties share.
 
 #include "emp-tool/emp-tool.h"
 #include <emp-zk/emp-zk.h>
@@ -60,14 +62,19 @@ static block one_proof_sid(BoolIO *io, int party) {
   return sid;
 }
 
-static void check_session_ids(NetIO *netio, BoolIO *io, int party) {
+static void check_proofs(NetIO *netio, BoolIO *io, int party) {
   if (!io->has_session_root()) error("BoolIO: no session root over a NetIO");
   const block s1 = one_proof_sid(io, party);
   const block s2 = one_proof_sid(io, party);
+  io->flush();
+  const block mine = io->get_digest();
+  const block inner = netio->get_digest();
+  if (!cmpBlock(&mine, &inner, 1))
+    error("BoolIO: the proofs gave it a transcript of its own");
+  cout << "one transcript after the proofs: OK" << endl;
   if (cmpBlock(&s1, &zero_block, 1) || cmpBlock(&s2, &zero_block, 1))
     error("a proof's Ferret kept the zero session id");
   if (cmpBlock(&s1, &s2, 1)) error("two proofs got the same session id");
-  io->flush();
   const block t1 = exchange(netio, party, s1);
   const block t2 = exchange(netio, party, s2);
   if (!cmpBlock(&s1, &t1, 1) || !cmpBlock(&s2, &t2, 1))
@@ -81,6 +88,6 @@ int main(int argc, char **argv) {
                                 : NetIO::connect(peer_ip(), peer_port());
   BoolIO io(netio.get(), party == ALICE);
   check_one_transcript(netio.get(), &io, party);
-  check_session_ids(netio.get(), &io, party);
+  check_proofs(netio.get(), &io, party);
   return 0;
 }

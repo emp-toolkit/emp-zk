@@ -4,13 +4,29 @@
 
 namespace emp {
 using namespace std;
-// Bit-level IOChannel adapter for emp-zk-bool. Wraps an inner IOChannel and
-// buffers single bits (send_bit / recv_bit), flushing them packed 8-per-byte
-// through the inner channel's send_bool / recv_bool. The Fiat-Shamir
-// transcript lives on the INNER channel (enabled here), so it absorbs every
-// byte that actually crosses the wire — packed gate bits, byte sends, Ferret
-// OT — in true wire order. Callers read it via `io->get_digest()` on the inner
-// channel; there is no separate hash here to keep in sync.
+// The channel of an emp-zk proof. It wraps the connection's channel `io` and
+// carries two kinds of traffic over it in protocol order: single bits
+// (send_bit / recv_bit), buffered and sent packed 8 per byte in chunks of
+// NETWORK_STAGING_BUFFER_SIZE bits, and byte messages (everything sent through
+// this object as an IOChannel, including by the OT and VOLE extensions given
+// this channel).
+//
+// Bits flow one way, from the prover (sender) to the verifier. A chunk crosses
+// the wire when it is full, so a byte message in the middle of a chunk would
+// overtake the bits before it. Every byte message therefore closes the current
+// chunk first, on both sides: the sender pads the partial chunk and sends it,
+// and the receiver drops the unread padding of the chunk it holds. Both
+// parties reach each byte message at the same protocol point, so they close
+// the same chunk.
+//
+// Everything goes through `io`, so this object uses io's Fiat-Shamir
+// transcript (use_transcript_of) and keeps none of its own: the proof's checks
+// and the extensions that turn the transcript on through this object share the
+// one transcript, which sees the bits and the bytes in wire order. Read the
+// digest after flush(): until then the sender's transcript lacks the bits of
+// its partial chunk, which the receiver's will include once the chunk arrives.
+// Session ids come from `io` too: the two are one connection, so they share
+// one sequence.
 class BoolIO : public IOChannel {
 public:
   IOChannel *io;
@@ -21,9 +37,9 @@ public:
   int ptr;
   bool sender;
   BoolIO(IOChannel *io, int sender) : io(io), sender(sender) {
-    // FS transcript on the inner channel; exactly one party passes true and
-    // sender (= party == ALICE) satisfies that. Guard so re-wrapping a channel
-    // that already has FS on is a no-op rather than an assert / reset.
+    use_transcript_of(io);
+    // Exactly one party passes true (sender = party == ALICE). Guard so
+    // re-wrapping a channel that already has its transcript on keeps it.
     if (!io->fs_enabled())
       io->enable_fs(sender);
     buf.reset(new bool[NETWORK_STAGING_BUFFER_SIZE]);
@@ -34,16 +50,13 @@ public:
   }
   ~BoolIO() { this->flush(); }
   void flush() override {
-    if (sender) {
-      if (ptr != 0) {
-        bool data = true;
-        while (ptr != 0)
-          send_bit(data);
-      }
-    } else {
-      ptr = NETWORK_STAGING_BUFFER_SIZE;
-    }
+    close_chunk_();
     io->flush();
+  }
+
+  bool has_session_root() const override { return io->has_session_root(); }
+  [[nodiscard]] SessionID next_session_id() override {
+    return io->next_session_id();
   }
 
   void send_bit(bool data) {
@@ -65,19 +78,29 @@ public:
     return res;
   }
 
-  // Pending bits must reach the wire before any byte op so the bit and byte
-  // streams stay ordered on the shared connection.
+  // `io` sends what is pending before it blocks on a receive, so closing the
+  // chunk is all a byte message needs here.
   void send_data_internal(const void *data, int64_t nbyte) override {
-    if (ptr != 0)
-      flush();
+    close_chunk_();
     io->send_data(data, nbyte);
   }
 
   void recv_data_internal(void *data, int64_t nbyte) override {
-    if (ptr != NETWORK_STAGING_BUFFER_SIZE)
-      flush();
+    close_chunk_();
     io->recv_data(data, nbyte);
+  }
+
+private:
+  // Close the current chunk, as the class comment describes. Sends nothing
+  // when the sender has no bits pending.
+  void close_chunk_() {
+    if (sender) {
+      while (ptr != 0)
+        send_bit(true);
+    } else {
+      ptr = NETWORK_STAGING_BUFFER_SIZE;
+    }
   }
 };
 } // namespace emp
-#endif // __UNIDIRIO_H__
+#endif // __EMP_BITIO_H__

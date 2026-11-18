@@ -41,6 +41,7 @@ add_test_case_with_run(bool example)
 # bit-for-bit against a ClearCtx replay of the same circuit.
 add_test_case_with_run(bool test_context_zk)
 add_test_case_with_run(bool bool_io)
+add_test_case_with_run(bool bool_io_channel)
 add_test_case_with_run(bool perm_proof)
 add_test_case_with_run(bool polynomial)
 add_test_case_with_run(bool inner_prdt)

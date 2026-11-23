@@ -51,7 +51,7 @@ public:
 
   int party;            // ALICE (prover) or BOB (verifier)
 
-  // ---- Shared state (formerly OSTriple + ZKBoolBase) -----------
+  // ---- Shared state ---------------------------------------------------
   block delta;          // Ferret global secret. Prover side just stores it.
   int64_t gid = 0;      // Number of AND gates issued.
   block pub_label[2];   // Labels for PUBLIC-input bits.
@@ -72,21 +72,23 @@ public:
   // ---- f2k wire support (lazily initialised on first f2k op) ----------
   // The second wire type: authenticated F(2^128) values, sharing this
   // backend's Δ and its one Ferret. f2k_vole streams fresh authenticated
-  // values for f2k_mul; the left/right val+mac buffers feed the batch
-  // multiplication check (f2k_check_manage). The polynomial-product
-  // variant lives in ZKPermProof, its sole caller. Conversion from bits
-  // is a local Σ·Xⁱ map (same Δ), so only multiplication is interactive.
+  // values for f2k_mul; the left/right mac buffers (and, on the prover, the
+  // val buffers) feed the batch multiplication check (f2k_check_manage). The
+  // polynomial-product variant lives in ZKPermProof, its sole caller.
+  // Conversion from bits is a local Σ·Xⁱ map (same Δ), so only
+  // multiplication is interactive.
   bool f2k_ready = false;
   F2kVOLE<AuthValueF2k> *f2k_vole = nullptr;
   int64_t f2k_buffer_sz = 0;
   int64_t f2k_authval_cnt = 0, f2k_check_cnt = 0;
   std::vector<AuthValueF2k> f2k_auth_buffer;       // pre-drawn VOLE values
-  std::vector<block> f2k_left_val, f2k_left_mac;
+  std::vector<block> f2k_left_val, f2k_left_mac;   // vals: prover only
   std::vector<block> f2k_rght_val, f2k_rght_mac;
   // Dedicated VOLE buffer for f2k_input (committing a cleartext field
-  // element). Kept separate from the mul buffer so f2k_check's omac_base
-  // bookkeeping — which assumes the last check_cnt VOLE draws are all mul
-  // outputs — stays undisturbed. Filled lazily, refilled when exhausted.
+  // element). Kept separate from the mul buffer so that f2k_check, which
+  // takes the last f2k_check_cnt VOLE draws to be the mul outputs, stays
+  // right. Allocated and filled on the first f2k_input, refilled when
+  // exhausted.
   std::vector<AuthValueF2k> f2k_in_buffer;
   int64_t f2k_in_cnt = 0;
 
@@ -110,11 +112,7 @@ public:
   // of one COT-correction burst per ~15M-COT round.
   ZKBoolBase(int p, BoolIO *io_, int64_t expected_cots = 0)
       : party(p), io(io_) {
-    // BoolIO inherits IOChannel publicly with the IOChannel subobject at
-    // offset 0, so the cast is a no-op at runtime. Ferret now takes a
-    // single IOChannel (post-unification with the other OT extensions).
-    IOChannel *iochan = reinterpret_cast<IOChannel *>(io_);
-    ferret = new SilentFerret(3 - p, iochan, /*malicious=*/true);
+    ferret = new SilentFerret(3 - p, io_, /*malicious=*/true);
     delta = ferret->Delta;           // Δ sampled in Ferret's ctor
     // One persistent SilentFerret streaming session for the whole proof. COTs
     // are drawn lazily, one per AND gate, straight from the streaming interface
@@ -126,18 +124,17 @@ public:
     if (io_->has_session_root()) check_sid = io_->next_session_id().value();
 
     // Buffers for the QuickSilver AND-gate batch check (left/right inputs +
-    // output MAC, folded once per CHECK_SZ gates with an FS-derived chi). The
-    // out buffer holds only the per-gate output MAC now — the fresh COT comes
-    // from ferret->next_n() at gate time, not a pre-draw.
+    // output MAC, folded once per CHECK_SZ gates with an FS-derived chi). Each
+    // gate draws its fresh COT from ferret->next_n() at gate time.
     andgate_out_buffer.resize(CHECK_SZ);
     andgate_left_buffer.resize(CHECK_SZ);
     andgate_right_buffer.resize(CHECK_SZ);
 
     // Public-input label table — known to both parties by design.
     // PRP(1) key, distinct from ZKFpExec's PRP(0), so the two public
-    // outputs live in disjoint pseudorandom domains. Both bits start
-    // LSB-cleared; subclass ctor flips bit-1 of pub_label[1] (prover)
-    // or xors zdelta (verifier).
+    // outputs live in disjoint pseudorandom domains. Both labels start
+    // LSB-cleared; the prover's ctor then sets the LSB of pub_label[1], and
+    // the verifier's xors zdelta into it.
     pub_label[0] = makeBlock(0, 0);
     pub_label[1] = bit0_mask;
     PRP(makeBlock(0, 1)).permute_block(pub_label, 2);
@@ -238,12 +235,13 @@ public:
     if (party == BOB) f2k_vole->set_delta(ferret->Delta);
     f2k_buffer_sz = f2k_vole->chunk_aligned_buf_sz();
     f2k_auth_buffer.resize(f2k_buffer_sz);
-    f2k_left_val.resize(f2k_buffer_sz);
     f2k_left_mac.resize(f2k_buffer_sz);
-    f2k_rght_val.resize(f2k_buffer_sz);
     f2k_rght_mac.resize(f2k_buffer_sz);
-    f2k_in_buffer.resize(f2k_buffer_sz);
-    f2k_in_cnt = f2k_buffer_sz;        // sentinel: refill on first f2k_input
+    if (party == ALICE) {              // the verifier holds no cleartext
+      f2k_left_val.resize(f2k_buffer_sz);
+      f2k_rght_val.resize(f2k_buffer_sz);
+    }
+    f2k_in_cnt = f2k_buffer_sz;        // sentinel: fill on first f2k_input
     f2k_ready = true;
     f2k_pre_buffer_refill();
   }
@@ -257,6 +255,7 @@ public:
   F2kAuthValue f2k_input(block v) {
     f2k_init();
     if (f2k_in_cnt == f2k_buffer_sz) {
+      if (f2k_in_buffer.empty()) f2k_in_buffer.resize(f2k_buffer_sz);
       f2k_vole->run(f2k_in_buffer.data(), f2k_buffer_sz);
       f2k_in_cnt = 0;
     }

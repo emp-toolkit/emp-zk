@@ -8,10 +8,10 @@ namespace emp {
 using namespace std;
 
 // PolyProof operates purely on raw authenticated `block`s, so it sits at engine
-// level (below the typed ZKBit/ZKInt layer in the include order). The one method
-// that consumed typed values, zkp_inner_prdt_multi, now lives as a free function
-// in emp-zk-bool.h (after the typed layer is defined) and drives this class's
-// public accumulate_* / buffer / num members.
+// level (below the typed ZKBit/ZKInt layer in the include order).
+// zkp_inner_prdt_multi, which takes typed values, is a free function in
+// emp-zk-bool.h that drives this class's public accumulate_* / buffer / num
+// members.
 class PolyProof {
 public:
   static constexpr int64_t buffer_sz = 1 << 20;
@@ -101,7 +101,7 @@ public:
     block t;
     gfmul(a, b, &t);
     A0 = A0 ^ t;
-    A1 = A1 ^ (getLSB(b) ? a : zero_block) ^ (getLSB(a) ? b : zero_block);
+    A1 = A1 ^ (select_mask[getLSB(b)] & a) ^ (select_mask[getLSB(a)] & b);
   }
   inline void accumulate_bob(block a, block b, block &B) const {
     block t;
@@ -120,6 +120,7 @@ public:
   }
 
   inline void zkp_poly_deg2(block *polyx, block *polyy, bool *coeff, int64_t len) {
+    expecting(len >= 0, "zkp_poly_deg2: negative length");
     if (num >= buffer_sz)
       batch_check();
     if (party == ALICE) {
@@ -142,6 +143,7 @@ public:
 
   inline void zkp_inner_prdt(block *polyx, block *polyy, bool constant,
                              int64_t len) {
+    expecting(len >= 0, "zkp_inner_prdt: negative length");
     if (num >= buffer_sz)
       batch_check();
     if (party == ALICE) {
@@ -162,6 +164,7 @@ public:
 
   inline void zkp_inner_prdt_eq(block *polyx, block *polyy, block *r, block *s,
                                 int64_t len, int64_t len2) {
+    expecting(len >= 0 && len2 >= 0, "zkp_inner_prdt_eq: negative length");
     if (num >= buffer_sz)
       batch_check();
     if (party == ALICE) {
@@ -185,6 +188,7 @@ public:
 
   inline void zkp_inner_prdt_eq(block *polyx, block *polyy, block *r, block *s,
                                 block *rr, block *ss, int64_t len, int64_t len2) {
+    expecting(len >= 0 && len2 >= 0, "zkp_inner_prdt_eq: negative length");
     if (num >= buffer_sz)
       batch_check();
     if (party == ALICE) {
@@ -207,8 +211,6 @@ public:
     }
     num++;
   }
-
-  // (zkp_inner_prdt_multi moved to emp-zk-bool.h — see class comment above.)
 };
 
 } // namespace emp

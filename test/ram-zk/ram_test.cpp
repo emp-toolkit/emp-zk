@@ -13,9 +13,8 @@ int index_sz = 5, val_sz = 130;
 
 // Two-shuffles read/write RAM (unified ZKRam, read/write mode): init, an
 // interleaved load/store stream that mutates cells, read-back checks, then
-// check(). `bad` makes a malicious prover forge a stored value so the verifier
-// must abort.
-void test(BoolIO *io, int party, bool bad) {
+// check(). test/ram-zk/cheat.cpp runs the cheating provers.
+void test(BoolIO *io, int party) {
   ZKBoolSession sess(io, party);
   int cells = (1 << index_sz);
 
@@ -28,9 +27,6 @@ void test(BoolIO *io, int party, bool bad) {
 
   ZKRam *ram = new ZKRam(sess, index_sz, val_sz, T);
   ram->init(data);
-
-  if (bad && party == ALICE)
-    ram->mem[0] += 1;   // forge cell 0: future reads carry a wrong value
 
   auto start = clock_start();
   int wrong = 0;
@@ -50,6 +46,7 @@ void test(BoolIO *io, int party, bool bad) {
     }
   ram->check();   // both shuffles; aborts on a forged value
   double t = time_from(start);
+  expecting(wrong == 0, "ram_test: a load returned a wrong value");
 
   delete ram;
   sess.finalize();
@@ -64,8 +61,7 @@ int main(int argc, char **argv) {
   auto netio = (party == ALICE) ? NetIO::listen(peer_port()) : NetIO::connect(peer_ip(), peer_port());
   BoolIO io(netio.get(), party == ALICE);
 
-  bool bad = (argc >= 3 && string(argv[2]) == "bad");
-  test(&io, party, bad);
+  test(&io, party);
 
   return 0;
 }

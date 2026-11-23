@@ -8,23 +8,18 @@ int party;
 
 // ZKSet is the freshness primitive of the read/write RAM: the public range
 // {1, …, T}, with prove_member(v) proving v is in range. An in-range stream
-// must pass; a single out-of-range query must make the verifier abort
-// (Yang–Heath §4.2 / Remark 1).
-void test(BoolIO *io, int party, bool bad) {
+// must pass; test/ram-zk/cheat.cpp checks that queries of a non-member fail.
+void test(BoolIO *io, int party) {
   ZKBoolSession sess(io, party);
   int64_t T = 64;
   int elem_sz = (int)ramzk_bits_for(T);
 
-  ZKSet *s = new ZKSet(sess, T, elem_sz);
+  ZKSet *s = new ZKSet(sess, T, elem_sz, 3 * T);   // 3T queries below
 
   // Query each element of {1..T}, several elements repeatedly (chains).
   for (int rep = 0; rep < 3; ++rep)
     for (int64_t e = 1; e <= T; ++e)
       s->prove_member(sess.input<ZKUInt>(ALICE, (uint64_t)e, elem_sz));
-
-  // Soundness: 0 ∉ {1..T}, so this query cannot be chained to a setup write.
-  if (bad)
-    s->prove_member(sess.input<ZKUInt>(ALICE, (uint64_t)0, elem_sz));
 
   s->check();
   sess.finalize();
@@ -36,8 +31,7 @@ int main(int argc, char **argv) {
   auto netio = (party == ALICE) ? NetIO::listen(peer_port()) : NetIO::connect(peer_ip(), peer_port());
   BoolIO io(netio.get(), party == ALICE);
 
-  bool bad = (argc >= 3 && string(argv[2]) == "bad");
-  test(&io, party, bad);
+  test(&io, party);
 
   return 0;
 }

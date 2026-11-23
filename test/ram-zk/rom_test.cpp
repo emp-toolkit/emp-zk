@@ -7,7 +7,7 @@ using namespace std;
 int party;
 int index_sz = 5, val_sz = 32;
 
-void test(BoolIO *io, int party, bool bad) {
+void test(BoolIO *io, int party) {
   ZKBoolSession sess(io, party);
   int test_n = (1 << index_sz);   // number of cells
 
@@ -22,11 +22,6 @@ void test(BoolIO *io, int party, bool bad) {
   ZKROM *rom = new ZKROM(sess, index_sz, val_sz, T);
   rom->init(data);
 
-  // Soundness check: a malicious prover forges cell 0's value. The reads of
-  // cell 0 then carry the wrong value and won't match any write → check()
-  // must abort on the verifier.
-  if (bad && party == ALICE) rom->mem[0] ^= 1;
-
   auto start = clock_start();
   // Read every cell several times.
   int wrong = 0;
@@ -38,6 +33,7 @@ void test(BoolIO *io, int party, bool bad) {
     }
   rom->check();   // proves reads ∼ writes; aborts on a forged read
   double t = time_from(start);
+  expecting(wrong == 0, "rom_test: a lookup returned a wrong value");
 
   sess.finalize();
   int accesses = rounds * test_n;
@@ -51,8 +47,7 @@ int main(int argc, char **argv) {
   auto netio = (party == ALICE) ? NetIO::listen(peer_port()) : NetIO::connect(peer_ip(), peer_port());
   BoolIO io(netio.get(), party == ALICE);
 
-  bool bad = (argc >= 3 && string(argv[2]) == "bad");
-  test(&io, party, bad);
+  test(&io, party);
 
   return 0;
 }

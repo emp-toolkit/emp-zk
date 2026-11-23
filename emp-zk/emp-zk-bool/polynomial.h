@@ -38,14 +38,15 @@ public:
     if (num == 0)
       return;
 
+    // The verifier's seed expands into independent coefficients chi_i. Powers
+    // of one challenge would multiply the soundness error by num.
     block seed;
-    std::vector<block> chi(num > 4 ? num : 4);
+    std::vector<block> chi(num);
     block ope_data[128];
     block check_sum[2];
     if (party == ALICE) {
       io->recv_data(&seed, sizeof(block));
-
-      uni_hash_coeff_gen(chi.data(), seed, num > 4 ? num : 4);
+      PRG(&seed).random_block(chi.data(), num);
 
       vector_inn_prdt_sum_red(check_sum, chi.data(), buffer.data(), num);
       vector_inn_prdt_sum_red(check_sum + 1, chi.data(), buffer1.data(), num);
@@ -72,7 +73,7 @@ public:
       io->send_data(&seed, sizeof(block));
       io->flush();
 
-      uni_hash_coeff_gen(chi.data(), seed, num > 4 ? num : 4);
+      PRG(&seed).random_block(chi.data(), num);
       block B;
       vector_inn_prdt_sum_red(&B, chi.data(), buffer.data(), num);
       ferret->next_n(ope_data, 128);

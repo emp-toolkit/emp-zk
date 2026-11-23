@@ -8,8 +8,9 @@ so the alpha status lives in the git tag).
 
 Requires emp-tool and emp-ot newer than `v1.0.0-alpha.2` (their `main`):
 `BoolIO` calls emp-tool's `IOChannel::use_transcript_of`, and the OT and VOLE
-extensions take their session ids from the channel. The session ids change
-every transcript, so both parties must upgrade together.
+extensions take their session ids from the channel. The session ids and the
+changed Boolean checks below change every transcript, so both parties must
+upgrade together.
 
 ### Changed
 
@@ -24,6 +25,21 @@ every transcript, so both parties must upgrade together.
 - `BoolIO` no longer flushes its channel on every byte message. The channel
   sends what is pending before it blocks on a receive, so the verifier's
   messages go out batched.
+- The Boolean polynomial proofs (`zkp_poly_deg2`, `zkp_inner_prdt`,
+  `zkp_inner_prdt_eq`, `zkp_inner_prdt_multi`) expand the verifier's seed into
+  independent coefficients. Each batch check now errs with probability about
+  2⁻¹²⁶. With powers of one challenge, a full batch could err with
+  probability up to about 2⁻¹⁰⁸.
+- The AND-gate and f2k batch checks derive their Fiat–Shamir seeds from the
+  transcript digest under a per-check domain and a session id drawn at setup,
+  instead of using the raw digest.
+- `f2k_pack_v` commits the 128 bits it packs, one COT each. It used to commit
+  130 and leave two of them unused.
+
+### Removed
+
+- `ZKBoolBase::authenticated_input_bits_zero_extend`. Its only caller,
+  `f2k_pack_v`, commits its bits directly.
 
 ## v1.0.0-alpha.2
 

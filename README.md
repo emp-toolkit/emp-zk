@@ -105,10 +105,17 @@ EMP_PORT=12345 EMP_PEER_IP=<host-A-address> ./build/test_bool_example 2
 Research software; there has been no independent security audit. Please report
 vulnerabilities by email to Xiao Wang (wangxiao1254@gmail.com).
 
+- **Boolean soundness.** Each check of the Boolean core accepts a cheating
+  prover with probability about 2⁻¹²⁶. That covers every AND-gate and f2k
+  multiplication batch of a `ZKBoolSession`, every batch of the `zkp_*`
+  polynomial gadgets, and the digest of revealed values. The
+  global key Δ carries 127 bits of entropy, and a false value leaves an error of
+  degree at most 2 in Δ. The AND-gate and f2k checks take their challenges from
+  the transcript (Fiat–Shamir), so a prover that evaluates the hash q times adds
+  about q·2⁻¹²⁸.
 - **Arithmetic soundness is field-bounded, not 128-bit.** `emp-zk-arith` works
   over the prime field p = 2⁶¹ − 1, so its single-field consistency checks have
-  soundness error on the order of 2⁻⁶¹. Boolean ZK operates at the 128-bit
-  level.
+  soundness error on the order of 2⁻⁶¹.
 - **Malicious mode is selective-abort, with provisional output.** A cheating
   prover is caught at the session's closing checks (`ZKBoolSession::finalize()`
   on the Boolean side; the arithmetic side settles its checks at teardown), and

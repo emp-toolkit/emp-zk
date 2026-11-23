@@ -29,6 +29,7 @@
 #include "emp-zk/emp-zk-bool/bool_io.h"
 #include "emp-zk/emp-zk-bool/polynomial.h"
 #include <memory>
+#include <string_view>
 
 namespace emp {
 using namespace std;
@@ -54,6 +55,13 @@ public:
   block delta;          // Ferret global secret. Prover side just stores it.
   int64_t gid = 0;      // Number of AND gates issued.
   block pub_label[2];   // Labels for PUBLIC-input bits.
+
+  // Fiat–Shamir seeds of the AND-gate and f2k batch checks: the transcript
+  // digest under a per-check domain and this proof's session id (zero on a
+  // channel without a session root).
+  static constexpr std::string_view kAndCheckDomain = "emp-zk:bool:and-check";
+  static constexpr std::string_view kF2kCheckDomain = "emp-zk:bool:f2k-check";
+  block check_sid = zero_block;
 
   // AND-gate triple buffer (ALICE-side: cleartext+MAC; BOB-side: keys only).
   int64_t check_cnt = 0;
@@ -114,6 +122,8 @@ public:
     // the destructor.
     if (expected_cots > 0) ferret->begin(expected_cots);
     else                   ferret->begin();
+    // Both parties draw the check session id here, at the same point of setup.
+    if (io_->has_session_root()) check_sid = io_->next_session_id().value();
 
     // Buffers for the QuickSilver AND-gate batch check (left/right inputs +
     // output MAC, folded once per CHECK_SZ gates with an FS-derived chi). The
@@ -178,16 +188,10 @@ public:
   virtual void feed_bits(block *out, int from_party, const bool *in, size_t n) = 0;
   virtual void reveal_bits(bool *out, int to_party, const block *in, size_t n) = 0;
 
-  // Commit `width` authenticated bits of `value`, ZERO-extended beyond bit 63,
-  // into `out` via feed_bits. The f2k packing path uses this to commit a
-  // cleartext field limb as prover-owned authenticated bits; it must NOT
-  // sign-extend (which Int_T::constant would). Draws exactly `width` COTs.
-  void authenticated_input_bits_zero_extend(block *out, int width,
-                                            uint64_t value, int owner = ALICE) {
-    auto b = std::make_unique<bool[]>((size_t)width);   // real bool[], no byte→bool cast
-    for (int i = 0; i < width; ++i)
-      b[(size_t)i] = (i < 64) ? (((value >> i) & 1) != 0) : false;
-    feed_bits(out, owner, b.get(), (size_t)width);
+  // The Fiat–Shamir seed of one batch check (see kAndCheckDomain). Call it
+  // after io->flush(), so that both parties' transcripts hold the same bytes.
+  block check_seed(std::string_view domain) const {
+    return RO(domain, check_sid).absorb(io->io->get_digest()).squeeze_block();
   }
 
   // ---- AND-gate batch correctness check (single-threaded) ------------
@@ -198,7 +202,7 @@ public:
   // exchange + compare. Fires once per CHECK_SZ buffered ANDs.
   void andgate_correctness_check_manage() {
     io->flush();
-    block seed = io->io->get_digest();
+    block seed = check_seed(kAndCheckDomain);
     // ALICE writes (A0, A1) into sum[0..1]; BOB writes B into sum[0].
     block sum[2] = { zero_block, zero_block };
     andgate_correctness_check(sum, check_cnt, seed);
@@ -276,20 +280,17 @@ public:
   }
 
   // Pack a cleartext F(2^128) value v into the MAC layout the polynomial
-  // product expects (Σ vᵢ·Xⁱ over the 128 bits of v, via the 65-bit
-  // lo/hi SignedInt feed).
+  // product expects: commit the 128 bits of v (low limb first) as
+  // prover-owned authenticated bits, one COT each, and pack them as Σ vᵢ·Xⁱ.
+  // The verifier's v is ignored.
   block f2k_pack_v(block v) {
-    uint64_t low  = _mm_extract_epi64(v, 0);
-    uint64_t high = _mm_extract_epi64(v, 1);
-    // Commit 65 zero-extended authenticated bits per limb. Only the low 64 are
-    // packed, but the 65th is still drawn (one COT each) so Ferret consumption —
-    // and the honest-path transcript — stays byte-identical to the old
-    // SignedInt(65, ., ALICE) path this replaces.
-    block lowbits[65], highbits[65], packbuf[128], m;
-    authenticated_input_bits_zero_extend(lowbits, 65, low, ALICE);
-    authenticated_input_bits_zero_extend(highbits, 65, high, ALICE);
-    memcpy(packbuf,      lowbits,  64 * sizeof(block));
-    memcpy(packbuf + 64, highbits, 64 * sizeof(block));
+    const uint64_t limb[2] = { (uint64_t)_mm_extract_epi64(v, 0),
+                               (uint64_t)_mm_extract_epi64(v, 1) };
+    bool bits[128];
+    for (int i = 0; i < 128; ++i)
+      bits[i] = ((limb[i / 64] >> (i % 64)) & 1) != 0;
+    block packbuf[128], m;
+    feed_bits(packbuf, ALICE, bits, 128);
     pack.packing(&m, packbuf);
     return m;
   }

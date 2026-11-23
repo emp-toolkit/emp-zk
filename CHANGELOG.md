@@ -12,6 +12,39 @@ extensions take their session ids from the channel. The session ids and the
 changed Boolean checks below change every transcript, so both parties must
 upgrade together.
 
+### Security
+
+These fix proofs that a cheating prover could make the verifier accept, or
+that leaked witness data to the verifier, in `v1.0.0-alpha.1` and
+`v1.0.0-alpha.2`. A proof made there with `ZKROM`, with `ZKRam` at a bound `T`
+that is not a power of two or past `T` accesses, or with `ZKSet` past `T`
+queries of one value, is not sound against a cheating prover.
+
+- `ZKROM` accepted any lookup value. A lookup wrote its record back stamped
+  with the public clock, and nothing constrained the time the lookup claimed
+  to read, so a lookup could read back its own write, with any value at any
+  index. A lookup now writes back the version it read plus one (Yang–Heath,
+  "Two Shuffles Make a RAM", Fig. 7), so the versions of a cell form one chain
+  from its setup write.
+- `ZKRam` accepted reads of a later write whenever `T` was not a power of two.
+  Its freshness check computed clock − t modulo 2^⌈log₂(T+1)⌉, which is less
+  than 2T, so the difference for a later write could wrap into {1, …, T}. The
+  time field now has ⌈log₂ 2T⌉ bits.
+- `ZKRam` and `ZKROM` did not enforce `T`. Past `T` accesses, forged reads
+  passed even at a power-of-two `T`. An access past `T` now aborts on both
+  parties.
+- `ZKSet` accepted a value outside its range after 2^ver_sz queries of it,
+  whose versions then closed a cycle. The version field was sized from the
+  set's size, and nothing bounded the number of queries. `ZKSet` now takes a
+  `max_queries` bound (default `T`), sizes its versions from it, and aborts
+  past it.
+- `ZKPermProof` sent both evaluated products p_A(r) and p_B(r) under MACs the
+  verifier can open, so a one-element multiset revealed its element. The
+  prover now sends only the difference of the two MACs.
+- The permutation proof's product check sent its folded coefficients
+  unmasked, so a verifier could test guesses of a low-entropy witness. They
+  are now masked by four random authenticated values (512 COTs per check).
+
 ### Changed
 
 - The OT and VOLE extensions in a proof take fresh session ids from the
@@ -59,11 +92,56 @@ upgrade together.
   They also run honest proofs across a SilentFerret round, both streaming and
   with a prepay of several rounds.
 - The `bool_io` test streams 4M bits instead of 100M.
+- The permutation proof's product check folds the products with independent
+  coefficients. With powers of one challenge the fold alone could err with
+  probability up to about 2⁻¹¹² for a full batch; it now errs with about
+  2⁻¹²⁸, and a batch with about 2⁻¹²⁴, which is its degree-5 test in Δ. Its
+  seed, the fold coefficients and the challenge r come from the transcript
+  under per-use domains and the session id, like the Boolean checks.
+- A permutation proof multiplies only through its product proof: the last
+  product of each side fills its free slots with a public 1, where the last
+  one to three factors used `f2k_mul`. A session that runs only RAM, ROM, set
+  and permutation proofs no longer starts the f2k VOLE.
+- `ZKBoolSession::finalize()` aborts while a RAM, ROM, set or permutation
+  proof holds records that its check has not checked, and so does destroying
+  one of them before its check. `ZKSet` and `ZKPermProof` are no longer
+  movable.
+- `ZKRam` keeps the prover's copy of the memory as bits (`mem` is a `bool`
+  array), so values may be wider than 64 bits.
+- `ZKRam`, `ZKSet` and `ZKPermProof` check their parameters: index and value
+  widths, at most 2^index_sz cells, an element width that holds `T` (and at
+  most 64 bits), and positive sizes and bounds. `ZKRam` needs `init()` before
+  any access, and `ZKRam` and `ZKSet` take one `check()` and no access after
+  it.
+- The verifier's abort message names the gadget whose records do not match:
+  `ZKRam`, `ZKSet`, or `ZKPermProof`, which takes the message as an optional
+  constructor argument.
+- `ZKRam::check()` commits each cell's final value before its time in a fixed
+  order, rather than in the order a compiler evaluates function arguments, so
+  a prover and a verifier built by different compilers agree.
+- `RamPolyPrdt` takes the engine and proves products of exactly five values
+  (`polyPrdt5`). A product of three or four values, which `polyPrdtN` allowed
+  but no caller used, would put its error on a power of Δ that the prover's
+  coefficients cancel.
+- New tests check that the RAM, ROM, set and permutation proofs reject a
+  cheating prover: reads of a later write at a `T` that is not a power of two,
+  a stale read after a store, a changed value (also above bit 128), a ROM
+  lookup that reads its own write and a cycle of forged lookups, an index past
+  the last cell, more than `T` accesses in a RAM and in a ROM, a set query past
+  its bound and a non-member whose versions would wrap, false permutations of
+  one-wire and three-wire elements, a wrong product alone and in the first of
+  two batches, a missing `check()`, each parameter contract, and the
+  transcript of the open and the product check. The checks on public data are
+  tested on the verifier's copy alone. `ram_test` and `rom_test` fail on a
+  wrong read.
 
 ### Removed
 
 - `ZKBoolBase::authenticated_input_bits_zero_extend`. Its only caller,
   `f2k_pack_v`, commits its bits directly.
+- `RamPolyPrdt::polyPrdtN`, replaced by `polyPrdt5`.
+- The `bad` modes of the RAM, ROM, set and permutation tests, which no test
+  ran. `test/ram-zk/cheat.cpp` covers them.
 
 ## v1.0.0-alpha.2
 

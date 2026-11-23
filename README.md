@@ -85,7 +85,8 @@ ctest --test-dir build --output-on-failure
 Tests under `test/bool/`, `test/arith/`, and `test/ram-zk/` exercise each
 module: Boolean and arithmetic ZK, polynomial and inner-product proofs, a
 SHA-256 circuit, edabit bool↔arith conversion, and RAM / ROM / set-membership
-ZK. `test/bool/cheat.cpp` runs a cheating prover against each Boolean check.
+ZK. `test/bool/cheat.cpp` runs a cheating prover against each Boolean check,
+and `test/ram-zk/cheat.cpp` against the RAM, ROM, set and permutation proofs.
 Two-party tests are driven by the top-level `./run` wrapper, which starts
 both parties on localhost and passes any further arguments to both. It fails
 if either party fails, and stops both after `EMP_RUN_TIMEOUT` seconds (default
@@ -114,6 +115,17 @@ vulnerabilities by email to Xiao Wang (wangxiao1254@gmail.com).
   degree at most 2 in Δ. The AND-gate and f2k checks take their challenges from
   the transcript (Fiat–Shamir), so a prover that evaluates the hash q times adds
   about q·2⁻¹²⁸.
+- **Memory soundness.** A permutation proof (`ZKPermProof`, and the RAM, ROM
+  and set built on it) over |A| records accepts a false claim with
+  probability about q·|A|·2⁻¹²⁸ + 2⁻¹²⁷, plus about q·2⁻¹²⁸ + 5·2⁻¹²⁷ for each
+  batch of its product check, where q counts the prover's evaluations of the
+  transcript hash (Fiat–Shamir); the terms in 2⁻¹²⁷ come from guessing Δ, which
+  a prover cannot test offline. `ZKRam` and `ZKROM` allow at most `T`
+  accesses and `ZKSet` at most `max_queries` queries; both bounds are
+  enforced. Each of them must run its `check()` before
+  `ZKBoolSession::finalize()`, which aborts otherwise. That includes a `ZKSet`
+  or a read/write `ZKRam` that was never used, since a set adds its setup
+  records at construction.
 - **Arithmetic soundness is field-bounded, not 128-bit.** `emp-zk-arith` works
   over the prime field p = 2⁶¹ − 1, so its single-field consistency checks have
   soundness error on the order of 2⁻⁶¹.

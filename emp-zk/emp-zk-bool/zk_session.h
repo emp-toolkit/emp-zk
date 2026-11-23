@@ -53,7 +53,8 @@ public:
     // traffic + malicious checks ship once at setup, leaving the whole proof's
     // COT consumption wire-free. A proof draws one COT per AND gate and per
     // authenticated input bit, 128 per AND-gate, f2k or polynomial batch
-    // check, and 128 per f2k_pack_v. Both parties must pass the same value:
+    // check, 128 per f2k_pack_v, and 512 per batch of a permutation proof's
+    // product check. Both parties must pass the same value:
     // it fixes the prepay schedule, and a mismatch desynchronizes the setup,
     // which then aborts or stalls. A proof that draws more than it prepaid
     // prepays another batch of the same size as it goes, so a low estimate
@@ -74,8 +75,16 @@ public:
 
     // Run the closing checks (engine dtor). Idempotent. A cheating prover makes
     // the verifier abort here; on success the session is spent and must not be
-    // reused.
-    void finalize() { delete eng_; eng_ = nullptr; }
+    // reused. Every RAM, ROM, set and permutation proof that holds records
+    // must have run its check() first; otherwise both parties abort here.
+    void finalize() {
+        if (eng_ == nullptr) return;
+        expecting(eng_->unchecked_perm_proofs == 0,
+                  "ZKBoolSession::finalize: a RAM, ROM, set or permutation "
+                  "proof holds records that its check() never checked");
+        delete eng_;
+        eng_ = nullptr;
+    }
 
     int party() const { return eng_->party; }
     ctx_t& ctx() { return ctx_; }

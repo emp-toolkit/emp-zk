@@ -3,7 +3,8 @@
 #include <iostream>
 using namespace emp;
 using namespace std;
-const int LL = 1024 * 1024 * 100 + 10;
+// Whole chunks of bits plus a partial last one.
+const int LL = 1024 * 1024 * 4 + 10;
 int main(int argc, char **argv) {
   int party = parse_party(argv);
   auto netio = (party == ALICE) ? NetIO::listen(peer_port(), false)

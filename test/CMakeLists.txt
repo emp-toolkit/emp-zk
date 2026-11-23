@@ -51,6 +51,49 @@ add_test_case_with_run(bool inner_prdt)
 # ZK SHA-256 on the IR-replay model: the sha256_256 builtin replayed over the ZK
 # context and validated against a ClearCtx replay.
 add_test_case_with_run(bool sha256)
+
+# The Boolean checks against a cheating prover (bool/cheat.cpp); without
+# arguments it runs the honest cases at the batch boundaries.
+add_test_case_with_run(bool cheat)
+# One more run of test_bool_cheat with arguments. With `regex`, the run must
+# abort with that message (the verifier's, or both parties' for a wrong BoolIO
+# flag): ./run then exits nonzero, so the test passes on the message and fails
+# if the verifier finishes. With "" it is an ordinary run that must succeed.
+function(add_bool_cheat_case name regex)
+    set(test bool_cheat_${name})
+    add_test(NAME ${test}
+             COMMAND ${PROJECT_SOURCE_DIR}/run $<TARGET_FILE:test_bool_cheat> ${ARGN}
+             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    next_test_port(port)
+    set_tests_properties(${test} PROPERTIES
+                         ENVIRONMENT "EMP_PORT=${port};EMP_RUN_TIMEOUT=600")
+    if(regex)
+        set_tests_properties(${test} PROPERTIES
+                             PASS_REGULAR_EXPRESSION "${regex}"
+                             FAIL_REGULAR_EXPRESSION "party 2: finalize passed")
+    endif()
+endfunction()
+# AND gates: a lie in the first of two batches (caught when the second starts),
+# in a batch checked at finalize, in a full batch checked at finalize, and in
+# a final batch of one gate.
+add_bool_cheat_case(and_mid   "emp_zk_bool AND batch check" and 1048577 1048575)
+add_bool_cheat_case(and_end   "emp_zk_bool AND batch check" and 1000 500)
+add_bool_cheat_case(and_full  "emp_zk_bool AND batch check" and 1048576 1048575)
+add_bool_cheat_case(and_last  "emp_zk_bool AND batch check" and 1048577 1048576)
+add_bool_cheat_case(reveal    "emp-zk-bool finalize" reveal 1)
+# f2k: a lie in the first chunk of the check, and in the last of three.
+add_bool_cheat_case(f2k       "emp-zk-bool f2k mult batch check" f2k 10 3)
+add_bool_cheat_case(f2k_late  "emp-zk-bool f2k mult batch check" f2k 3000 2500)
+foreach(kind inner eq eq2 multi)
+    add_bool_cheat_case(poly_${kind} "boolean polynomial zkp fails" poly ${kind} 0)
+endforeach()
+add_bool_cheat_case(padding "padding of a closed chunk must be all true" padding)
+add_bool_cheat_case(role    "sender flag must be true on the prover" role)
+# Honest runs that cross a SilentFerret round: streaming, where the next round
+# is prepaid as it starts, and a prepay of several rounds, which rolls into the
+# next one without wire traffic.
+add_bool_cheat_case(rollover        "" rollover 0)
+add_bool_cheat_case(rollover_prepay "" rollover 40000000)
 # (input/circuit/f2k/memory _scalability are build-only benchmarks — see ../bench)
 
 # Arithmetic ZK

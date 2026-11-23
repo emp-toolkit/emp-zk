@@ -85,7 +85,8 @@ ctest --test-dir build --output-on-failure
 Tests under `test/bool/`, `test/arith/`, and `test/ram-zk/` exercise each
 module: Boolean and arithmetic ZK, polynomial and inner-product proofs, a
 SHA-256 circuit, edabit bool↔arith conversion, and RAM / ROM / set-membership
-ZK. Two-party tests are driven by the top-level `./run` wrapper, which starts
+ZK. `test/bool/cheat.cpp` runs a cheating prover against each Boolean check.
+Two-party tests are driven by the top-level `./run` wrapper, which starts
 both parties on localhost and passes any further arguments to both. It fails
 if either party fails, and stops both after `EMP_RUN_TIMEOUT` seconds (default
 120; ctest allows 600); set it higher for long benchmark runs.

@@ -8,7 +8,6 @@ int party;
 int sz, repeat;
 
 void test_polynomial(BoolIO *io, int party) {
-  srand(1);  // both parties draw the same test values
   bool *coeff = new bool[sz + 1];
   bool *witness = new bool[2 * sz];
   memset(witness, 0, 2 * sz * sizeof(bool));
@@ -65,11 +64,8 @@ int main(int argc, char **argv) {
   std::cout << " ------------" << std::endl << std::endl;
   ;
 
-  if (argc < 2) {
-    std::cout << "usage: [binary] PARTY POLY_NUM POLY_DIMENSION"
-              << std::endl;
-    return -1;
-  } else if (argc < 4) {
+  // usage: [binary] PARTY [POLY_NUM POLY_DIMENSION]
+  if (argc < 4) {
     repeat = 100;
     sz = 10;
   } else {

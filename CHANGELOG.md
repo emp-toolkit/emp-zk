@@ -49,6 +49,16 @@ upgrade together.
   first `f2k_input`.
 - The polynomial proof's prover accumulates its terms with masks, not branches
   on witness bits.
+- New tests check that a cheating prover is rejected by each Boolean check:
+  - the AND-gate batch, at every batch boundary;
+  - the revealed-value digest;
+  - the f2k multiplication check, in its first and in its last chunk;
+  - all four polynomial statements;
+  - `BoolIO`'s padding check and its sender-flag check.
+
+  They also run honest proofs across a SilentFerret round, both streaming and
+  with a prepay of several rounds.
+- The `bool_io` test streams 4M bits instead of 100M.
 
 ### Removed
 

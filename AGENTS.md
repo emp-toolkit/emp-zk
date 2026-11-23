@@ -107,11 +107,14 @@ convention for a debug tree.
   roadmap item, see docs/arith-modernization.md.)
 
 - **Soundness gate: cheating-prover tests.** `test/bool/cheat.cpp`
-  runs a prover that deviates once against each Boolean check. Its
-  negative `bool_cheat_*` ctest cases pass only when the run aborts
-  with that check's message (the verifier's, or both parties' for a
-  wrong `BoolIO` flag). A change that weakens a check fails one of
-  them. Give a new check a case there.
+  runs a prover that deviates once against each Boolean check, and
+  `test/ram-zk/cheat.cpp` one that edits its copy of the memory or
+  commits a wrong value against the RAM, ROM, set and permutation
+  proofs. Their negative `bool_cheat_*` / `ram-zk_cheat_*` ctest cases
+  pass only when the run aborts with that check's message (the
+  verifier's, or either party's for a check on public data). A change
+  that weakens a check fails one of them. Give a new check a case
+  there.
 
 - **Comments describe current code only.** No "used to" / "formerly" /
   "the old …" narration of removed approaches. Buffer-length and count

@@ -19,13 +19,12 @@ static F2kAuthValue make_wire(ZKBoolSession &sess, uint64_t v) {
 }
 
 // n elements, each `m` wires (payload = m*128 bits). A is the natural order;
-// B is the same elements in reversed order (a permutation). `bad` corrupts
-// one wire of B so the multiset no longer matches.
+// B is the same elements in reversed order (a permutation).
+// test/ram-zk/cheat.cpp checks that a multiset that differs fails.
 void test_perm(BoolIO *io, int party, int n, int bits,
                const string &mode) {
   ZKBoolSession sess(io, party);
   const int m = (bits + 127) / 128;
-  const bool bad = (mode == "bad");
   // "periodic" exercises explicit per-batch compress(): each fold draws its
   // own coefficient, so matched elements must stay in the same batch — use
   // identity order. Otherwise B is the reversed permutation, folded once.
@@ -43,14 +42,7 @@ void test_perm(BoolIO *io, int party, int n, int bits,
   for (int i = 0; i < n; ++i) {
     perm.add_A(&elems[(size_t)i * m]);
     int src = periodic ? i : (n - 1 - i);
-    if (bad && i == 0) {
-      F2kAuthValue e[8];                  // corrupt one element's first wire
-      for (int j = 0; j < m; ++j) e[j] = elems[(size_t)src * m + j];
-      e[0] = make_wire(sess, 0xDEADBEEFull);
-      perm.add_B(e);
-    } else {
-      perm.add_B(&elems[(size_t)src * m]);
-    }
+    perm.add_B(&elems[(size_t)src * m]);
     if (periodic && (i + 1) % chunk == 0) perm.compress();   // fold this batch
   }
   perm.check_eq();   // passes iff B is a permutation of A
@@ -69,7 +61,7 @@ int main(int argc, char **argv) {
 
   int n = (argc >= 3) ? atoi(argv[2]) : 100000;
   int bits = (argc >= 4) ? atoi(argv[3]) : 128;
-  string mode = (argc >= 5) ? string(argv[4]) : "";   // "", "periodic", "bad"
+  string mode = (argc >= 5) ? string(argv[4]) : "";   // "" or "periodic"
   test_perm(&io, party, n, bits, mode);
 
   return 0;

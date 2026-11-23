@@ -10,7 +10,7 @@
 //
 // Lifecycle: the ctor sets up Ferret + the engine; finalize() runs the closing
 // proof / network checks (leftover batch checks + the MAC-digest exchange that
-// aborts via error() on a cheating prover) by destroying the engine. finalize()
+// aborts on a cheating prover) by destroying the engine. finalize()
 // is explicit for a clear failure surface; the dtor calls it if you did not.
 //
 // Settlement (session contract, ir/session/session.h): this session settles AT
@@ -60,9 +60,9 @@ public:
     // costs traffic, not correctness. 0 (default) uses per-round streaming,
     // for an unknown circuit size.
     ZKBoolSession(BoolIO* io, int party, int64_t expected_cots = 0) {
-        if (party != ALICE && party != BOB)
-            error("ZKBoolSession: party must be ALICE or BOB");
-        if (io == nullptr) error("ZKBoolSession: io channel must not be null");
+        expecting(party == ALICE || party == BOB,
+                  "ZKBoolSession: party must be ALICE or BOB");
+        expecting(io != nullptr, "ZKBoolSession: io channel must not be null");
         if (party == ALICE) eng_ = new ZKBoolProver(io, expected_cots);
         else                eng_ = new ZKBoolVerifier(io, expected_cots);
         ctx_ = ZKBoolContext(eng_);
@@ -72,8 +72,9 @@ public:
     ZKBoolSession(const ZKBoolSession&) = delete;
     ZKBoolSession& operator=(const ZKBoolSession&) = delete;
 
-    // Run the closing checks (engine dtor). Idempotent. A cheating prover aborts
-    // here via error(); on success the session is spent and must not be reused.
+    // Run the closing checks (engine dtor). Idempotent. A cheating prover makes
+    // the verifier abort here; on success the session is spent and must not be
+    // reused.
     void finalize() { delete eng_; eng_ = nullptr; }
 
     int party() const { return eng_->party; }
@@ -89,8 +90,8 @@ public:
     // Feed n cleartext bits owned by `owner` (ALICE witness or PUBLIC), returning
     // the authenticated wires. All typed input paths route through here.
     std::vector<ZKWire> input_bits(int owner, const bool* in, size_t n) {
-        if (owner != ALICE && owner != PUBLIC)
-            error("ZKBoolSession::input_bits: boolean ZK supports only ALICE or PUBLIC");
+        expecting(owner == ALICE || owner == PUBLIC,
+                  "ZKBoolSession::input_bits: boolean ZK supports only ALICE or PUBLIC");
         std::vector<block> tmp(n);
         eng_->feed_bits(tmp.data(), owner, in, n);
         std::vector<ZKWire> w(n);
@@ -123,8 +124,8 @@ public:
         static_assert(std::same_as<typename V::context_type, ctx_t>,
                       "ZKBoolSession::reveal<V>: V must be a value over ZKBoolContext");
 #if EMP_CONTEXT_CHECKS
-        if (v.context() != &ctx_)
-            error("ZKBoolSession::reveal: value is bound to a different context");
+        expecting(v.context() == &ctx_,
+                  "ZKBoolSession::reveal: value is bound to a different context");
 #endif
         check_recipient_(recipient);
         constexpr int W = V::width();
@@ -161,8 +162,8 @@ public:
         static_assert(std::same_as<typename V::context_type, ctx_t>,
                       "ZKBoolSession::reveal<V>: V must be a value over ZKBoolContext");
 #if EMP_CONTEXT_CHECKS
-        if (v.context() != &ctx_)
-            error("ZKBoolSession::reveal: value is bound to a different context");
+        expecting(v.context() == &ctx_,
+                  "ZKBoolSession::reveal: value is bound to a different context");
 #endif
         check_recipient_(recipient);
         const int n = v.width();
@@ -179,8 +180,8 @@ private:
         return recipient == PUBLIC || recipient == eng_->party;
     }
     static void check_recipient_(int recipient) {
-        if (recipient != ALICE && recipient != BOB && recipient != PUBLIC)
-            error("ZKBoolSession::reveal: recipient must be ALICE, BOB, or PUBLIC");
+        expecting(recipient == ALICE || recipient == BOB || recipient == PUBLIC,
+                  "ZKBoolSession::reveal: recipient must be ALICE, BOB, or PUBLIC");
     }
     ZKBoolBase* eng_ = nullptr;
     ZKBoolContext ctx_;

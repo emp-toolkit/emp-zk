@@ -36,8 +36,8 @@ public:
     auth_hash.digest(digest);
     char digest2[Hash::DIGEST_SIZE];
     io->recv_data(digest2, Hash::DIGEST_SIZE);
-    if (memcmp(digest, digest2, Hash::DIGEST_SIZE) != 0)
-      error("emp-zk-bool finalize");
+    expecting(memcmp(digest, digest2, Hash::DIGEST_SIZE) == 0,
+              "emp-zk-bool finalize");
   }
 
   // ---- Engine gate / I-O surface (verifier) ------------------------------
@@ -55,17 +55,17 @@ public:
   void feed_bits(block *out, int from_party, const bool *in, size_t n) override {
     // Guard the raw primitive too (engine() is public): an invalid owner would
     // leave the prover on the other branch and desync the transcript.
+    expecting(from_party == ALICE || from_party == PUBLIC,
+              "ZKBoolVerifier::feed_bits: input owner must be ALICE or PUBLIC");
     if (from_party == ALICE)
       authenticated_bits_input(out, in, static_cast<int64_t>(n));
-    else if (from_party == PUBLIC)
-      for (size_t i = 0; i < n; ++i) out[i] = pub_label[in[i]];
     else
-      error("ZKBoolVerifier::feed_bits: input owner must be ALICE or PUBLIC");
+      for (size_t i = 0; i < n; ++i) out[i] = pub_label[in[i]];
   }
 
   void reveal_bits(bool *out, int to_party, const block *in, size_t n) override {
-    if (to_party != ALICE && to_party != BOB && to_party != PUBLIC)
-      error("ZKBoolVerifier::reveal_bits: recipient must be ALICE, BOB, or PUBLIC");
+    expecting(to_party == ALICE || to_party == BOB || to_party == PUBLIC,
+              "ZKBoolVerifier::reveal_bits: recipient must be ALICE, BOB, or PUBLIC");
     if (to_party == BOB || to_party == PUBLIC)
       verify_output(out, in, static_cast<int64_t>(n));
   }
@@ -164,8 +164,7 @@ private:
     block W;
     gfmul(A_star[1], delta, &W);
     W = W ^ A_star[0];
-    if (cmpBlock(&W, &B_star, 1) != 1)
-      error("emp_zk_bool AND batch check");
+    expecting(cmpBlock(&W, &B_star, 1) == 1, "emp_zk_bool AND batch check");
   }
 
   // ---- f2k wire ops (BOB) ---------------------------------------------
@@ -222,8 +221,7 @@ private:
     block W;
     gfmul(A_star[1], delta, &W);
     W = W ^ A_star[0];
-    if (cmpBlock(&W, &B_star, 1) != 1)
-      error("emp-zk-bool f2k mult batch check");
+    expecting(cmpBlock(&W, &B_star, 1) == 1, "emp-zk-bool f2k mult batch check");
     io->flush();
   }
 

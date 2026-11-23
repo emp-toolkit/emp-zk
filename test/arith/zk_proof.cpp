@@ -70,8 +70,7 @@ void test_circuit_zk(BoolIO *io, int party) {
   std::cout << "\treveal" << std::endl;
   uint64_t *dd = new uint64_t[sz];
   batch_reveal(di, dd, sz);
-  if (memcmp(dd, d, sz * sizeof(uint64_t)) != 0)
-    error("reveal fails");
+  expecting(memcmp(dd, d, sz * sizeof(uint64_t)) == 0, "reveal fails");
   std::cout << "\treveal check" << std::endl;
   batch_reveal_check(ei, e, sz);
   std::cout << "\treveal check zero" << std::endl;

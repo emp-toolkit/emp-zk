@@ -75,8 +75,7 @@ public:
       for (int i = 0; i < 4; ++i)
         gfmul(check_sum[i + 1], delta[i], &t[i]);
       check_sum[0] ^= (t[0] ^ t[1] ^ t[2] ^ t[3]);
-      if (memcmp(&B, check_sum, 16) != 0)
-        error("product by polynomial fails");
+      expecting(memcmp(&B, check_sum, 16) == 0, "product by polynomial fails");
     }
     num = 0;
   }
@@ -234,12 +233,12 @@ public:
   }
 
   // Prove A ∼ B. Folds any remaining elements, then runs the product test at
-  // a fresh challenge r. On the verifier this aborts (error()) on failure.
+  // a fresh challenge r. On the verifier this aborts on failure.
   // Resets state so the object can be reused.
   void check_eq() {
     compress();
-    if (a_elems_compressed.size() != b_elems_compressed.size())
-      error("ZKPermProof: |A| != |B|");
+    expecting(a_elems_compressed.size() == b_elems_compressed.size(),
+              "ZKPermProof: |A| != |B|");
     if (!a_elems_compressed.empty()) {
       bb->io->flush();
       // Domain-separated from any compress() coefficient seed so r stays
@@ -334,8 +333,8 @@ private:
       bb->io->recv_data(recv, 2 * sizeof(block));
       macs[0] = macs[0] ^ recv[0];
       macs[1] = macs[1] ^ recv[1];
-      if (memcmp(macs, macs + 1, sizeof(block)) != 0)
-        error("ZKPermProof: A is not a permutation of B");
+      expecting(memcmp(macs, macs + 1, sizeof(block)) == 0,
+                "ZKPermProof: A is not a permutation of B");
     }
   }
 };

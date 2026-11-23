@@ -211,8 +211,7 @@ public:
       io->recv_data(check_sum, 2 * sizeof(uint64_t));
       check_sum[1] = mult_mod(check_sum[1], delta);
       check_sum[1] = add_mod(check_sum[1], W);
-      if (check_sum[0] != check_sum[1])
-        error("multiplication gates check fails");
+      expecting(check_sum[0] == check_sum[1], "multiplication gates check fails");
     }
     io->flush();
   }
@@ -294,8 +293,8 @@ public:
                          int64_t len) {
     std::vector<uint64_t> val_real(len);
     reveal_recv(output, val_real.data(), len);
-    if (memcmp(val_exp, val_real.data(), len * sizeof(uint64_t)) != 0)
-      error("arithmetic reveal value not expected");
+    expecting(memcmp(val_exp, val_real.data(), len * sizeof(uint64_t)) == 0,
+              "arithmetic reveal value not expected");
   }
 
   void reveal_check_zero(const __uint128_t *output, int64_t len) {
@@ -475,12 +474,10 @@ public:
       io->recv_data(cr.data(), len * sizeof(__uint128_t));
       for (int64_t i = 0; i < len; ++i) {
         uint64_t product = mult_mod(VAL(ar[i]), VAL(br[i]));
-        if (product != VAL(cr[i]))
-          error("wrong product");
+        expecting(product == VAL(cr[i]), "wrong product");
         uint64_t recomputed = mult_mod(product, (uint64_t)delta);
         recomputed = add_mod(recomputed, MAC(c[i]));
-        if (recomputed != MAC(cr[i]))
-          error("wrong mac");
+        expecting(recomputed == MAC(cr[i]), "wrong mac");
       }
     }
   }

@@ -78,8 +78,7 @@ public:
   ZKUInt read(const ZKUInt &index) { return access_(index, index, false); }
 
   void write(const ZKUInt &index, const ZKUInt &value) {
-    if (read_only)
-      error("ZKRam: write() on read-only memory");
+    expecting(!read_only, "ZKRam: write() on read-only memory");
     access_(index, value, true);
   }
 

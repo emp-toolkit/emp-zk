@@ -1,9 +1,8 @@
 #ifndef EMP_ZK_BOOL_PROVER_H__
 #define EMP_ZK_BOOL_PROVER_H__
 
-// Prover-side Backend (ALICE). Owns the ALICE branches of the
-// authenticated-triple protocol that used to live in OSTriple.
-// Included from zk_bool.h.
+// The prover (ALICE) side of the proof engine: the ALICE branches of the
+// authenticated-triple protocol. Included from zk_bool_base.h.
 
 namespace emp {
 using namespace std;
@@ -82,9 +81,9 @@ private:
     }
   }
 
-  // Authenticated AND: compute s = a·b on cleartext, mask the pre-drawn COT
-  // to hold s, send the masking bit. The fresh COT is drawn one at a time from
-  // the SilentFerret streaming interface (wire-free); the gate's output MAC is
+  // Authenticated AND: compute s = a·b on cleartext, mask a fresh COT to hold
+  // s, send the masking bit. The COT is drawn one at a time from the
+  // SilentFerret streaming interface (wire-free); the gate's output MAC is
   // buffered alongside the inputs for the eventual batch correctness check.
   // When the buffer fills, run the check.
   block auth_compute_and(block a, block b) {
@@ -246,29 +245,37 @@ private:
 
  private:
   // Fold the buffered f2k multiplication triples into (Δ⁰, Δ¹) check
-  // coefficients (A0 = ma·mb, A1 the linear term + the output mac), then
-  // chi-reduce. left/right val buffers are reused as scratch.
+  // coefficients (A0 = ma·mb, A1 the linear term + the output mac) and
+  // chi-reduce them one chunk at a time, as the AND-gate check does.
   void f2k_check(block *ret, int64_t task_n, block chi_seed) {
     if (task_n == 0) return;
-    block *lval = f2k_left_val.data();
-    block *lmac = f2k_left_mac.data();
-    block *rval = f2k_rght_val.data();
-    block *rmac = f2k_rght_mac.data();
-    const int64_t omac_base = f2k_authval_cnt - f2k_check_cnt;
-    for (int64_t i = 0; i < task_n; ++i) {
-      block A0, A1, tmp;
-      gfmul(lmac[i], rmac[i], &A0);
-      gfmul(lval[i], rmac[i], &tmp);
-      gfmul(rval[i], lmac[i], &A1);
-      A1 = A1 ^ tmp;
-      A1 = A1 ^ f2k_auth_buffer[omac_base + i].mac;
-      lval[i] = A0;
-      rval[i] = A1;
+    const block *lval = f2k_left_val.data(), *lmac = f2k_left_mac.data();
+    const block *rval = f2k_rght_val.data(), *rmac = f2k_rght_mac.data();
+    const AuthValueF2k *out =
+        f2k_auth_buffer.data() + (f2k_authval_cnt - f2k_check_cnt);
+    PRG prg(&chi_seed);
+    constexpr int64_t kChunk = 1024;
+    block chi[kChunk], A0[kChunk], A1[kChunk];
+    block acc0[2] = {zero_block, zero_block}, acc1[2] = {zero_block, zero_block};
+    for (int64_t base = 0; base < task_n; base += kChunk) {
+      const int64_t m = (task_n - base < kChunk) ? (task_n - base) : kChunk;
+      prg.random_block(chi, m);
+      for (int64_t i = 0; i < m; ++i) {
+        const int64_t j = base + i;
+        block tmp;
+        gfmul(lmac[j], rmac[j], &A0[i]);
+        gfmul(lval[j], rmac[j], &tmp);
+        gfmul(rval[j], lmac[j], &A1[i]);
+        A1[i] = A1[i] ^ tmp ^ out[j].mac;
+      }
+      block p[2];
+      vector_inn_prdt_sum_no_red(p, chi, A0, m);
+      acc0[0] = acc0[0] ^ p[0];  acc0[1] = acc0[1] ^ p[1];
+      vector_inn_prdt_sum_no_red(p, chi, A1, m);
+      acc1[0] = acc1[0] ^ p[0];  acc1[1] = acc1[1] ^ p[1];
     }
-    std::vector<block> chi(task_n);
-    PRG(&chi_seed).random_block(chi.data(), task_n);
-    vector_inn_prdt_sum_red(ret + 0, chi.data(), lval, task_n);
-    vector_inn_prdt_sum_red(ret + 1, chi.data(), rval, task_n);
+    ret[0] = reduce(acc0[0], acc0[1]);
+    ret[1] = reduce(acc1[0], acc1[1]);
   }
 
  public:

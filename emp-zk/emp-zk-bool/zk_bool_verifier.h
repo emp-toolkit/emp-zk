@@ -1,9 +1,8 @@
 #ifndef EMP_ZK_BOOL_VERIFIER_H__
 #define EMP_ZK_BOOL_VERIFIER_H__
 
-// Verifier-side Backend (BOB). Owns the BOB branches of the
-// authenticated-triple protocol that used to live in OSTriple.
-// Included from zk_bool.h.
+// The verifier (BOB) side of the proof engine: the BOB branches of the
+// authenticated-triple protocol. Included from zk_bool_base.h.
 
 namespace emp {
 using namespace std;
@@ -72,7 +71,7 @@ public:
   }
 
 private:
-  // ---- BOB-side OSTriple methods ----------------------------------------
+  // ---- Verifier-side protocol methods ------------------------------------
 
   // Authenticated-bit input: receive the prover's masking flips, fold them
   // into the COT keys to recover the per-bit MAC structure.
@@ -121,7 +120,7 @@ private:
     auth_hash.put_block(auth_tmp.data(), length);
   }
 
-  // ---- Per-thread + aggregation hooks (called from base skeleton) -------
+  // ---- Batch-check hooks (called from the base skeleton) ----------------
 
   void andgate_correctness_check(block *ret, int64_t task_n,
                                  block chi_seed) override {
@@ -188,9 +187,7 @@ private:
     }
     if (f2k_authval_cnt == f2k_buffer_sz)
       f2k_pre_buffer_refill();
-    f2k_left_val[f2k_check_cnt] = a.val;
     f2k_left_mac[f2k_check_cnt] = a.mac;
-    f2k_rght_val[f2k_check_cnt] = b.val;
     f2k_rght_mac[f2k_check_cnt] = b.mac;
 
     // Receive the prover's masking difference, fold Δ·d into the pre-drawn
@@ -231,24 +228,32 @@ private:
   }
 
  private:
-  // Verifier check coefficient B = lmac·rmac + outmac·Δ, then chi-reduce.
-  // The left val buffer is reused as scratch.
+  // Verifier check coefficient B = lmac·rmac + outmac·Δ, chi-reduced one
+  // chunk at a time, as the AND-gate check does.
   void f2k_check(block *ret, int64_t task_n, block chi_seed) {
     if (task_n == 0) return;
-    block *lmac = f2k_left_mac.data();
-    block *rmac = f2k_rght_mac.data();
-    const int64_t omac_base = f2k_authval_cnt - f2k_check_cnt;
-    block *lval = f2k_left_val.data();   // reused as scratch
-    for (int64_t i = 0; i < task_n; ++i) {
-      block B, tmp;
-      gfmul(lmac[i], rmac[i], &B);
-      gfmul(f2k_auth_buffer[omac_base + i].mac, delta, &tmp);
-      B = B ^ tmp;
-      lval[i] = B;
+    const block *lmac = f2k_left_mac.data(), *rmac = f2k_rght_mac.data();
+    const AuthValueF2k *out =
+        f2k_auth_buffer.data() + (f2k_authval_cnt - f2k_check_cnt);
+    PRG prg(&chi_seed);
+    constexpr int64_t kChunk = 1024;
+    block chi[kChunk], B[kChunk];
+    block acc[2] = {zero_block, zero_block};
+    for (int64_t base = 0; base < task_n; base += kChunk) {
+      const int64_t m = (task_n - base < kChunk) ? (task_n - base) : kChunk;
+      prg.random_block(chi, m);
+      for (int64_t i = 0; i < m; ++i) {
+        const int64_t j = base + i;
+        block tmp;
+        gfmul(lmac[j], rmac[j], &B[i]);
+        gfmul(out[j].mac, delta, &tmp);
+        B[i] = B[i] ^ tmp;
+      }
+      block p[2];
+      vector_inn_prdt_sum_no_red(p, chi, B, m);
+      acc[0] = acc[0] ^ p[0];  acc[1] = acc[1] ^ p[1];
     }
-    std::vector<block> chi(task_n);
-    PRG(&chi_seed).random_block(chi.data(), task_n);
-    vector_inn_prdt_sum_red(ret + 0, chi.data(), lval, task_n);
+    ret[0] = reduce(acc[0], acc[1]);
   }
 
  public:

@@ -19,7 +19,7 @@
 // against a cheating prover. Do not act on revealed values across a trust
 // boundary before finalize() succeeds.
 //
-// I/O surface (mirrors emp-sh2pc's session):
+// I/O surface (emp-tool's SessionIO / RuntimeSessionIO contracts):
 //   * input<V>/reveal<V> — fixed-width: V is an emp-tool WireValue (compile-time
 //     width). Runtime-width: V is a RuntimeWidthValue (ZKUInt/ZKInt) and input
 //     takes a trailing width — input<ZKUInt>(owner, value, width); reveal reads
@@ -35,6 +35,7 @@
 #include "emp-tool/ir/wire_value.h"                // WireValue
 #include <array>
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -48,10 +49,16 @@ public:
 
     // party = ALICE (prover) or BOB (verifier). `io` is caller-owned.
     // `expected_cots` (optional) sizes the SilentFerret prepay to the proof:
-    // pass roughly the number of COTs it will draw (~ AND gates + authenticated
-    // inputs + check overhead) and all COT correction traffic + malicious checks
-    // ship once at setup, leaving the whole proof's COT consumption wire-free.
-    // 0 (default) uses per-round streaming, safe for an unknown circuit size.
+    // pass roughly the number of COTs it will draw, and all COT correction
+    // traffic + malicious checks ship once at setup, leaving the whole proof's
+    // COT consumption wire-free. A proof draws one COT per AND gate and per
+    // authenticated input bit, 128 per AND-gate, f2k or polynomial batch
+    // check, and 128 per f2k_pack_v. Both parties must pass the same value:
+    // it fixes the prepay schedule, and a mismatch desynchronizes the setup,
+    // which then aborts or stalls. A proof that draws more than it prepaid
+    // prepays another batch of the same size as it goes, so a low estimate
+    // costs traffic, not correctness. 0 (default) uses per-round streaming,
+    // for an unknown circuit size.
     ZKBoolSession(BoolIO* io, int party, int64_t expected_cots = 0) {
         if (party != ALICE && party != BOB)
             error("ZKBoolSession: party must be ALICE or BOB");
@@ -73,6 +80,9 @@ public:
     ctx_t& ctx() { return ctx_; }
     ZKBoolBase& engine() { return *eng_; }
     uint64_t num_and() const { return eng_->num_and(); }
+    // Part of the protocol: it closes BoolIO's current bit chunk, so both
+    // parties must call it at the same point of the proof. A flush on one side
+    // only desynchronizes the bit stream, and the proof aborts.
     void flush() { eng_->io->flush(); }
 
     // ---- raw-bit I/O: the width-agnostic session boundary (IR replay, etc.) ----
@@ -132,16 +142,18 @@ public:
     // byte-bools (uint8_t 0/1); they are copied into real bool storage for the
     // engine boundary here — a uint8_t* is never reinterpreted as a bool*.
     template <RuntimeWidthValue V>
-    V input(int owner, const typename V::clear_t& value, int width) {
+    V input(int owner, const typename V::clear_t& value, int64_t width) {
         static_assert(std::same_as<typename V::context_type, ctx_t>,
                       "ZKBoolSession::input<V>: V must be a value over ZKBoolContext");
-        if (width < 1)
-            error("ZKBoolSession::input: runtime width must be >= 1");
-        const std::vector<uint8_t> bits = V::encode(value, width);
-        auto bb = std::make_unique<bool[]>((size_t)width);
-        for (int i = 0; i < width; ++i) bb[(size_t)i] = (bits[(size_t)i] != 0);
-        std::vector<ZKWire> w = input_bits(owner, bb.get(), (size_t)width);
-        return V::from_wires(ctx_, w.data(), width);
+        // The value types take an int width.
+        expecting(width >= 1 && width <= std::numeric_limits<int>::max(),
+                  "ZKBoolSession::input: runtime width must be in [1, INT_MAX]");
+        const int n = (int)width;
+        const std::vector<uint8_t> bits = V::encode(value, n);
+        auto bb = std::make_unique<bool[]>((size_t)n);
+        for (int i = 0; i < n; ++i) bb[(size_t)i] = (bits[(size_t)i] != 0);
+        std::vector<ZKWire> w = input_bits(owner, bb.get(), (size_t)n);
+        return V::from_wires(ctx_, w.data(), n);
     }
 
     template <RuntimeWidthValue V>

@@ -35,6 +35,14 @@ upgrade together.
   instead of using the raw digest.
 - `f2k_pack_v` commits the 128 bits it packs, one COT each. It used to commit
   130 and leave two of them unused.
+- `ZKBoolSession::input` (runtime width) and `zk_int_from_blocks` take the
+  width as `int64_t` and reject a width outside [1, INT_MAX].
+- The `zkp_*` polynomial gadgets reject a negative length.
+- The f2k multiplication check holds no cleartext buffers on the verifier and
+  folds its coefficients in chunks. The `f2k_input` buffer is allocated on the
+  first `f2k_input`.
+- The polynomial proof's prover accumulates its terms with masks, not branches
+  on witness bits.
 
 ### Removed
 

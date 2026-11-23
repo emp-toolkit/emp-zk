@@ -20,6 +20,7 @@
 
 #include "emp-zk/emp-zk-bool/zk_context.h"
 #include "emp-tool/circuits/typed.h"   // Bit_T / Int_T / UInt_T / value_traits
+#include <limits>
 #include <vector>
 
 namespace emp {
@@ -47,10 +48,13 @@ inline std::vector<block> int_blocks(const V& x) {
 inline int zk_int_width(const ZKInt& x) { return x.width(); }
 
 // Rebuild a runtime-width int from raw authenticated blocks (LSB-first).
-inline ZKInt zk_int_from_blocks(ZKBoolContext& ctx, const block* blk, int width) {
+inline ZKInt zk_int_from_blocks(ZKBoolContext& ctx, const block* blk, int64_t width) {
+    // ZKInt takes an int width.
+    expecting(width >= 1 && width <= std::numeric_limits<int>::max(),
+              "zk_int_from_blocks: width must be in [1, INT_MAX]");
     std::vector<ZKWire> wires((std::size_t)width);
-    for (int i = 0; i < width; ++i) wires[(std::size_t)i].label = blk[i];
-    return ZKInt::from_wires(ctx, wires.data(), width);
+    for (int64_t i = 0; i < width; ++i) wires[(std::size_t)i].label = blk[i];
+    return ZKInt::from_wires(ctx, wires.data(), (int)width);
 }
 
 }  // namespace emp

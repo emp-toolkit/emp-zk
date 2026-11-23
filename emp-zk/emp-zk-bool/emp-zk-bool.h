@@ -17,23 +17,31 @@ using namespace std;
 // Statement bits/ints are ZKBit/ZKInt; the proof gadget (PolyProof) runs on raw
 // authenticated blocks, so these copy the wires out at the boundary (a ZKBit
 // carries a context pointer alongside its wire — not layout-castable to block*).
+// Every statement is over GF(2), and its proof settles with the session's
+// closing checks.
 
+// Proves Σ_{i<len} coeff[i+1]·x[i]·y[i] = coeff[0]; coeff has len + 1 entries.
 inline void zkp_poly_deg2(ZKBoolSession &sess, ZKBit *x, ZKBit *y, bool *coeff,
                           int64_t len) {
+  expecting(len >= 0, "zkp_poly_deg2: negative length");
   std::vector<block> xb((size_t)len), yb((size_t)len);
   for (int64_t i = 0; i < len; ++i) { xb[i] = bit_block(x[i]); yb[i] = bit_block(y[i]); }
   sess.engine().polyproof->zkp_poly_deg2(xb.data(), yb.data(), coeff, len);
 }
 
+// Proves Σ_{i<len} x[i]·y[i] = constant.
 inline void zkp_inner_prdt(ZKBoolSession &sess, ZKBit *x, ZKBit *y, bool constant,
                            int64_t len) {
+  expecting(len >= 0, "zkp_inner_prdt: negative length");
   std::vector<block> xb((size_t)len), yb((size_t)len);
   for (int64_t i = 0; i < len; ++i) { xb[i] = bit_block(x[i]); yb[i] = bit_block(y[i]); }
   sess.engine().polyproof->zkp_inner_prdt(xb.data(), yb.data(), constant, len);
 }
 
+// Proves Σ_{i<len} x[i]·y[i] = Σ_{j<len2} r[j]·s[j].
 inline void zkp_inner_prdt_eq(ZKBoolSession &sess, ZKBit *x, ZKBit *y, ZKBit *r,
                               ZKBit *s, int64_t len, int64_t len2) {
+  expecting(len >= 0 && len2 >= 0, "zkp_inner_prdt_eq: negative length");
   std::vector<block> xb((size_t)len), yb((size_t)len), rb((size_t)len2), sb((size_t)len2);
   for (int64_t i = 0; i < len; ++i)  { xb[i] = bit_block(x[i]); yb[i] = bit_block(y[i]); }
   for (int64_t i = 0; i < len2; ++i) { rb[i] = bit_block(r[i]); sb[i] = bit_block(s[i]); }
@@ -41,9 +49,11 @@ inline void zkp_inner_prdt_eq(ZKBoolSession &sess, ZKBit *x, ZKBit *y, ZKBit *r,
                                              sb.data(), len, len2);
 }
 
+// Proves Σ_{i<len} x[i]·y[i] = Σ_{j<len2} r[j]·s[j] + rr·ss.
 inline void zkp_inner_prdt_eq(ZKBoolSession &sess, ZKBit *x, ZKBit *y, ZKBit *r,
                               ZKBit *s, ZKBit *rr, ZKBit *ss, int64_t len,
                               int64_t len2) {
+  expecting(len >= 0 && len2 >= 0, "zkp_inner_prdt_eq: negative length");
   std::vector<block> xb((size_t)len), yb((size_t)len), rb((size_t)len2), sb((size_t)len2);
   for (int64_t i = 0; i < len; ++i)  { xb[i] = bit_block(x[i]); yb[i] = bit_block(y[i]); }
   for (int64_t i = 0; i < len2; ++i) { rb[i] = bit_block(r[i]); sb[i] = bit_block(s[i]); }
@@ -52,10 +62,15 @@ inline void zkp_inner_prdt_eq(ZKBoolSession &sess, ZKBit *x, ZKBit *y, ZKBit *r,
                                              sb.data(), &rrb, &ssb, len, len2);
 }
 
-// Relocated from PolyProof (polynomial.h is engine-level / typed-layer-free):
-// drives PolyProof's public accumulate_*/buffer/num over typed ZKInt/ZKBit.
+// Proves, for every bit position w < in_width,
+//   Σ_{i<len} polyx[i][w]·polyy[0][i] = r[w]·s[0]:
+// the bits of the matrix polyx (len integers of at least in_width bits) times
+// the vector of bits of polyy[0] (at least len bits) equal r scaled by s[0].
+// One claim per bit position. It drives PolyProof's public accumulate_* /
+// buffer / num members directly, because PolyProof sits below the typed layer.
 inline void zkp_inner_prdt_multi(ZKBoolSession &sess, ZKInt *polyx, ZKInt *polyy,
                                  ZKBit *r, ZKBit *s, int64_t len, int64_t in_width) {
+  expecting(len >= 0 && in_width >= 0, "zkp_inner_prdt_multi: negative length");
   PolyProof *pp = sess.engine().polyproof;
   const int party = sess.party();
   for (int64_t width = 0; width < in_width; ++width) {

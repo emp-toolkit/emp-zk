@@ -63,6 +63,11 @@ public:
   static constexpr std::string_view kF2kCheckDomain = "emp-zk:bool:f2k-check";
   block check_sid = zero_block;
 
+  // Permutation proofs (including those inside a RAM, ROM or set) that hold
+  // records their check has not checked yet. ZKPermProof keeps the count, and
+  // ZKBoolSession::finalize() requires it to be zero.
+  int64_t unchecked_perm_proofs = 0;
+
   // AND-gate triple buffer (ALICE-side: cleartext+MAC; BOB-side: keys only).
   int64_t check_cnt = 0;
   std::vector<block> andgate_out_buffer;

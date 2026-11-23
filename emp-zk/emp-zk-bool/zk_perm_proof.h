@@ -3,124 +3,137 @@
 
 #include "emp-zk/emp-zk-bool/zk_session.h"
 #include <array>
+#include <limits>
 #include <memory>
+#include <string>
+#include <string_view>
 
 namespace emp {
 using namespace std;
 
-// Degree-N polynomial-product proof over authenticated F(2^128) values — the
-// high-fan-in multiply that powers the permutation product below. polyPrdtN
-// commits the coefficients of P(Δ) = ∏ᵢ(kᵢ + xᵢΔ) so N field elements
-// multiply for the cost of N VOLEs (the QuickSilver trick); batch_check folds
-// all buffered products under one Fiat–Shamir uni-hash and opens a single MAC.
-// Owned per ZKPermProof instance — its only consumer — and only allocated when
-// a product actually runs.
+// Product proof for five authenticated F(2^128) values, the high-fan-in
+// multiply behind the permutation product below (the QuickSilver
+// polynomial-proof trick). polyPrdt5 buffers the coefficients of
+// P(Δ) = ∏ᵢ(mᵢ + xᵢΔ) for one product, so five factors cost one committed
+// value; batch_check folds every buffered product with independent
+// coefficients and checks the folded polynomial under a random mask. Owned by
+// a ZKPermProof, which allocates it on its first product.
 class RamPolyPrdt {
 public:
+  // The Fiat–Shamir domain of batch_check's coefficients.
+  static constexpr std::string_view kCheckDomain = "emp-zk:perm:product-check";
+  static constexpr int64_t buffer_sz = 1 << 16;
+
+  ZKBoolBase *bb;
   int party;
   BoolIO *io;
-  block delta[4];
-  int64_t buffer_sz = 1 << 16;
-  // ALICE: per-call coefficients of Δ⁰..Δ⁴; BOB: only [0] = poly(Δ).
+  block delta[4];   // BOB: Δ, Δ², Δ³, Δ⁴
+  // ALICE: per-product coefficients of Δ⁰..Δ⁴; BOB: only [0] = poly(Δ).
   std::array<std::vector<block>, 5> buffer;
-  Ferret *ferret = nullptr;
-  int64_t num;
+  int64_t num = 0;
 
-  RamPolyPrdt(int party, BoolIO *io, Ferret *ferret)
-      : party(party), io(io), ferret(ferret) {
+  explicit RamPolyPrdt(ZKBoolBase *bb) : bb(bb), party(bb->party), io(bb->io) {
     if (party == ALICE) {
       for (auto &b : buffer)
         b.resize(buffer_sz);
     } else {
       buffer[0].resize(buffer_sz);
-      delta[0] = ferret->Delta;
-      gfmul(delta[0], delta[0], delta + 1);
-      gfmul(delta[1], delta[0], delta + 2);
-      gfmul(delta[2], delta[0], delta + 3);
+      delta[0] = bb->delta;
+      for (int i = 1; i < 4; ++i)
+        gfmul(delta[i - 1], delta[0], delta + i);
     }
-    num = 0;
   }
 
-  ~RamPolyPrdt() { batch_check(); }
+  ~RamPolyPrdt() {
+    expecting(num == 0,
+              "RamPolyPrdt: destroyed with products that batch_check() never checked");
+  }
 
+  // Check every buffered product. The coefficients χᵢ are a PRG expansion of
+  // the check seed, so a batch with a wrong product folds to a nonzero error
+  // except with probability 2⁻¹²⁸. That error sits on Δ⁵, which none of the
+  // prover's five coefficients reaches, so it then passes only if Δ is a root
+  // of a nonzero polynomial of degree 5: about 2⁻¹²⁴ in all.
+  //
+  // The prover's coefficients U_j are masked by A*(Y) = Σₕ (m_h + u_h·Y)·Y^(h−1),
+  // h = 1..4, built from four random authenticated values (m_h = k_h + u_h·Δ).
+  // The map (u₁..u₄) → (U₁..U₄) is triangular with unit diagonal, so U₁..U₄
+  // are uniform, and U₀ is fixed by the check. The verifier adds
+  // B* = A*(Δ) = Σₕ k_h·Δ^(h−1), which it computes from its keys.
   void batch_check() {
     if (num == 0)
       return;
     io->flush();
+    block seed = bb->check_seed(kCheckDomain);
     std::vector<block> chi(num);
-    block check_sum[5];
+    PRG(&seed).random_block(chi.data(), num);
+    block u[4], mk[4];
+    draw_mask_(u, mk);
     if (party == ALICE) {
-      block seed = io->io->get_digest();
-      uni_hash_coeff_gen(chi.data(), seed, num);
-
-      for (int i = 0; i < 5; ++i)
-        vector_inn_prdt_sum_red(check_sum + i, chi.data(), buffer[i].data(), num);
-
-      // TODO mask
-      //
-      io->send_data(check_sum, 5 * sizeof(block));
+      block U[5];
+      for (int j = 0; j < 5; ++j)
+        vector_inn_prdt_sum_red(&U[j], chi.data(), buffer[j].data(), num);
+      U[0] = U[0] ^ mk[0];
+      for (int h = 1; h < 4; ++h)
+        U[h] = U[h] ^ u[h - 1] ^ mk[h];
+      U[4] = U[4] ^ u[3];
+      io->send_data(U, sizeof(U));
       io->flush();
     } else {
-      block seed = io->io->get_digest();
-      uni_hash_coeff_gen(chi.data(), seed, num);
-
-      block B;
+      block B, t;
       vector_inn_prdt_sum_red(&B, chi.data(), buffer[0].data(), num);
-
-      // TODO mask
-      //
-      io->recv_data(check_sum, 5 * sizeof(block));
-
-      block t[4];
-      for (int i = 0; i < 4; ++i)
-        gfmul(check_sum[i + 1], delta[i], &t[i]);
-      check_sum[0] ^= (t[0] ^ t[1] ^ t[2] ^ t[3]);
-      expecting(memcmp(&B, check_sum, 16) == 0, "product by polynomial fails");
+      B = B ^ mk[0];
+      for (int h = 1; h < 4; ++h) {
+        gfmul(mk[h], delta[h - 1], &t);
+        B = B ^ t;
+      }
+      block U[5];
+      io->recv_data(U, sizeof(U));
+      block W = U[0];
+      for (int j = 1; j < 5; ++j) {
+        gfmul(U[j], delta[j - 1], &t);
+        W = W ^ t;
+      }
+      expecting(cmpBlock(&W, &B, 1) == 1, "ZKPermProof: product check fails");
     }
     num = 0;
   }
 
-  // Templated polynomial-product MAC step.
+  // Buffer the proof that m_last commits the product x[0]·…·x[4] of five
+  // committed values (the prover's cleartext x and MACs m; the verifier's keys
+  // m, its x unused). Both sides expand
   //
-  // x[0..N-1], m[0..N-1] are the prover's (cleartext, MAC) pairs for N
-  // committed values; m_last is the MAC the prover commits as the
-  // product. Both sides build coefficients of the polynomial-in-Δ
+  //     P(Δ) = (m_0 + x_0 Δ)(m_1 + x_1 Δ) … (m_4 + x_4 Δ),
   //
-  //     P(Δ) = (k_1 + x_1 Δ)(k_2 + x_2 Δ) … (k_N + x_N Δ)
+  // whose Δ⁵ coefficient is the cleartext product v. The prover buffers the
+  // coefficients of Δ⁰..Δ⁴, with m_last folded into the one of Δ⁴; the
+  // verifier buffers P(Δ) + k_last·Δ⁴. If m_last commits some v' ≠ v, the two
+  // differ by (v + v')·Δ⁵. Products of fewer factors are not offered: their
+  // error would sit on a power of Δ that the prover's coefficients cancel.
   //
-  // (with k_i ≡ m_i in this code's spelling). The Δ^N coefficient is
-  // x_1·x_2·…·x_N (the cleartext product, available to the caller as
-  // `v`); we buffer the lower coefficients 0..N-1. The Δ^(N-1) slot
-  // also folds in the m_last correction term so that
-  //   buffer_{N-1} − m_last = coefficient of Δ^(N-1).
-  // Higher-index buffers (N..4) are zeroed so batch_check's later
-  // chi-fold sees a clean degree-N polynomial regardless of N.
-  //
-  // ALICE expands the polynomial iteratively
-  //   poly_{i+1}[j] = poly_i[j] · k_{i+1} + poly_i[j-1] · x_{i+1}.
-  // BOB stores only B = ⊓_i m_i + m_last · Δ^(N-1) in buffer0.
-  template <int N>
-  inline void polyPrdtN(const block *x, const block *m, const block &m_last) {
-    static_assert(N >= 3 && N <= 5);
+  // ALICE expands the polynomial iteratively,
+  //   poly_{i+1}[j] = poly_i[j]·m_{i+1} + poly_i[j-1]·x_{i+1};
+  // BOB stores only ∏ᵢ mᵢ + m_last·Δ⁴.
+  void polyPrdt5(const block *x, const block *m, const block &m_last) {
+    constexpr int N = 5;
     if (num >= buffer_sz) batch_check();
 
     if (party == ALICE) {
       block poly[N + 1] = {};
       block tmp;
 
-      // Hand-expand the 2-term init: poly = (k_1 + x_1 Δ)(k_2 + x_2 Δ).
+      // Hand-expand the 2-term init: poly = (m_0 + x_0 Δ)(m_1 + x_1 Δ).
       gfmul(m[0], m[1], &poly[0]);
       gfmul(m[0], x[1], &poly[1]);
       gfmul(x[0], m[1], &tmp);
       poly[1] ^= tmp;
       gfmul(x[0], x[1], &poly[2]);
 
-      // Iteratively multiply in (k_i + x_i Δ) for i = 2 .. N-1.
+      // Multiply in (m_i + x_i Δ) for i = 2 .. N-1.
       for (int i = 2; i < N; ++i) {
         block new_poly[N + 1] = {};
-        // At the LAST step (i == N-1) the new top coefficient
-        // new_poly[N] = poly[N-1] · x_i would be the all-x term =
-        // x_1·…·x_N = v, which the caller already has; skip it.
+        // At the last step the new top coefficient poly[N-1]·x_i would be the
+        // all-x term x_0·…·x_4 = v, which the caller already has; skip it.
         const int top = (i == N - 1) ? (N - 1) : (i + 1);
         for (int j = 0; j <= top; ++j) {
           if (j <= i)
@@ -133,46 +146,55 @@ public:
         for (int j = 0; j <= top; ++j) poly[j] = new_poly[j];
       }
 
-      // Coefficient layout: poly[0..N-2] → Δ⁰..Δ^(N-2); poly[N-1] folds in
-      // m_last at Δ^(N-1); buffers N..4 zeroed so batch_check sees a clean
-      // degree-N polynomial regardless of N.
-      for (int j = 0; j < 5; ++j)
-        buffer[j][num] = (j < N - 1)  ? poly[j]
-                       : (j == N - 1) ? (poly[N - 1] ^ m_last)
-                                      : zero_block;
+      for (int j = 0; j < N - 1; ++j) buffer[j][num] = poly[j];
+      buffer[N - 1][num] = poly[N - 1] ^ m_last;
     } else {
       block prod = m[0];
       for (int i = 1; i < N; ++i) gfmul(prod, m[i], &prod);
-      // delta[k] = Δ^(k+1) (delta[0]=Δ, delta[1]=Δ², …);
-      // delta[N-2] = Δ^(N-1).
       block adj;
-      gfmul(m_last, delta[N - 2], &adj);
+      gfmul(m_last, delta[N - 2], &adj);   // delta[3] = Δ⁴
       buffer[0][num] = prod ^ adj;
     }
     num++;
   }
+
+private:
+  // Four random authenticated F(2^128) values, each packed from 128 COTs as
+  // Σ·Xⁱ, the way the AND-gate check builds its mask: the prover gets (u_h,
+  // m_h) and the verifier k_h, with m_h = k_h + u_h·Δ.
+  void draw_mask_(block u[4], block mk[4]) {
+    block cot[128];
+    for (int h = 0; h < 4; ++h) {
+      bb->ferret->next_n(cot, 128);
+      bb->pack.packing(&mk[h], cot);
+      if (party == ALICE) {
+        bool bits[128];
+        for (int i = 0; i < 128; ++i) bits[i] = getLSB(cot[i]);
+        bb->pack.packing(&u[h], bits);
+      }
+    }
+  }
 };
 
-// Zero-knowledge multiset permutation check over authenticated elements —
-// the core gadget for VOLE-ZK RAM/ROM (Yang–Heath, "Two Shuffles Make a
-// RAM", §2.2). The prover commits two multisets A and B; the proof passes
-// iff A is a permutation of B.
+// Zero-knowledge multiset permutation check over authenticated elements, the
+// core gadget for VOLE-ZK RAM/ROM (Yang–Heath, "Two Shuffles Make a RAM",
+// §2.2). The prover commits two multisets A and B; the proof passes iff A is a
+// permutation of B, and the verifier learns nothing else.
 //
 // Method: encode each multiset as a polynomial with its elements as roots,
 //   p_A(X) = ∏_i (X − a_i),   p_B(X) = ∏_i (X − b_i),
-// and test p_A = p_B at a public-coin challenge r by Schwartz–Zippel. Both
-// products are evaluated in zero knowledge as a chain of authenticated f2k
-// multiplications, batched through a degree-N product proof (mul_poly_, the
-// QuickSilver high-fan-in trick — so most factors cost no fresh VOLE); the
-// two product wires are then opened and compared.
+// and test p_A = p_B at a challenge r by Schwartz–Zippel. Both products are
+// evaluated in zero knowledge four factors at a time through the product
+// proof (RamPolyPrdt), and the difference of the two product wires is opened
+// as zero.
 //
 // Payload size (bits) is fixed at construction. ≤128 bits → each element is
 // one F(2^128) wire and the product runs directly. Larger → an element spans
 // m = ⌈bits/128⌉ wires that are *compressed* to one wire by the random linear
-// combination Σ_j c_j·B_j with a public-coin coefficient vector c (a local
-// op — f2k_mul_const / f2k_add — no VOLE, no comms). Distinct tuples collide
-// under a random c only with prob ≈ 1/2^128, after which the single-wire
-// product applies. Total soundness ≈ (|A| + m)/2^128.
+// combination Σ_j c_j·B_j with a coefficient vector c (a local op —
+// f2k_mul_const / f2k_add — no VOLE, no comms). As a polynomial in (c, X), the
+// difference of the two products has degree |A|, so a false claim passes with
+// probability about |A|/2^128, plus the product check's error.
 //
 // Compression is decoupled from the final check: add_* buffers raw (multi-
 // wire) elements; compress() folds the current buffer into the compressed
@@ -184,8 +206,19 @@ public:
 // calls: every element that must match another in this permutation has to be
 // folded in the same compress() call. The default flow (let check_eq() fold
 // everything once, at the end) satisfies this for a whole-stream check.
+// Several compress() calls stay sound, since each fold's coefficients are
+// drawn after its elements are committed; the |A|/2^128 bound above is
+// derived for a single fold.
+//
+// Records stay unchecked until check_eq() runs. The session's finalize()
+// aborts while any permutation proof holds unchecked records, and so does the
+// destructor of one that does.
 class ZKPermProof {
 public:
+  // Fiat–Shamir domains of the fold coefficients and of the challenge r.
+  static constexpr std::string_view kFoldDomain = "emp-zk:perm:fold";
+  static constexpr std::string_view kChallengeDomain = "emp-zk:perm:challenge";
+
   ZKBoolBase *bb;
   int64_t n_blocks;   // wires per element = ⌈bits/128⌉
 
@@ -196,25 +229,46 @@ public:
   // Collapsed single-wire elements; the permutation product runs over these.
   std::vector<F2kAuthValue> a_elems_compressed, b_elems_compressed;
 
-  // Degree-N product engine for eval_'s batched factors. Lazily created on
-  // first product, batch-checked in check_eq.
+  // Product proof for eval_'s batched factors. Created on the first product,
+  // batch-checked in check_eq.
   std::unique_ptr<RamPolyPrdt> polyprdt;
 
-  explicit ZKPermProof(ZKBoolSession &sess, int64_t payload_bits = 128)
-      : bb(&sess.engine()), n_blocks((payload_bits + 127) / 128) {}
+  // `mismatch` is the verifier's abort message when A is not a permutation of
+  // B; the RAM, ROM and set name themselves in theirs.
+  explicit ZKPermProof(ZKBoolSession &sess, int64_t payload_bits = 128,
+                       std::string_view mismatch =
+                           "ZKPermProof: A is not a permutation of B")
+      : bb(&sess.engine()), n_blocks(blocks_for_(payload_bits)),
+        mismatch_(mismatch) {}
+
+  ~ZKPermProof() {
+    expecting(!pending_,
+              "ZKPermProof: destroyed with records that check_eq() never checked");
+  }
 
   // Append one element. The pointer form reads n_blocks consecutive wires;
-  // the reference form is a convenience for single-wire payloads (≤128 bits).
+  // the reference form is for single-wire payloads (≤128 bits).
   void add_A(const F2kAuthValue *e) {
+    mark_pending_();
     if (n_blocks == 1) a_elems_compressed.push_back(*e);
     else a_pending.insert(a_pending.end(), e, e + n_blocks);
   }
   void add_B(const F2kAuthValue *e) {
+    mark_pending_();
     if (n_blocks == 1) b_elems_compressed.push_back(*e);
     else b_pending.insert(b_pending.end(), e, e + n_blocks);
   }
-  void add_A(const F2kAuthValue &e) { add_A(&e); }   // requires n_blocks == 1
-  void add_B(const F2kAuthValue &e) { add_B(&e); }   // requires n_blocks == 1
+  void add_A(const F2kAuthValue &e) {
+    expecting(n_blocks == 1, "ZKPermProof::add_A: an element spans more than one wire");
+    add_A(&e);
+  }
+  void add_B(const F2kAuthValue &e) {
+    expecting(n_blocks == 1, "ZKPermProof::add_B: an element spans more than one wire");
+    add_B(&e);
+  }
+
+  // Whether records added since the last check_eq() are still unchecked.
+  bool pending() const { return pending_; }
 
   // Fold the pending multi-wire elements into the compressed lists, drawing a
   // fresh coefficient vector by Fiat–Shamir now (so it binds the committed
@@ -223,9 +277,9 @@ public:
   void compress() {
     if (n_blocks == 1 || (a_pending.empty() && b_pending.empty())) return;
     bb->io->flush();
-    block seed = bb->io->io->get_digest();
+    block seed = bb->check_seed(kFoldDomain);
     std::vector<block> coeff(n_blocks);
-    PRG(&seed).random_block(coeff.data(), (int)n_blocks);
+    PRG(&seed).random_block(coeff.data(), n_blocks);
     fold_(a_pending, coeff.data(), a_elems_compressed);
     fold_(b_pending, coeff.data(), b_elems_compressed);
     a_pending.clear();
@@ -241,12 +295,7 @@ public:
               "ZKPermProof: |A| != |B|");
     if (!a_elems_compressed.empty()) {
       bb->io->flush();
-      // Domain-separated from any compress() coefficient seed so r stays
-      // independent even when the last fold and this draw share a transcript
-      // point (compress() is local — it does no IO).
-      block seed = bb->io->io->get_digest() ^ makeBlock(0, 1);
-      block r;
-      PRG(&seed).random_block(&r, 1);
+      const block r = bb->check_seed(kChallengeDomain);
       F2kAuthValue pa = eval_(a_elems_compressed, r);
       F2kAuthValue pb = eval_(b_elems_compressed, r);
       open_eq_(pa, pb);
@@ -256,29 +305,43 @@ public:
     b_pending.clear();
     a_elems_compressed.clear();
     b_elems_compressed.clear();
+    if (pending_) {
+      pending_ = false;
+      --bb->unchecked_perm_proofs;
+    }
   }
 
 private:
-  // Degree-N product of f2k wires: out = ∏ inputs, MAC committed through the
-  // owned polyprdt's degree-N check (lazily created). ALICE's f2k_mul_v gives
-  // the cleartext product, BOB's gives zero; f2k_pack_v puts it in MAC layout.
-  // Both f2k_mul_v and f2k_pack_v are backend primitives (shared Δ/Ferret).
-  template <typename... Args>
-  void mul_poly_(F2kAuthValue &out, Args... args) {
-    constexpr int N = sizeof...(args);
-    static_assert(N >= 3 && N <= 5, "mul_poly_ supports N=3, 4, 5");
-    if (!polyprdt)
-      polyprdt = std::make_unique<RamPolyPrdt>(bb->party, bb->io, bb->ferret);
+  std::string mismatch_;
+  bool pending_ = false;
 
-    const F2kAuthValue in[N] = { args... };
-    block vals[N], macs[N];
-    for (int i = 0; i < N; ++i) {
-      vals[i] = in[i].val;
-      macs[i] = in[i].mac;
+  // ⌈payload_bits / 128⌉, after checking payload_bits.
+  static int64_t blocks_for_(int64_t payload_bits) {
+    expecting(payload_bits >= 1 && payload_bits <= std::numeric_limits<int>::max(),
+              "ZKPermProof: payload_bits must be in [1, INT_MAX]");
+    return (payload_bits + 127) / 128;
+  }
+
+  void mark_pending_() {
+    if (pending_) return;
+    pending_ = true;
+    ++bb->unchecked_perm_proofs;
+  }
+
+  // out = f[0]·f[1]·f[2]·f[3]·f[4]. ALICE's f2k_mul_v gives the cleartext
+  // product, BOB's gives zero; f2k_pack_v commits it in MAC layout, and the
+  // owned product proof checks the commitment.
+  void mul5_(F2kAuthValue &out, const F2kAuthValue (&f)[5]) {
+    if (!polyprdt)
+      polyprdt = std::make_unique<RamPolyPrdt>(bb);
+    block vals[5], macs[5];
+    for (int i = 0; i < 5; ++i) {
+      vals[i] = f[i].val;
+      macs[i] = f[i].mac;
     }
-    block v = bb->f2k_mul_v(N, vals);
-    block m = bb->f2k_pack_v(v);
-    polyprdt->template polyPrdtN<N>(vals, macs, m);
+    const block v = bb->f2k_mul_v(5, vals);
+    const block m = bb->f2k_pack_v(v);
+    polyprdt->polyPrdt5(vals, macs, m);
     out.val = v;
     out.mac = m;
   }
@@ -299,42 +362,39 @@ private:
 
   // ∏_i (r − elem_i) over the authenticated wires (r is a public constant; in
   // F(2^128) subtraction is XOR, so r − e = f2k_add_const(e, r)). Folds 4
-  // factors per mul_poly_ (a degree-5 polynomial proof, no fresh VOLE) and
-  // finishes the remainder with plain f2k_mul.
+  // factors per mul5_ (a degree-5 product proof, no fresh VOLE); the last
+  // mul5_ fills its free slots with a public 1. So the proof never calls
+  // f2k_mul, and a session that runs only permutation proofs never starts the
+  // f2k VOLE.
   F2kAuthValue eval_(const std::vector<F2kAuthValue> &v, block r) {
-    F2kAuthValue acc;
+    F2kAuthValue acc, one;
     bb->f2k_add_const(acc, v[0], r);
-    size_t i = 1;
-    for (; i + 3 < v.size(); i += 4) {
-      F2kAuthValue x[4];
-      for (int j = 0; j < 4; ++j)
-        bb->f2k_add_const(x[j], v[i + j], r);
-      mul_poly_(acc, acc, x[0], x[1], x[2], x[3]);
-    }
-    for (; i < v.size(); ++i) {
-      F2kAuthValue x;
-      bb->f2k_add_const(x, v[i], r);
-      bb->f2k_mul(acc, acc, x);
+    bb->f2k_add_const(one, F2kAuthValue{zero_block, zero_block},
+                      makeBlock(0, 1));
+    for (size_t i = 1; i < v.size(); i += 4) {
+      F2kAuthValue f[5] = {acc, one, one, one, one};
+      for (size_t j = 0; j < 4 && i + j < v.size(); ++j)
+        bb->f2k_add_const(f[j + 1], v[i + j], r);
+      mul5_(acc, f);
     }
     return acc;
   }
 
-  // Open both product wires and check p_A(r) == p_B(r): the prover ships her
-  // two MAC shares; the verifier folds them into its keys, recovering
-  // val_A·Δ and val_B·Δ, and checks they match (⇒ val_A == val_B). Forging a
-  // pass with val_A ≠ val_B would require guessing Δ.
+  // Check p_A(r) == p_B(r) by opening the difference of the two product
+  // wires as zero: the prover sends M_A + M_B and the verifier compares it
+  // with K_A + K_B. The two differ by (p_A(r) + p_B(r))·Δ, so a false claim
+  // passes only if the prover guesses that multiple of Δ. An honest message
+  // equals K_A + K_B, which the verifier already holds, so it reveals
+  // nothing.
   void open_eq_(const F2kAuthValue &pa, const F2kAuthValue &pb) {
-    block macs[2] = { pa.mac, pb.mac };
+    const block diff = pa.mac ^ pb.mac;
     if (bb->party == ALICE) {
-      bb->io->send_data(macs, 2 * sizeof(block));
+      bb->io->send_data(&diff, sizeof(block));
       bb->io->flush();
     } else {
-      block recv[2];
-      bb->io->recv_data(recv, 2 * sizeof(block));
-      macs[0] = macs[0] ^ recv[0];
-      macs[1] = macs[1] ^ recv[1];
-      expecting(memcmp(macs, macs + 1, sizeof(block)) == 0,
-                "ZKPermProof: A is not a permutation of B");
+      block recv;
+      bb->io->recv_data(&recv, sizeof(block));
+      expecting(cmpBlock(&recv, &diff, 1) == 1, mismatch_.c_str());
     }
   }
 };
@@ -378,6 +438,8 @@ inline void ramzk_pack_record(ZKBoolBase *bb,
 
 // Bit width needed to hold any value in [0, hi]: the smallest b with 2^b > hi.
 inline int64_t ramzk_bits_for(int64_t hi) {
+  expecting(hi >= 0 && hi < (int64_t(1) << 62),
+            "ramzk_bits_for: hi must be in [0, 2^62)");
   int64_t b = 1;
   while ((int64_t(1) << b) <= hi)
     ++b;

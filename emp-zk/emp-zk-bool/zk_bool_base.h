@@ -112,6 +112,12 @@ public:
   // of one COT-correction burst per ~15M-COT round.
   ZKBoolBase(int p, BoolIO *io_, int64_t expected_cots = 0)
       : party(p), io(io_) {
+    // Before any traffic: a BoolIO with the wrong flag would send on the
+    // verifier or receive on the prover.
+    expecting(io_ != nullptr, "ZKBoolBase: io channel must not be null");
+    expecting(io_->sender == (p == ALICE),
+              "ZKBoolBase: the BoolIO's sender flag must be true on the prover "
+              "and false on the verifier");
     ferret = new SilentFerret(3 - p, io_, /*malicious=*/true);
     delta = ferret->Delta;           // Δ sampled in Ferret's ctor
     // One persistent SilentFerret streaming session for the whole proof. COTs

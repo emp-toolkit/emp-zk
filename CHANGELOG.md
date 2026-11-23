@@ -35,6 +35,12 @@ upgrade together.
   instead of using the raw digest.
 - `f2k_pack_v` commits the 128 bits it packs, one COT each. It used to commit
   130 and leave two of them unused.
+- `BoolIO`'s receiver checks that the padding of each closed chunk is all
+  true bits. The transcript absorbs the padding, so a sender could otherwise
+  vary bits that the receiver ignores.
+- `BoolIO` takes its sender flag as a `bool`. Passing a party id, which
+  would make both parties senders, no longer compiles. The proof engine
+  checks the flag against its party before any traffic.
 - `ZKBoolSession::input` (runtime width) and `zk_int_from_blocks` take the
   width as `int64_t` and reject a width outside [1, INT_MAX].
 - The `zkp_*` polynomial gadgets reject a negative length.

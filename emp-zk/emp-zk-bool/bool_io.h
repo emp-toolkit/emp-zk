@@ -1,6 +1,7 @@
 #ifndef __EMP_BITIO_H__
 #define __EMP_BITIO_H__
 #include "emp-tool/emp-tool.h"
+#include <algorithm>
 
 namespace emp {
 using namespace std;
@@ -14,10 +15,10 @@ using namespace std;
 // Bits flow one way, from the prover (sender) to the verifier. A chunk crosses
 // the wire when it is full, so a byte message in the middle of a chunk would
 // overtake the bits before it. Every byte message therefore closes the current
-// chunk first, on both sides: the sender pads the partial chunk and sends it,
-// and the receiver drops the unread padding of the chunk it holds. Both
-// parties reach each byte message at the same protocol point, so they close
-// the same chunk.
+// chunk first, on both sides: the sender pads the partial chunk with true bits
+// and sends it, and the receiver checks that the unread rest of the chunk it
+// holds is that padding, then drops it. Both parties reach each byte message
+// at the same protocol point, so they close the same chunk.
 //
 // Everything goes through `io`, so this object uses io's Fiat-Shamir
 // transcript (use_transcript_of) and keeps none of its own: the proof's checks
@@ -36,10 +37,13 @@ public:
   std::unique_ptr<bool[]> buf;
   int ptr;
   bool sender;
-  BoolIO(IOChannel *io, int sender) : io(io), sender(sender) {
+  // `sender` is true on the prover (party == ALICE), the only party that
+  // sends bits, and false on the verifier. A party id would convert to true
+  // on both sides, so the int overload is deleted.
+  BoolIO(IOChannel *io, bool sender) : io(io), sender(sender) {
     use_transcript_of(io);
-    // Exactly one party passes true (sender = party == ALICE). Guard so
-    // re-wrapping a channel that already has its transcript on keeps it.
+    // Guard so re-wrapping a channel that already has its transcript on
+    // keeps it.
     if (!io->fs_enabled())
       io->enable_fs(sender);
     buf.reset(new bool[NETWORK_STAGING_BUFFER_SIZE]);
@@ -48,6 +52,7 @@ public:
     else
       ptr = NETWORK_STAGING_BUFFER_SIZE;
   }
+  BoolIO(IOChannel *io, int party) = delete;
   ~BoolIO() { this->flush(); }
   void flush() override {
     close_chunk_();
@@ -99,6 +104,12 @@ private:
       while (ptr != 0)
         send_bit(true);
     } else {
+      // The transcript absorbs the padding too, so accept only true bits:
+      // every bit stream then has exactly one wire encoding.
+      const bool *rest = buf.get() + ptr;
+      const bool *end = buf.get() + NETWORK_STAGING_BUFFER_SIZE;
+      expecting(std::find(rest, end, false) == end,
+                "BoolIO: the padding of a closed chunk must be all true");
       ptr = NETWORK_STAGING_BUFFER_SIZE;
     }
   }

@@ -86,11 +86,11 @@ convention for a debug tree.
   emp-tool `ArithmeticContext` concept + an emp-zk `ZKFpSession`); don't
   do a partial ad-hoc de-singletonization outside that plan.
 
-- **Contracts use `expecting()` / `error()` (always-on).** Check a
-  precondition or invariant with `expecting(cond, msg)`; fail an
-  unreachable / bad-state branch with `error(msg)`. Both abort in every
-  build flavor — don't use raw `assert()` (compiled out under `NDEBUG`)
-  for a protocol contract.
+- **Checks use `expecting(cond, msg)` (always-on).** Write every
+  precondition, invariant and protocol check as `expecting()` on its
+  condition, and a bad-state branch as an `expecting()` before the
+  branch. Don't call `error()` directly. `expecting()` aborts in every
+  build flavor; don't use raw `assert()` (compiled out under `NDEBUG`).
 
 - **Two-party test discipline.** Tests use `NetIO::listen` / `connect`
   via the `./run` wrapper. If a test needs more than one channel between

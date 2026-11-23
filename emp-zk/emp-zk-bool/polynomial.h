@@ -85,8 +85,8 @@ public:
 
       gfmul(check_sum[1], delta, &tmp);
       check_sum[1] = B ^ tmp;
-      if (cmpBlock(check_sum, check_sum + 1, 1) != 1)
-        error("zk polynomial: boolean polynomial zkp fails");
+      expecting(cmpBlock(check_sum, check_sum + 1, 1) == 1,
+                "zk polynomial: boolean polynomial zkp fails");
     }
     num = 0;
   }

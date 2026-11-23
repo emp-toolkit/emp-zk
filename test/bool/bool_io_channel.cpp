@@ -37,17 +37,17 @@ static void check_one_transcript(NetIO *netio, BoolIO *io, int party) {
     io->send_block(&msg, 1);  // closes the partial chunk
   } else {
     for (int i = 0; i < nbits; ++i)
-      if (io->recv_bit() != (i % 3 == 0)) error("BoolIO: a bit arrived wrong");
+      expecting(io->recv_bit() == (i % 3 == 0), "BoolIO: a bit arrived wrong");
     block got;
     io->recv_block(&got, 1);
-    if (!cmpBlock(&got, &msg, 1)) error("BoolIO: the message arrived wrong");
+    expecting(cmpBlock(&got, &msg, 1), "BoolIO: the message arrived wrong");
   }
   io->flush();
   const block mine = io->get_digest();
   const block inner = netio->get_digest();
-  if (!cmpBlock(&mine, &inner, 1)) error("BoolIO: its digest is not its channel's");
+  expecting(cmpBlock(&mine, &inner, 1), "BoolIO: its digest is not its channel's");
   const block theirs = exchange(netio, party, mine);
-  if (!cmpBlock(&mine, &theirs, 1)) error("BoolIO: the parties' transcripts differ");
+  expecting(cmpBlock(&mine, &theirs, 1), "BoolIO: the parties' transcripts differ");
   cout << "one transcript, in wire order: OK" << endl;
 }
 
@@ -56,29 +56,30 @@ static block one_proof_sid(BoolIO *io, int party) {
   ZKBoolSession sess(io, party);
   Int32 a = sess.input<Int32>(ALICE, 3);
   Int32 b = sess.input<Int32>(ALICE, 2);
-  if (sess.reveal(a - b, PUBLIC).value_or(-1) != 1) error("the proof revealed a wrong value");
+  expecting(sess.reveal(a - b, PUBLIC).value_or(-1) == 1,
+            "the proof revealed a wrong value");
   const block sid = sess.engine().ferret->session_id().value();
   sess.finalize();
   return sid;
 }
 
 static void check_proofs(NetIO *netio, BoolIO *io, int party) {
-  if (!io->has_session_root()) error("BoolIO: no session root over a NetIO");
+  expecting(io->has_session_root(), "BoolIO: no session root over a NetIO");
   const block s1 = one_proof_sid(io, party);
   const block s2 = one_proof_sid(io, party);
   io->flush();
   const block mine = io->get_digest();
   const block inner = netio->get_digest();
-  if (!cmpBlock(&mine, &inner, 1))
-    error("BoolIO: the proofs gave it a transcript of its own");
+  expecting(cmpBlock(&mine, &inner, 1),
+            "BoolIO: the proofs gave it a transcript of its own");
   cout << "one transcript after the proofs: OK" << endl;
-  if (cmpBlock(&s1, &zero_block, 1) || cmpBlock(&s2, &zero_block, 1))
-    error("a proof's Ferret kept the zero session id");
-  if (cmpBlock(&s1, &s2, 1)) error("two proofs got the same session id");
+  expecting(!cmpBlock(&s1, &zero_block, 1) && !cmpBlock(&s2, &zero_block, 1),
+            "a proof's Ferret kept the zero session id");
+  expecting(!cmpBlock(&s1, &s2, 1), "two proofs got the same session id");
   const block t1 = exchange(netio, party, s1);
   const block t2 = exchange(netio, party, s2);
-  if (!cmpBlock(&s1, &t1, 1) || !cmpBlock(&s2, &t2, 1))
-    error("the parties' session ids differ");
+  expecting(cmpBlock(&s1, &t1, 1) && cmpBlock(&s2, &t2, 1),
+            "the parties' session ids differ");
   cout << "fresh session ids from the channel: OK" << endl;
 }
 

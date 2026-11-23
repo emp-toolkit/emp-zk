@@ -39,8 +39,8 @@ int main(int argc, char **argv) {
   if (party == BOB) {
     PRG prg2(&test_seed);
     prg2.random_bool(data2, LL);
-    if (memcmp(data, data2, LL) != 0)
-      error("BoolIO: the received bits differ from the sent ones");
+    expecting(memcmp(data, data2, LL) == 0,
+              "BoolIO: the received bits differ from the sent ones");
     cout << "fine!\n";
   }
   return 0;

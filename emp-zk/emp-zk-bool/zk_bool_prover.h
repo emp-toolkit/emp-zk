@@ -49,17 +49,17 @@ public:
   void feed_bits(block *out, int from_party, const bool *in, size_t n) override {
     // Guard the raw primitive too (engine() is public): an invalid owner would
     // leave the verifier on the other branch and desync the transcript.
+    expecting(from_party == ALICE || from_party == PUBLIC,
+              "ZKBoolProver::feed_bits: input owner must be ALICE or PUBLIC");
     if (from_party == ALICE)
       authenticated_bits_input(out, in, static_cast<int64_t>(n));
-    else if (from_party == PUBLIC)
-      for (size_t i = 0; i < n; ++i) out[i] = pub_label[in[i]];
     else
-      error("ZKBoolProver::feed_bits: input owner must be ALICE or PUBLIC");
+      for (size_t i = 0; i < n; ++i) out[i] = pub_label[in[i]];
   }
 
   void reveal_bits(bool *out, int to_party, const block *in, size_t n) override {
-    if (to_party != ALICE && to_party != BOB && to_party != PUBLIC)
-      error("ZKBoolProver::reveal_bits: recipient must be ALICE, BOB, or PUBLIC");
+    expecting(to_party == ALICE || to_party == BOB || to_party == PUBLIC,
+              "ZKBoolProver::reveal_bits: recipient must be ALICE, BOB, or PUBLIC");
     int64_t len = static_cast<int64_t>(n);
     if (to_party == ALICE) {
       // Local read-out — no MAC check needed since prover is the trust root.
@@ -108,8 +108,8 @@ private:
   }
 
   // Output reveal: send each cleartext bit, then drop the MACs into the
-  // auth_hash transcript. The destructor sends the digest; the verifier's
-  // matching digest fails error() if the prover lied.
+  // auth_hash transcript. The destructor sends the digest; the verifier aborts
+  // if it does not match its own, that is, if the prover lied.
   void verify_output(bool *b, const block *output, int64_t length) {
     for (int64_t i = 0; i < length; ++i) {
       b[i] = getLSB(output[i]);

@@ -57,8 +57,8 @@ int main(int argc, char **argv) {
   auto cout = execute_program(cctx, prog,
                               std::span<const uint8_t>(wit.data(), (size_t)nin));
   for (size_t i = 0; i < cout.size(); ++i)
-    if ((zdig[i] & 1) != (cout[i] & 1))
-      error("wrong");
+    expecting((zdig[i] & 1) == (cout[i] & 1),
+              "sha256: the ZK output differs from the cleartext replay");
 
   sess.finalize();
   if (party == ALICE)

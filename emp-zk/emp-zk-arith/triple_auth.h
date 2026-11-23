@@ -33,10 +33,9 @@ public:
     } else {
       char dig_recv[emp::Hash::DIGEST_SIZE];
       io->recv_data(dig_recv, emp::Hash::DIGEST_SIZE);
-      if (!cmpBlock((block *)dig, (block *)dig_recv,
-                    emp::Hash::DIGEST_SIZE / 16)) {
-        error("Fp auth_helper check mac fails");
-      }
+      expecting(cmpBlock((block *)dig, (block *)dig_recv,
+                         emp::Hash::DIGEST_SIZE / 16),
+                "Fp auth_helper check mac fails");
     }
   }
 };

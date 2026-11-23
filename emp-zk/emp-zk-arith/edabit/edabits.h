@@ -78,8 +78,7 @@ public:
   }
 
   ~EdaBits() {
-    if (!auth_helper->triple_equality_check())
-      error("cut and choose fails");
+    expecting(auth_helper->triple_equality_check(), "cut and choose fails");
     if (auth_helper != nullptr)
       delete auth_helper;
   }
@@ -146,8 +145,7 @@ public:
       else
         auth_helper->open_check_recv(f2_to_check.data(), fp_to_check.data(), N);
     }
-    if (!auth_helper->triple_equality_check())
-      error("cut and choose fails");
+    expecting(auth_helper->triple_equality_check(), "cut and choose fails");
     edabit_num = N;
     edabit_offset = 0;
     // std::cout << "edabits generation: " << time_from(start)/N << "
@@ -317,8 +315,7 @@ public:
     if (party == ALICE) {
       uint64_t a = sender_check_int_value(bool_candidate[edab_f2]);
       uint64_t b = sender_check_int_value(arith_candidate[edab_fp]);
-      if (a != b)
-        error("edabit error!");
+      expecting(a == b, "edabit error!");
     }
   }
 

@@ -39,9 +39,10 @@ concept to emp-tool — but **no arithmetic circuit**.
   plumbing/lifetime refactor plus the emp-tool concept. Note the
   *deterministic transcript will still move*: removing the unconditional
   pre-draw and centralizing/reordering correlation draws changes the byte
-  trace under `EMP_TEST_MODE` even though the protocol stays equivalent — so
-  the phase-0 baseline (below) is a reviewable regression aid, regenerated
-  with the delta reviewed on an intentional change, not a freeze.
+  trace in deterministic mode (`EMP_DETERMINISTIC_MODE`) even though the
+  protocol stays equivalent — so the phase-0 baseline (below) is a
+  reviewable regression aid, regenerated with the delta reviewed on an
+  intentional change, not a freeze.
 
 ## Layering
 

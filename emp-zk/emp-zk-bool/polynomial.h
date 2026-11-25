@@ -26,7 +26,7 @@ public:
   Ferret *ferret = nullptr;
 
   PolyProof(int party, IOChannel *io, Ferret *ferret)
-      : party(party), io(io), delta(ferret->Delta), ferret(ferret), num(0) {
+      : party(party), io(io), delta(ferret->Delta), num(0), ferret(ferret) {
     buffer.resize(buffer_sz);
     if (party == ALICE)
       buffer1.resize(buffer_sz);

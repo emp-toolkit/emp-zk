@@ -185,7 +185,7 @@ public:
     share_seed_gen(&share_seed, 1);
     io->flush();
 
-    uint64_t sum[2];
+    uint64_t sum[2] = {0, 0};
     andgate_correctness_check(sum, 0, 0, check_cnt, &share_seed);
     if (party == ALICE) {
       U = sum[0];
